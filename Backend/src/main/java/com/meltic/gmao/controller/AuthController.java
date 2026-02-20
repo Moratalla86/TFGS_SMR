@@ -25,7 +25,7 @@ public class AuthController {
         String email = credentials.get("email");
         String password = credentials.get("password");
 
-        return usuarioRepo.findByEmail(email)
+        return usuarioRepo. findByEmail(email)
                 .filter(user -> encoder.matches(password, user.getPassword())) // Compara Hash
                 .map(user -> ResponseEntity.ok(user)) // Login correcto
                 .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()); // Login fallo

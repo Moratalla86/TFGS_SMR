@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MaquinaRepository extends JpaRepository<Maquina, Long> {
-    // Métodos Spring como save(), findAll(), deleteById(), etc.
 }
