@@ -11,27 +11,22 @@ public class Maquina {
     private Long id;
 
     private String nombre;
+    private String modelo; // Campo necesario para el DataInitializer
     private String descripcion;
     private String ubicacion;
-    private String estado; // OK, WARNING, ERROR
+    private String estado; // OK, WARNING, ERROR [cite: 34]
 
-    // Constructor vacío NECESARIO para que Spring/Hibernate funcionen
     public Maquina() {}
 
-    // Constructor para crear objetos rápidamente
-    public Maquina(String nombre, String descripcion, String ubicacion, String estado) {
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.ubicacion = ubicacion;
-        this.estado = estado;
-    }
-
-    // Getters y Setters (Sin esto, el JSON llegará vacío o dará error)
+    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getModelo() { return modelo; }
+    public void setModelo(String modelo) { this.modelo = modelo; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

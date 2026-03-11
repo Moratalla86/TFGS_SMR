@@ -1,0 +1,96 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'api_config.dart';
+import '../models/orden_trabajo.dart';
+
+class OrdenTrabajoService {
+  final String _base = '${ApiConfig.baseUrl}/api/ordenes';
+
+  Future<List<OrdenTrabajo>> fetchOrdenes() async {
+    final res = await http.get(Uri.parse(_base));
+    if (res.statusCode == 200) {
+      final List<dynamic> body = json.decode(res.body);
+      return body.map((e) => OrdenTrabajo.fromJson(e)).toList();
+    }
+    throw Exception('Error al cargar órdenes: ${res.statusCode}');
+  }
+
+  Future<List<OrdenTrabajo>> fetchOrdenesPorTecnico(int tecnicoId) async {
+    final res = await http.get(Uri.parse('$_base/tecnico/$tecnicoId'));
+    if (res.statusCode == 200) {
+      final List<dynamic> body = json.decode(res.body);
+      return body.map((e) => OrdenTrabajo.fromJson(e)).toList();
+    }
+    throw Exception('Error al cargar OTs del técnico: ${res.statusCode}');
+  }
+
+  Future<OrdenTrabajo> crearOrden(OrdenTrabajo ot, {int? tecnicoId, int? maquinaId}) async {
+    // Enviamos como JSON plano con IDs para maquina y tecnico
+    final body = {
+      'descripcion': ot.descripcion,
+      'prioridad': ot.prioridad,
+      'estado': 'PENDIENTE',
+      if (tecnicoId != null) 'tecnico': {'id': tecnicoId},
+      if (maquinaId != null) 'maquina': {'id': maquinaId},
+    };
+    final res = await http.post(
+      Uri.parse(_base),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return OrdenTrabajo.fromJson(json.decode(res.body));
+    }
+    throw Exception('Error al crear OT: ${res.statusCode}');
+  }
+
+  Future<OrdenTrabajo> asignar(int id, {int? tecnicoId, int? maquinaId}) async {
+    String url = '$_base/$id/asignar?';
+    if (tecnicoId != null) url += 'tecnicoId=$tecnicoId&';
+    if (maquinaId != null) url += 'maquinaId=$maquinaId';
+    final res = await http.patch(Uri.parse(url));
+    if (res.statusCode == 200) return OrdenTrabajo.fromJson(json.decode(res.body));
+    throw Exception('Error al asignar OT: ${res.statusCode}');
+  }
+
+  Future<OrdenTrabajo> actualizarEstado(int id, String estado) async {
+    final res = await http.patch(Uri.parse('$_base/$id/estado?estado=$estado'));
+    if (res.statusCode == 200) return OrdenTrabajo.fromJson(json.decode(res.body));
+    throw Exception('Error al actualizar estado: ${res.statusCode}');
+  }
+
+  Future<OrdenTrabajo> iniciarOT(int id) async {
+    final res = await http.patch(Uri.parse('$_base/$id/iniciar'));
+    if (res.statusCode == 200) return OrdenTrabajo.fromJson(json.decode(res.body));
+    throw Exception('Error al iniciar OT: ${res.statusCode}');
+  }
+
+  Future<OrdenTrabajo> actualizarAcciones(int id, String trabajos) async {
+    final res = await http.patch(
+      Uri.parse('$_base/$id/acciones'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'trabajosRealizados': trabajos}),
+    );
+    if (res.statusCode == 200) return OrdenTrabajo.fromJson(json.decode(res.body));
+    throw Exception('Error al actualizar acciones: ${res.statusCode}');
+  }
+
+  Future<OrdenTrabajo> cerrarOT(int id, {String? trabajos, String? firmaTecnico, String? firmaCliente}) async {
+    final body = <String, String>{};
+    if (trabajos != null) body['trabajosRealizados'] = trabajos;
+    if (firmaTecnico != null) body['firmaTecnico'] = firmaTecnico;
+    if (firmaCliente != null) body['firmaCliente'] = firmaCliente;
+    final res = await http.patch(
+      Uri.parse('$_base/$id/cerrar'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    if (res.statusCode == 200) return OrdenTrabajo.fromJson(json.decode(res.body));
+    throw Exception('Error al cerrar OT: ${res.statusCode}');
+  }
+
+  Future<void> eliminarOT(int id) async {
+    final res = await http.delete(Uri.parse('$_base/$id'));
+    if (res.statusCode != 204) throw Exception('Error al eliminar OT: ${res.statusCode}');
+  }
+}

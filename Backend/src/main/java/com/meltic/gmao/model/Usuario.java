@@ -19,16 +19,24 @@ public class Usuario {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "rfid_tag")
+    @Column(name = "rfid_tag", unique = true)
     private String rfidTag;
 
-    private String rol;
+    private String nombre;
+
+    private String apellido1;
+
+    private String apellido2;
+    private String telefonoPersonal;
+    private String telefonoProfesional;
+    private String emailPersonal;
+
+    private String rol; // ADMIN, JEFE DE MANTENIMIENTO, TECNICO
     private boolean activo;
 
-    // Constructor vacío
     public Usuario() {}
 
-    // --- GETTERS Y SETTERS MANUALES ---
+    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -49,4 +57,22 @@ public class Usuario {
 
     public boolean isActivo() { return activo; }
     public void setActivo(boolean activo) { this.activo = activo; }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getApellido1() { return apellido1; }
+    public void setApellido1(String apellido1) { this.apellido1 = apellido1; }
+
+    public String getApellido2() { return apellido2; }
+    public void setApellido2(String apellido2) { this.apellido2 = apellido2; }
+
+    public String getTelefonoPersonal() { return telefonoPersonal; }
+    public void setTelefonoPersonal(String telefonoPersonal) { this.telefonoPersonal = telefonoPersonal; }
+
+    public String getTelefonoProfesional() { return telefonoProfesional; }
+    public void setTelefonoProfesional(String telefonoProfesional) { this.telefonoProfesional = telefonoProfesional; }
+
+    public String getEmailPersonal() { return emailPersonal; }
+    public void setEmailPersonal(String emailPersonal) { this.emailPersonal = emailPersonal; }
 }

@@ -1,6 +1,7 @@
 package com.meltic.gmao.controller;
 
 import com.meltic.gmao.model.Usuario;
+import com.meltic.gmao.repository.sql.OrdenTrabajoRepository;
 import com.meltic.gmao.repository.sql.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,25 +18,94 @@ public class UsuarioController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private OrdenTrabajoRepository ordenTrabajoRepository;
+
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    // Listar todos los usuarios
+    // ── Listar todos ────────────────────────────────────────────────────────────
     @GetMapping
     public List<Usuario> obtenerTodos() {
         return usuarioRepository.findAll();
     }
 
-    // Crear un nuevo usuario (Cifrando la contraseña)
+    // ── Crear usuario (genera email corporativo automáticamente) ────────────────
     @PostMapping
     public ResponseEntity<Usuario> crear(@RequestBody Usuario usuario) {
-        // Ciframos la contraseña antes de guardar
-        usuario.setPassword(encoder.encode(usuario.getPassword()));
+        // Generar email corporativo: inicial_nombre + apellido1 + @meltic.com
+        String emailCorp = generarEmailCorporativo(usuario.getNombre(), usuario.getApellido1());
+        usuario.setEmail(emailCorp);
 
-        Usuario nuevoUsuario = usuarioRepository.save(usuario);
-        return ResponseEntity.ok(nuevoUsuario);
+        // Si no viene username, usar el email corporativo
+        if (usuario.getUsername() == null || usuario.getUsername().isBlank()) {
+            usuario.setUsername(emailCorp);
+        }
+
+        // Cifrar contraseña
+        if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
+            usuario.setPassword(encoder.encode(usuario.getPassword()));
+        }
+
+        usuario.setActivo(true);
+        return ResponseEntity.ok(usuarioRepository.save(usuario));
     }
 
-    // Buscar usuario por RFID (Clave para el Controllino/App)
+    // ── Actualizar usuario ──────────────────────────────────────────────────────
+    @PutMapping("/{id}")
+    public ResponseEntity<Usuario> actualizar(@PathVariable Long id, @RequestBody Usuario datos) {
+        return usuarioRepository.findById(id)
+                .map(u -> {
+                    u.setNombre(datos.getNombre());
+                    u.setApellido1(datos.getApellido1());
+                    u.setApellido2(datos.getApellido2());
+                    u.setTelefonoPersonal(datos.getTelefonoPersonal());
+                    u.setTelefonoProfesional(datos.getTelefonoProfesional());
+                    u.setEmailPersonal(datos.getEmailPersonal());
+                    u.setRol(datos.getRol());
+                    u.setActivo(datos.isActivo());
+
+                    // Re-generar email corporativo si cambian nombre/apellido
+                    String emailCorp = generarEmailCorporativo(datos.getNombre(), datos.getApellido1());
+                    u.setEmail(emailCorp);
+                    u.setUsername(emailCorp);
+
+                    // Sólo actualizar contraseña si viene una nueva
+                    if (datos.getPassword() != null && !datos.getPassword().isBlank()) {
+                        u.setPassword(encoder.encode(datos.getPassword()));
+                    }
+
+                    return ResponseEntity.ok(usuarioRepository.save(u));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Eliminar usuario ────────────────────────────────────────────────────────
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        if (!usuarioRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        // Desasignar al técnico de todas sus OTs antes de borrarlo (evita FK constraint)
+        ordenTrabajoRepository.findByTecnicoId(id).forEach(ot -> {
+            ot.setTecnico(null);
+            ordenTrabajoRepository.save(ot);
+        });
+        usuarioRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Cambiar estado activo/inactivo ──────────────────────────────────────────
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<Usuario> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
+        return usuarioRepository.findById(id)
+                .map(u -> {
+                    u.setActivo(activo);
+                    return ResponseEntity.ok(usuarioRepository.save(u));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Buscar por RFID ─────────────────────────────────────────────────────────
     @GetMapping("/rfid/{tag}")
     public ResponseEntity<Usuario> obtenerPorRfid(@PathVariable String tag) {
         return usuarioRepository.findByRfidTag(tag)
@@ -43,14 +113,11 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Actualizar estado (Activo/Inactivo)
-    @PatchMapping("/{id}/estado")
-    public ResponseEntity<Usuario> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
-        return usuarioRepository.findById(id)
-                .map(usuario -> {
-                    usuario.setActivo(activo);
-                    return ResponseEntity.ok(usuarioRepository.save(usuario));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    // ── Helper: genera email corporativo ────────────────────────────────────────
+    private String generarEmailCorporativo(String nombre, String apellido1) {
+        if (nombre == null || apellido1 == null) return "usuario@meltic.com";
+        String inicial = nombre.trim().substring(0, 1);
+        String ap1 = apellido1.trim().replaceAll("\\s+", "");
+        return (inicial + ap1).toLowerCase() + "@meltic.com";
     }
 }
