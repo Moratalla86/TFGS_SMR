@@ -22,12 +22,21 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   }
 
   Future<void> _loadUsuarios() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final data = await _service.fetchUsuarios();
-      setState(() { _usuarios = data; _loading = false; });
+      setState(() {
+        _usuarios = data;
+        _loading = false;
+      });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -36,13 +45,21 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: Text('¿Eliminar a ${u.nombreCompleto}? Esta acción no se puede deshacer.'),
+        content: Text(
+          '¿Eliminar a ${u.nombreCompleto}? Esta acción no se puede deshacer.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -53,7 +70,10 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
         _loadUsuarios();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Usuario ${u.nombreCompleto} eliminado.'), backgroundColor: Colors.green),
+            SnackBar(
+              content: Text('Usuario ${u.nombreCompleto} eliminado.'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {
@@ -77,17 +97,23 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 
   Color _rolColor(String rol) {
     switch (rol) {
-      case 'ADMIN': return Colors.purple;
-      case 'JEFE_MANTENIMIENTO': return Colors.blue[800]!;
-      default: return Colors.teal;
+      case 'ADMIN':
+        return Colors.purple;
+      case 'JEFE_MANTENIMIENTO':
+        return Colors.blue[800]!;
+      default:
+        return Colors.teal;
     }
   }
 
   String _rolLabel(String rol) {
     switch (rol) {
-      case 'ADMIN': return 'Admin';
-      case 'JEFE_MANTENIMIENTO': return 'Jefe Mant.';
-      default: return 'Técnico';
+      case 'ADMIN':
+        return 'Admin';
+      case 'JEFE_MANTENIMIENTO':
+        return 'Jefe Mant.';
+      default:
+        return 'Técnico';
     }
   }
 
@@ -96,7 +122,10 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Gestión de Usuarios', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Gestión de Usuarios',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.blue[900],
         foregroundColor: Colors.white,
         elevation: 0,
@@ -107,46 +136,64 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.wifi_off, size: 60, color: Colors.red),
-                      const SizedBox(height: 12),
-                      Text('Error de conexión', style: TextStyle(color: Colors.grey[700], fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12), textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(onPressed: _loadUsuarios, icon: const Icon(Icons.refresh), label: const Text('Reintentar')),
-                    ],
-                  ),
-                )
-              : _usuarios.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.person_off, size: 60, color: Colors.grey[400]),
-                          const SizedBox(height: 12),
-                          Text('No hay usuarios registrados', style: TextStyle(color: Colors.grey[600], fontSize: 18)),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadUsuarios,
-                      child: Column(
-                        children: [
-                          _buildSummaryBar(),
-                          Expanded(
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _usuarios.length,
-                              itemBuilder: (_, i) => _buildUserCard(_usuarios[i]),
-                            ),
-                          ),
-                        ],
-                      ),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.wifi_off, size: 60, color: Colors.red),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Error de conexión',
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _loadUsuarios,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            )
+          : _usuarios.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_off, size: 60, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No hay usuarios registrados',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 18),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadUsuarios,
+              child: Column(
+                children: [
+                  _buildSummaryBar(),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _usuarios.length,
+                      itemBuilder: (_, i) => _buildUserCard(_usuarios[i]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),
         backgroundColor: Colors.blue[900],
@@ -164,14 +211,21 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.blue[900],
-        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _summaryItem('Total', '$total', Icons.people),
           _summaryItem('Activos', '$activos', Icons.check_circle_outline),
-          _summaryItem('Inactivos', '${total - activos}', Icons.cancel_outlined),
+          _summaryItem(
+            'Inactivos',
+            '${total - activos}',
+            Icons.cancel_outlined,
+          ),
         ],
       ),
     );
@@ -182,8 +236,18 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       children: [
         Icon(icon, color: Colors.white70, size: 20),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 11),
+        ),
       ],
     );
   }
@@ -195,7 +259,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -210,7 +280,11 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   backgroundColor: rolColor.withValues(alpha: 0.12),
                   child: Text(
                     u.nombre.isNotEmpty ? u.nombre[0].toUpperCase() : '?',
-                    style: TextStyle(color: rolColor, fontWeight: FontWeight.bold, fontSize: 20),
+                    style: TextStyle(
+                      color: rolColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -218,17 +292,39 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(u.nombreCompleto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        u.nombreCompleto,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(u.email ?? u.emailCorporativoPreview, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                      Text(
+                        u.email ?? u.emailCorporativoPreview,
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
                 // Chip de rol
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: rolColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-                  child: Text(_rolLabel(u.rol), style: TextStyle(color: rolColor, fontSize: 11, fontWeight: FontWeight.bold)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: rolColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _rolLabel(u.rol),
+                    style: TextStyle(
+                      color: rolColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -240,9 +336,11 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
               spacing: 20,
               runSpacing: 6,
               children: [
-                if (u.telefonoProfesional != null && u.telefonoProfesional!.isNotEmpty)
+                if (u.telefonoProfesional != null &&
+                    u.telefonoProfesional!.isNotEmpty)
                   _infoChip(Icons.phone_outlined, u.telefonoProfesional!),
-                if (u.telefonoPersonal != null && u.telefonoPersonal!.isNotEmpty)
+                if (u.telefonoPersonal != null &&
+                    u.telefonoPersonal!.isNotEmpty)
                   _infoChip(Icons.smartphone_outlined, u.telefonoPersonal!),
                 if (u.emailPersonal != null && u.emailPersonal!.isNotEmpty)
                   _infoChip(Icons.alternate_email, u.emailPersonal!),
@@ -265,8 +363,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.blue[800],
                     side: BorderSide(color: Colors.blue[200]!),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -277,8 +380,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red[700],
                     side: BorderSide(color: Colors.red[200]!),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                   ),
                 ),
               ],
@@ -326,7 +434,9 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   late final TextEditingController _telProfesional;
   late final TextEditingController _emailPersonal;
   late final TextEditingController _password;
+  late final TextEditingController _rfid;
   String _rol = 'TECNICO';
+  bool _isScanning = false;
 
   static const List<Map<String, String>> _roles = [
     {'value': 'ADMIN', 'label': 'Administrador'},
@@ -340,14 +450,15 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   void initState() {
     super.initState();
     final u = widget.usuario;
-    _nombre        = TextEditingController(text: u?.nombre ?? '');
-    _apellido1     = TextEditingController(text: u?.apellido1 ?? '');
-    _apellido2     = TextEditingController(text: u?.apellido2 ?? '');
-    _telPersonal   = TextEditingController(text: u?.telefonoPersonal ?? '');
-    _telProfesional= TextEditingController(text: u?.telefonoProfesional ?? '');
+    _nombre = TextEditingController(text: u?.nombre ?? '');
+    _apellido1 = TextEditingController(text: u?.apellido1 ?? '');
+    _apellido2 = TextEditingController(text: u?.apellido2 ?? '');
+    _telPersonal = TextEditingController(text: u?.telefonoPersonal ?? '');
+    _telProfesional = TextEditingController(text: u?.telefonoProfesional ?? '');
     _emailPersonal = TextEditingController(text: u?.emailPersonal ?? '');
-    _password      = TextEditingController();
-    _rol           = u?.rol ?? 'TECNICO';
+    _password = TextEditingController();
+    _rfid = TextEditingController(text: u?.rfidTag ?? '');
+    _rol = u?.rol ?? 'TECNICO';
 
     // Actualizar preview en tiempo real
     _nombre.addListener(() => setState(() {}));
@@ -356,7 +467,16 @@ class _UserFormDialogState extends State<_UserFormDialog> {
 
   @override
   void dispose() {
-    for (final c in [_nombre, _apellido1, _apellido2, _telPersonal, _telProfesional, _emailPersonal, _password]) {
+    for (final c in [
+      _nombre,
+      _apellido1,
+      _apellido2,
+      _telPersonal,
+      _telProfesional,
+      _emailPersonal,
+      _password,
+      _rfid,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -365,10 +485,42 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   String get _emailPreview {
     if (_nombre.text.isNotEmpty && _apellido1.text.isNotEmpty) {
       final ini = _nombre.text.trim()[0].toLowerCase();
-      final ap  = _apellido1.text.trim().toLowerCase().replaceAll(' ', '');
+      final ap = _apellido1.text.trim().toLowerCase().replaceAll(' ', '');
       return '$ini$ap@meltic.com';
     }
     return '—';
+  }
+
+  Future<void> _scanRfid() async {
+    setState(() => _isScanning = true);
+    try {
+      final data = await widget.service.fetchLastRfid();
+      final rfid = data['rfid'] ?? '';
+      if (rfid.isNotEmpty && rfid != "Ninguna tarjeta detectada") {
+        setState(() {
+          _rfid.text = rfid;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tarjeta vinculada correctamente'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se detectó ninguna tarjeta. Pásala por el lector y reintenta.'), backgroundColor: Colors.orange),
+          );
+        }
+      }
+    } catch (e) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al escanear: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      setState(() => _isScanning = false);
+    }
   }
 
   Future<void> _guardar() async {
@@ -376,15 +528,24 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     setState(() => _saving = true);
     try {
       final u = Usuario(
-        nombre:              _nombre.text.trim(),
-        apellido1:           _apellido1.text.trim(),
-        apellido2:           _apellido2.text.trim().isEmpty ? null : _apellido2.text.trim(),
-        telefonoPersonal:    _telPersonal.text.trim().isEmpty ? null : _telPersonal.text.trim(),
-        telefonoProfesional: _telProfesional.text.trim().isEmpty ? null : _telProfesional.text.trim(),
-        emailPersonal:       _emailPersonal.text.trim().isEmpty ? null : _emailPersonal.text.trim(),
-        password:            _password.text.trim().isEmpty ? null : _password.text.trim(),
-        rol:                 _rol,
-        activo:              true,
+        nombre: _nombre.text.trim(),
+        apellido1: _apellido1.text.trim(),
+        apellido2: _apellido2.text.trim().isEmpty
+            ? null
+            : _apellido2.text.trim(),
+        telefonoPersonal: _telPersonal.text.trim().isEmpty
+            ? null
+            : _telPersonal.text.trim(),
+        telefonoProfesional: _telProfesional.text.trim().isEmpty
+            ? null
+            : _telProfesional.text.trim(),
+        emailPersonal: _emailPersonal.text.trim().isEmpty
+            ? null
+            : _emailPersonal.text.trim(),
+        password: _password.text.trim().isEmpty ? null : _password.text.trim(),
+        rol: _rol,
+        activo: true,
+        rfidTag: _rfid.text.trim().isEmpty ? null : _rfid.text.trim(),
       );
 
       if (_esEdicion) {
@@ -428,30 +589,59 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                     const SizedBox(width: 12),
                     Text(
                       _esEdicion ? 'Editar Usuario' : 'Nuevo Usuario',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey[900]),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[900],
+                      ),
                     ),
                     const Spacer(),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, false)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context, false),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
 
                 // ── Email corporativo preview ─────────────────
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Row(
                     children: [
-                      Icon(Icons.email_outlined, color: Colors.blue[800], size: 18),
+                      Icon(
+                        Icons.email_outlined,
+                        color: Colors.blue[800],
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Email corporativo (generado automáticamente)',
-                                style: TextStyle(color: Colors.blue[700], fontSize: 11, fontWeight: FontWeight.w600)),
+                            Text(
+                              'Email corporativo (generado automáticamente)',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text(_emailPreview, style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold)),
+                            Text(
+                              _emailPreview,
+                              style: TextStyle(
+                                color: Colors.blue[900],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -465,9 +655,23 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: _field(_nombre, 'Nombre *', Icons.person, required: true)),
+                    Expanded(
+                      child: _field(
+                        _nombre,
+                        'Nombre *',
+                        Icons.person,
+                        required: true,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _field(_apellido1, 'Primer Apellido *', Icons.person_outline, required: true)),
+                    Expanded(
+                      child: _field(
+                        _apellido1,
+                        'Primer Apellido *',
+                        Icons.person_outline,
+                        required: true,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -475,13 +679,32 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _field(_telPersonal, 'Teléfono Personal', Icons.smartphone, keyboardType: TextInputType.phone)),
+                    Expanded(
+                      child: _field(
+                        _telPersonal,
+                        'Teléfono Personal',
+                        Icons.smartphone,
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _field(_telProfesional, 'Teléfono Profesional', Icons.phone, keyboardType: TextInputType.phone)),
+                    Expanded(
+                      child: _field(
+                        _telProfesional,
+                        'Teléfono Profesional',
+                        Icons.phone,
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                _field(_emailPersonal, 'Email Personal', Icons.alternate_email, keyboardType: TextInputType.emailAddress),
+                _field(
+                  _emailPersonal,
+                  'Email Personal',
+                  Icons.alternate_email,
+                  keyboardType: TextInputType.emailAddress,
+                ),
 
                 const SizedBox(height: 20),
 
@@ -489,19 +712,79 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 _sectionTitle('Acceso y Rol'),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  value: _rol,
+                  initialValue: _rol,
                   decoration: _inputDeco('Rol', Icons.badge_outlined),
-                  items: _roles.map((r) => DropdownMenuItem(value: r['value'], child: Text(r['label']!))).toList(),
+                  items: _roles
+                      .map(
+                        (r) => DropdownMenuItem(
+                          value: r['value'],
+                          child: Text(r['label']!),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) => setState(() => _rol = v!),
                   validator: (v) => v == null ? 'Selecciona un rol' : null,
                 ),
                 const SizedBox(height: 12),
                 _field(
                   _password,
-                  _esEdicion ? 'Nueva contraseña (vacío = sin cambios)' : 'Contraseña *',
+                  _esEdicion
+                      ? 'Nueva contraseña (vacío = sin cambios)'
+                      : 'Contraseña *',
                   Icons.lock_outline,
                   obscure: true,
                   required: !_esEdicion,
+                ),
+                const SizedBox(height: 20),
+
+                // ── Identificación RFID ─────────────────────
+                _sectionTitle('Identificación RFID'),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _field(
+                        _rfid,
+                        'ID Tarjeta RFID',
+                        Icons.nfc,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: _isScanning ? null : _scanRfid,
+                      icon: _isScanning
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.blue,
+                              ),
+                            )
+                          : const Icon(Icons.sensors),
+                      label: const Text('ESCANEAR'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[50],
+                        foregroundColor: Colors.blue[900],
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: Colors.blue[200]!),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, left: 4),
+                  child: Text(
+                    'Pasa la tarjeta por el lector y pulsa Escanear para vincularla.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -510,21 +793,37 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: _saving ? null : () => Navigator.pop(context, false),
+                      onPressed: _saving
+                          ? null
+                          : () => Navigator.pop(context, false),
                       child: const Text('Cancelar'),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: _saving ? null : _guardar,
                       icon: _saving
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Icon(Icons.save_outlined),
-                      label: Text(_esEdicion ? 'Guardar cambios' : 'Crear usuario'),
+                      label: Text(
+                        _esEdicion ? 'Guardar cambios' : 'Crear usuario',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[900],
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -538,7 +837,15 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   }
 
   Widget _sectionTitle(String text) {
-    return Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.grey[700], letterSpacing: 0.5));
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: Colors.grey[700],
+        letterSpacing: 0.5,
+      ),
+    );
   }
 
   InputDecoration _inputDeco(String label, IconData icon) {
@@ -547,8 +854,14 @@ class _UserFormDialogState extends State<_UserFormDialog> {
       prefixIcon: Icon(icon, size: 18),
       filled: true,
       fillColor: Colors.grey[50],
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey[300]!)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey[300]!)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
   }
@@ -566,7 +879,9 @@ class _UserFormDialogState extends State<_UserFormDialog> {
       obscureText: obscure,
       keyboardType: keyboardType,
       decoration: _inputDeco(label, icon),
-      validator: required ? (v) => (v == null || v.trim().isEmpty) ? 'Campo obligatorio' : null : null,
+      validator: required
+          ? (v) => (v == null || v.trim().isEmpty) ? 'Campo obligatorio' : null
+          : null,
     );
   }
 }

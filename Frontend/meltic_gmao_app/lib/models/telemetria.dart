@@ -3,6 +3,8 @@ class Telemetria {
   final int maquinaId;
   final double temperatura;
   final double humedad;
+  final String rfidTag;
+  final String usuarioNombre;
   final String timestamp;
 
   Telemetria({
@@ -10,6 +12,8 @@ class Telemetria {
     required this.maquinaId,
     required this.temperatura,
     required this.humedad,
+    required this.rfidTag,
+    required this.usuarioNombre,
     required this.timestamp,
   });
 
@@ -19,7 +23,10 @@ class Telemetria {
       maquinaId: json['maquinaId'] ?? 0,
       temperatura: (json['temperatura'] ?? 0).toDouble(),
       humedad: (json['humedad'] ?? 0).toDouble(),
+      rfidTag: json['rfidTag'] ?? '',
+      usuarioNombre: json['usuarioNombre'] ?? '',
       timestamp: json['timestamp'] ?? '',
     );
   }
 }
+

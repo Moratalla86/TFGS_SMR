@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import '../services/api_config.dart';
 import '../services/app_session.dart';
+import '../services/usuario_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +18,47 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  Timer? _rfidTimer;
+  String? _lastRfidTimestamp;
+
+  @override
+  void initState() {
+    super.initState();
+    _startRfidPolling();
+  }
+
+  @override
+  void dispose() {
+    _rfidTimer?.cancel();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _startRfidPolling() {
+    // Poll cada 2 segundos buscando una tarjeta nueva
+    _rfidTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (_isLoading) return; 
+
+      try {
+        final data = await UsuarioService().fetchLastRfid();
+        final rfid = data['rfid'] ?? '';
+        final timestamp = data['timestamp']?.toString();
+
+        // Si hay una tarjeta y el timestamp ha cambiado desde la última vez que logueamos/vimos
+        if (rfid.isNotEmpty && 
+            rfid != "Ninguna tarjeta detectada" && 
+            timestamp != null && 
+            timestamp != _lastRfidTimestamp) {
+          
+          _lastRfidTimestamp = timestamp;
+          _handleRfidLogin(rfid);
+        }
+      } catch (e) {
+        // En el login automático somos silenciosos con los errores de red
+      }
+    });
+  }
 
   Future<void> _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -36,7 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Guardar sesión del usuario
         final userData = json.decode(response.body);
         AppSession.instance.fromJson(userData);
         if (!mounted) return;
@@ -46,6 +88,36 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       _showError("Error de conexión: comprueba que el Backend esté encendido");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleRfidLogin(String rfidTag) async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/rfid-login'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"rfidTag": rfidTag}),
+      );
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        AppSession.instance.fromJson(userData);
+        if (!mounted) return;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Acceso concedido mediante RFID'), backgroundColor: Colors.green),
+        );
+        
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        // Solo mostramos error si el login falla (ej. tarjeta no vinculada)
+        _showError("Tarjeta RFID no reconocida o usuario inactivo");
+      }
+    } catch (e) {
+      _showError("Error al validar tarjeta RFID");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -153,6 +225,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: const Text("ENTRAR", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                         ),
+                ),
+                const SizedBox(height: 30),
+                
+                // ── Login Automático RFID ────────────────────
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.nfc, color: Colors.blue[900], size: 30),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Identificación por RFID",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Pasa tu tarjeta por el lector para entrar automáticamente",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

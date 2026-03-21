@@ -63,6 +63,7 @@ public class UsuarioController {
                     u.setEmailPersonal(datos.getEmailPersonal());
                     u.setRol(datos.getRol());
                     u.setActivo(datos.isActivo());
+                    u.setRfidTag(datos.getRfidTag());
 
                     // Re-generar email corporativo si cambian nombre/apellido
                     String emailCorp = generarEmailCorporativo(datos.getNombre(), datos.getApellido1());

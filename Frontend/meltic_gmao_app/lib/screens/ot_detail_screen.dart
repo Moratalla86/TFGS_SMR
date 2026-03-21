@@ -50,13 +50,23 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
     setState(() => _saving = true);
     try {
       final updated = await _otService.iniciarOT(_ot.id);
-      setState(() { _ot = updated; _changed = true; });
+      setState(() {
+        _ot = updated;
+        _changed = true;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OT iniciada'), backgroundColor: Colors.orange));
+          const SnackBar(
+            content: Text('OT iniciada'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
     } finally {
       setState(() => _saving = false);
     }
@@ -65,23 +75,41 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
   Future<void> _guardarAcciones() async {
     setState(() => _saving = true);
     try {
-      final updated = await _otService.actualizarAcciones(_ot.id, _accionesCtrl.text.trim());
-      setState(() { _ot = updated; _changed = true; });
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Acciones guardadas'), backgroundColor: Colors.green));
+      final updated = await _otService.actualizarAcciones(
+        _ot.id,
+        _accionesCtrl.text.trim(),
+      );
+      setState(() {
+        _ot = updated;
+        _changed = true;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Acciones guardadas'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
       }
     } finally {
       setState(() => _saving = false);
     }
   }
 
-  Future<String?> _capturarFirma(List<List<Offset?>> strokes, GlobalKey key) async {
+  Future<String?> _capturarFirma(
+    List<List<Offset?>> strokes,
+    GlobalKey key,
+  ) async {
     if (strokes.isEmpty) return null;
     try {
-      final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return null;
       final image = await boundary.toImage(pixelRatio: 2.0);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -95,21 +123,35 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
   Future<void> _cerrar() async {
     setState(() => _saving = true);
     try {
-      final firmaTec = _firmaTecDirty ? await _capturarFirma(_firmaStrokeTec, _firmaTecnicoKey) : null;
-      final firmaCli = _firmaCliDirty ? await _capturarFirma(_firmaStrokeCli, _firmaClienteKey) : null;
+      final firmaTec = _firmaTecDirty
+          ? await _capturarFirma(_firmaStrokeTec, _firmaTecnicoKey)
+          : null;
+      final firmaCli = _firmaCliDirty
+          ? await _capturarFirma(_firmaStrokeCli, _firmaClienteKey)
+          : null;
       final updated = await _otService.cerrarOT(
         _ot.id,
         trabajos: _accionesCtrl.text.trim(),
         firmaTecnico: firmaTec,
         firmaCliente: firmaCli,
       );
-      setState(() { _ot = updated; _changed = true; });
+      setState(() {
+        _ot = updated;
+        _changed = true;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ OT cerrada correctamente'), backgroundColor: Colors.green));
+          const SnackBar(
+            content: Text('✅ OT cerrada correctamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
     } finally {
       setState(() => _saving = false);
     }
@@ -117,9 +159,12 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
 
   Color _estadoColor(String e) {
     switch (e) {
-      case 'EN_PROCESO': return Colors.orange;
-      case 'CERRADA': return Colors.green;
-      default: return Colors.blue[700]!;
+      case 'EN_PROCESO':
+        return Colors.orange;
+      case 'CERRADA':
+        return Colors.green;
+      default:
+        return Colors.blue[700]!;
     }
   }
 
@@ -136,10 +181,16 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          title: Text('OT #${_ot.id}', style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(
+            'OT #${_ot.id}',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           backgroundColor: Colors.blue[900],
           foregroundColor: Colors.white,
-          leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context, _changed)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context, _changed),
+          ),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -147,33 +198,88 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Tarjeta de información ──────────────────────────────────
-              _card(children: [
-                Row(children: [
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(_ot.descripcion, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(spacing: 16, runSpacing: 6, children: [
-                      _infoItem(Icons.flag_outlined, _ot.prioridad),
-                      _infoItem(Icons.precision_manufacturing_outlined, _ot.maquinaNombre ?? '—'),
-                      _infoItem(Icons.engineering_outlined, _ot.tecnicoNombre ?? 'Sin asignar'),
-                    ]),
-                  ])),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _estadoColor(_ot.estado).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(_ot.estado, style: TextStyle(color: _estadoColor(_ot.estado), fontWeight: FontWeight.bold, fontSize: 12)),
+              _card(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _ot.descripcion,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 16,
+                              runSpacing: 6,
+                              children: [
+                                _infoItem(Icons.flag_outlined, _ot.prioridad),
+                                _infoItem(
+                                  Icons.precision_manufacturing_outlined,
+                                  _ot.maquinaNombre ?? '—',
+                                ),
+                                _infoItem(
+                                  Icons.engineering_outlined,
+                                  _ot.tecnicoNombre ?? 'Sin asignar',
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _estadoColor(
+                            _ot.estado,
+                          ).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _ot.estado,
+                          style: TextStyle(
+                            color: _estadoColor(_ot.estado),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ]),
-                const Divider(height: 20),
-                Wrap(spacing: 20, runSpacing: 4, children: [
-                  if (_ot.fechaCreacion != null) _infoItem(Icons.calendar_today_outlined, 'Creada: ${_formatDate(_ot.fechaCreacion!)}'),
-                  if (_ot.fechaInicio != null) _infoItem(Icons.play_arrow_outlined, 'Inicio: ${_formatDate(_ot.fechaInicio!)}', color: Colors.orange),
-                  if (_ot.fechaFin != null) _infoItem(Icons.check_circle_outlined, 'Fin: ${_formatDate(_ot.fechaFin!)}', color: Colors.green),
-                ]),
-              ]),
+                  const Divider(height: 20),
+                  Wrap(
+                    spacing: 20,
+                    runSpacing: 4,
+                    children: [
+                      if (_ot.fechaCreacion != null)
+                        _infoItem(
+                          Icons.calendar_today_outlined,
+                          'Creada: ${_formatDate(_ot.fechaCreacion!)}',
+                        ),
+                      if (_ot.fechaInicio != null)
+                        _infoItem(
+                          Icons.play_arrow_outlined,
+                          'Inicio: ${_formatDate(_ot.fechaInicio!)}',
+                          color: Colors.orange,
+                        ),
+                      if (_ot.fechaFin != null)
+                        _infoItem(
+                          Icons.check_circle_outlined,
+                          'Fin: ${_formatDate(_ot.fechaFin!)}',
+                          color: Colors.green,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
 
               const SizedBox(height: 16),
 
@@ -185,7 +291,14 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
                     onPressed: _saving ? null : _iniciar,
                     icon: const Icon(Icons.play_arrow),
                     label: const Text('INICIAR ORDEN DE TRABAJO'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
 
@@ -194,27 +307,40 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
                 const SizedBox(height: 16),
                 _sectionTitle('📋 Trabajos realizados'),
                 const SizedBox(height: 8),
-                _card(children: [
-                  TextFormField(
-                    controller: _accionesCtrl,
-                    maxLines: 6,
-                    enabled: !esCerrada,
-                    decoration: const InputDecoration(
-                      hintText: 'Describe aquí las acciones realizadas, materiales usados, observaciones...',
-                      border: InputBorder.none,
-                    ),
-                  ),
-                  if (!esCerrada)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ElevatedButton.icon(
-                        onPressed: _saving ? null : _guardarAcciones,
-                        icon: const Icon(Icons.save_outlined, size: 16),
-                        label: const Text('Guardar acciones'),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[800], foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8)),
+                _card(
+                  children: [
+                    TextFormField(
+                      controller: _accionesCtrl,
+                      maxLines: 6,
+                      enabled: !esCerrada,
+                      decoration: const InputDecoration(
+                        hintText:
+                            'Describe aquí las acciones realizadas, materiales usados, observaciones...',
+                        border: InputBorder.none,
                       ),
                     ),
-                ]),
+                    if (!esCerrada)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton.icon(
+                          onPressed: _saving ? null : _guardarAcciones,
+                          icon: const Icon(Icons.save_outlined, size: 16),
+                          label: const Text('Guardar acciones'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[800],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
 
               // ── Sección de firmas (solo si EN_PROCESO o se muestra info) ─
@@ -222,33 +348,85 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
                 const SizedBox(height: 16),
                 _sectionTitle('✍️ Firmas'),
                 const SizedBox(height: 8),
-                _card(children: [
-                  if (esCerrada && _ot.firmaTecnico != null) ...[
-                    Text('Firma del técnico:', style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.memory(base64Decode(_ot.firmaTecnico!), height: 100),
-                    ),
-                  ] else if (!esCerrada) ...[
-                    Text('Firma del técnico:', style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    _buildSignaturePad(_firmaStrokeTec, _firmaTecnicoKey, () => setState(() { _firmaStrokeTec.clear(); _firmaTecDirty = false; }), onDirty: () => setState(() => _firmaTecDirty = true)),
+                _card(
+                  children: [
+                    if (esCerrada && _ot.firmaTecnico != null) ...[
+                      Text(
+                        'Firma del técnico:',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(
+                          base64Decode(_ot.firmaTecnico!),
+                          height: 100,
+                        ),
+                      ),
+                    ] else if (!esCerrada) ...[
+                      Text(
+                        'Firma del técnico:',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _buildSignaturePad(
+                        _firmaStrokeTec,
+                        _firmaTecnicoKey,
+                        () => setState(() {
+                          _firmaStrokeTec.clear();
+                          _firmaTecDirty = false;
+                        }),
+                        onDirty: () => setState(() => _firmaTecDirty = true),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    if (esCerrada && _ot.firmaCliente != null) ...[
+                      Text(
+                        'Firma del cliente:',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(
+                          base64Decode(_ot.firmaCliente!),
+                          height: 100,
+                        ),
+                      ),
+                    ] else if (!esCerrada) ...[
+                      Text(
+                        'Firma del cliente (opcional):',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _buildSignaturePad(
+                        _firmaStrokeCli,
+                        _firmaClienteKey,
+                        () => setState(() {
+                          _firmaStrokeCli.clear();
+                          _firmaCliDirty = false;
+                        }),
+                        onDirty: () => setState(() => _firmaCliDirty = true),
+                      ),
+                    ],
                   ],
-                  const SizedBox(height: 16),
-                  if (esCerrada && _ot.firmaCliente != null) ...[
-                    Text('Firma del cliente:', style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.memory(base64Decode(_ot.firmaCliente!), height: 100),
-                    ),
-                  ] else if (!esCerrada) ...[
-                    Text('Firma del cliente (opcional):', style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    _buildSignaturePad(_firmaStrokeCli, _firmaClienteKey, () => setState(() { _firmaStrokeCli.clear(); _firmaCliDirty = false; }), onDirty: () => setState(() => _firmaCliDirty = true)),
-                  ],
-                ]),
+                ),
               ],
 
               // ── Botón cerrar ──────────────────────────────────────────────
@@ -258,9 +436,25 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _saving ? null : _cerrar,
-                    icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.lock_outlined),
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.lock_outlined),
                     label: const Text('CERRAR ORDEN DE TRABAJO'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[700],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -280,21 +474,40 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 
-  Widget _sectionTitle(String t) => Text(t, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.grey[700]));
+  Widget _sectionTitle(String t) => Text(
+    t,
+    style: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w700,
+      color: Colors.grey[700],
+    ),
+  );
 
   Widget _infoItem(IconData icon, String label, {Color? color}) {
     final c = color ?? Colors.grey[600]!;
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 14, color: c),
-      const SizedBox(width: 4),
-      Text(label, style: TextStyle(color: c, fontSize: 13)),
-    ]);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: c),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(color: c, fontSize: 13)),
+      ],
+    );
   }
 
   Widget _buildSignaturePad(
@@ -316,9 +529,19 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: GestureDetector(
-              onPanStart: (d) { strokes.add([d.localPosition]); onDirty(); setState(() {}); },
-              onPanUpdate: (d) { strokes.last.add(d.localPosition); setState(() {}); },
-              onPanEnd: (_) { strokes.last.add(null); setState(() {}); },
+              onPanStart: (d) {
+                strokes.add([d.localPosition]);
+                onDirty();
+                setState(() {});
+              },
+              onPanUpdate: (d) {
+                strokes.last.add(d.localPosition);
+                setState(() {});
+              },
+              onPanEnd: (_) {
+                strokes.last.add(null);
+                setState(() {});
+              },
               child: CustomPaint(
                 painter: _SignaturePainter(strokes),
                 size: Size.infinite,
@@ -331,14 +554,22 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
           onPressed: onClear,
           icon: const Icon(Icons.clear, size: 14),
           label: const Text('Limpiar'),
-          style: TextButton.styleFrom(foregroundColor: Colors.red[400], padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.red[400],
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+          ),
         ),
       ],
     );
   }
 
   String _formatDate(String dt) {
-    try { return dt.split('T')[0]; } catch (_) { return dt; }
+    try {
+      return dt.split('T')[0];
+    } catch (_) {
+      return dt;
+    }
   }
 }
 

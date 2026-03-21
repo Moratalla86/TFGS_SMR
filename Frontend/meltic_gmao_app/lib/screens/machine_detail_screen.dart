@@ -1,20 +1,57 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/telemetria_service.dart';
 import '../models/telemetria.dart';
 
-class MachineDetailScreen extends StatelessWidget {
+class MachineDetailScreen extends StatefulWidget {
   const MachineDetailScreen({super.key});
 
   @override
+  State<MachineDetailScreen> createState() => _MachineDetailScreenState();
+}
+
+class _MachineDetailScreenState extends State<MachineDetailScreen> {
+  final TelemetriaService _telemetriaService = TelemetriaService();
+  Timer? _timer;
+  late Future<List<Telemetria>> _telemetriaFuture;
+  Map<String, dynamic>? _machine;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_machine == null) {
+      _machine = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+      _refreshData();
+      // Iniciar el Timer para refrescar cada 5 segundos
+      _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+        if (mounted) {
+          _refreshData();
+        }
+      });
+    }
+  }
+
+  void _refreshData() {
+    setState(() {
+      _telemetriaFuture = _telemetriaService.fetchPorMaquina(_machine?['id'] ?? 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> machine =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final TelemetriaService telemetriaService = TelemetriaService();
+    if (_machine == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(machine['name']),
+        title: Text(_machine!['name']),
         backgroundColor: Colors.blue[900],
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -22,22 +59,25 @@ class MachineDetailScreen extends StatelessWidget {
             // --- SECCIÓN 1: ESTADO LÓGICO ---
             Container(
               width: double.infinity,
-              color: Colors.blue[900],
-              padding: EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.blue[900],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 30),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.precision_manufacturing,
-                    size: 80,
-                    color: Colors.white,
-                  ),
-                  SizedBox(height: 10),
+                  const Icon(Icons.precision_manufacturing, size: 80, color: Colors.white),
+                  const SizedBox(height: 10),
                   Text(
-                    "ESTADO: ${machine['status']}",
-                    style: TextStyle(
+                    "ESTADO: ${_machine!['status']}",
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 22,
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ],
@@ -46,51 +86,114 @@ class MachineDetailScreen extends StatelessWidget {
 
             // --- SECCIÓN 2: SENSORES IOT (CONTROLLINO) ---
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Telemetría en Tiempo Real",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Telemetría en Vivo",
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.circle, size: 10, color: Colors.green),
+                            const SizedBox(width: 5),
+                            Text("CONECTADO", style: TextStyle(color: Colors.green[800], fontSize: 10, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 15),
+                  const SizedBox(height: 20),
                   
                   FutureBuilder<List<Telemetria>>(
-                    future: telemetriaService.fetchPorMaquina(machine['id'] ?? 0),
+                    future: _telemetriaFuture,
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                      if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
-                        return Center(child: Text("Error obteniendo telemetría", style: TextStyle(color: Colors.red)));
+                        return Center(child: Text("Error obteniendo telemetría: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
                       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(child: Text("No hay datos de telemetría recientes conectados."));
+                        return const Center(child: Text("Esperando datos del PLC..."));
                       }
                       
-                      // Coger el último registro que suele venir primero por el OrderByDesc del backend
                       Telemetria actual = snapshot.data!.first;
                       
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      return Column(
                         children: [
-                          _buildSensorGauge(
-                            "Temp.",
-                            "${actual.temperatura.toStringAsFixed(1)}°C",
-                            Icons.thermostat,
-                            actual.temperatura > 50 ? Colors.red : Colors.orange,
+                          // Medidores
+                          Container(
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _buildSensorGauge(
+                                  "Temperatura",
+                                  "${actual.temperatura.toStringAsFixed(1)}°C",
+                                  Icons.thermostat,
+                                  actual.temperatura > 40 ? Colors.red : Colors.orange,
+                                ),
+                                _buildSensorGauge(
+                                  "Humedad",
+                                  "${actual.humedad.toStringAsFixed(1)}%",
+                                  Icons.water_drop,
+                                  Colors.blue,
+                                ),
+                                _buildSensorGauge(
+                                  "Sistema",
+                                  "OK",
+                                  Icons.check_circle,
+                                  Colors.green,
+                                ),
+                              ],
+                            ),
                           ),
-                          _buildSensorGauge(
-                            "Humedad",
-                            "${actual.humedad.toStringAsFixed(1)}%",
-                            Icons.water_drop,
-                            Colors.blue,
-                          ),
-                          _buildSensorGauge(
-                            "Motor",
-                            "ON",
-                            Icons.settings_input_component,
-                            Colors.green,
-                          ),
+                          
+                          const SizedBox(height: 20),
+
+                          // --- SECCIÓN RFID: TÉCNICO DETECTADO ---
+                          if (actual.usuarioNombre.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: [Colors.blue[800]!, Colors.blue[600]!]),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Row(
+                                children: [
+                                  const CircleAvatar(
+                                    backgroundColor: Colors.white24,
+                                    child: Icon(Icons.person, color: Colors.white),
+                                  ),
+                                  const SizedBox(width: 15),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text("TÉCNICO EN MÁQUINA", style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+                                        Text(actual.usuarioNombre, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.sensors, color: Colors.white54),
+                                ],
+                              ),
+                            ),
                         ],
                       );
                     }
@@ -99,56 +202,47 @@ class MachineDetailScreen extends StatelessWidget {
               ),
             ),
 
-            Divider(),
+            const Divider(),
 
             // --- SECCIÓN 3: ACCIONES TÉCNICAS ---
             ListTile(
-              leading: Icon(Icons.history, color: Colors.blue),
-              title: Text("Historial de Mantenimiento"),
-              trailing: Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                /* Ir a historial */
-              },
+              leading: const Icon(Icons.history, color: Colors.blue),
+              title: const Text("Historial de Mantenimiento"),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {},
             ),
             ListTile(
-              leading: Icon(Icons.report_problem, color: Colors.red),
-              title: Text("Reportar Avería"),
-              trailing: Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                /* Abrir formulario de avería */
-              },
+              leading: const Icon(Icons.report_problem, color: Colors.red),
+              title: const Text("Reportar Avería"),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {},
             ),
+            const SizedBox(height: 100), // Espacio para el FAB
           ],
         ),
       ),
-      // BOTÓN DE ACCIÓN PARA EL HARDWARE
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Aquí enviaremos la orden al Controllino para encender el ventilador
-        },
-        label: Text("ARRANCAR MOTOR"),
-        icon: Icon(Icons.play_arrow),
+        onPressed: () {},
+        label: const Text("ARRANCAR MOTOR"),
+        icon: const Icon(Icons.play_arrow),
         backgroundColor: Colors.red[700],
       ),
     );
   }
 
-  Widget _buildSensorGauge(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildSensorGauge(String label, String value, IconData icon, Color color) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 30),
-        SizedBox(height: 5),
-        Text(
-          value,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 30),
         ),
-        Text(label, style: TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 8),
+        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
       ],
     );
   }
 }
+

@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.List;
+
 @Configuration
 public class DataInitializer {
 
@@ -19,7 +21,9 @@ public class DataInitializer {
             OrdenTrabajoRepository ordenTrabajoRepo) {
 
         return args -> {
-            // Limpieza total
+            System.out.println("🚀 Invocando DataInitializer...");
+
+            // Limpieza si es necesario (con ddl-auto=create ya está vacío, pero por si acaso)
             ordenTrabajoRepo.deleteAll();
             usuarioRepo.deleteAll();
             maquinaRepo.deleteAll();
@@ -32,22 +36,6 @@ public class DataInitializer {
             m1.setEstado("OK");
             maquinaRepo.save(m1);
 
-            // Usuario técnico de ejemplo
-            Usuario u1 = new Usuario();
-            u1.setNombre("Santiago");
-            u1.setApellido1("Moreno");
-            u1.setApellido2("Ruiz");
-            u1.setUsername("smoreno@meltic.com");
-            u1.setEmail("smoreno@meltic.com");
-            u1.setEmailPersonal("santiago@gmail.com");
-            u1.setTelefonoPersonal("600111222");
-            u1.setTelefonoProfesional("912345678");
-            u1.setPassword(encoder.encode("1234"));
-            u1.setRol("TECNICO");
-            u1.setRfidTag("A1B2C3D4");
-            u1.setActivo(true);
-            usuarioRepo.save(u1);
-
             // Usuario Admin
             Usuario adminUser = new Usuario();
             adminUser.setNombre("Admin");
@@ -56,20 +44,38 @@ public class DataInitializer {
             adminUser.setEmail("admin@meltic.com");
             adminUser.setPassword(encoder.encode("admin"));
             adminUser.setRol("ADMIN");
-            adminUser.setRfidTag("ADMIN_RFID");
+            adminUser.setRfidTag("RFID_ADMIN"); // Cambiado para que sea más claro
             adminUser.setActivo(true);
             usuarioRepo.save(adminUser);
+            System.out.println("👤 Usuario Admin creado: admin@meltic.com / admin");
 
-            // Orden de Trabajo de prueba
+            // Usuario Técnico
+            Usuario tecnico = new Usuario();
+            tecnico.setNombre("Juan");
+            tecnico.setApellido1("Tecnico");
+            tecnico.setUsername("tecnico@meltic.com");
+            tecnico.setEmail("tecnico@meltic.com");
+            tecnico.setPassword(encoder.encode("tecnico"));
+            tecnico.setRol("TECNICO");
+            tecnico.setRfidTag("RFID_TECNICO");
+            tecnico.setActivo(true);
+            usuarioRepo.save(tecnico);
+            System.out.println("👤 Usuario Técnico creado: tecnico@meltic.com / tecnico");
+
+            // Orden de Trabajo
             OrdenTrabajo ot1 = new OrdenTrabajo();
             ot1.setDescripcion("Revisión preventiva mensual");
             ot1.setPrioridad("MEDIA");
             ot1.setEstado("PENDIENTE");
             ot1.setMaquina(m1);
-            ot1.setTecnico(u1);
+            ot1.setTecnico(tecnico);
             ordenTrabajoRepo.save(ot1);
 
-            System.out.println("✅ Base de datos inicializada correctamente.");
+            List<Usuario> usuarios = usuarioRepo.findAll();
+            System.out.println("✅ Base de datos inicializada. Total usuarios: " + usuarios.size());
+            for (Usuario u : usuarios) {
+                System.out.println("   - " + u.getEmail() + " [Tag: " + u.getRfidTag() + "]");
+            }
         };
     }
 }

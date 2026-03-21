@@ -45,4 +45,12 @@ class UsuarioService {
       throw Exception('Error al eliminar usuario: ${res.statusCode}');
     }
   }
+
+  Future<Map<String, dynamic>> fetchLastRfid() async {
+    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/plc/last-rfid'));
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    }
+    throw Exception('Error al obtener RFID: ${res.statusCode}');
+  }
 }
