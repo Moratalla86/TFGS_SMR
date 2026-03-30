@@ -47,7 +47,9 @@ class UsuarioService {
   }
 
   Future<Map<String, dynamic>> fetchLastRfid() async {
-    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/api/plc/last-rfid'));
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/plc/last-rfid'),
+    );
     if (res.statusCode == 200) {
       return json.decode(res.body);
     }

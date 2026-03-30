@@ -3,6 +3,10 @@ import '../services/maquina_service.dart';
 import '../services/orden_trabajo_service.dart';
 import '../models/orden_trabajo.dart';
 import '../models/maquina.dart';
+import '../services/app_session.dart';
+
+import 'package:flutter_animate/flutter_animate.dart';
+import '../theme/industrial_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,20 +18,64 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final MaquinaService _maquinaService = MaquinaService();
   final OrdenTrabajoService _otService = OrdenTrabajoService();
+  AppSession get session => AppSession.instance;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Panel de Control", style: TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.blue[900],
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: const Text(
+          'PANEL PRINCIPAL',
+          style: TextStyle(letterSpacing: 2, fontSize: 16),
+        ),
+        centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => setState(() {}),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: IndustrialTheme.neonCyan.withOpacity(0.15),
+                  radius: 16,
+                  child: const Icon(
+                    Icons.person,
+                    color: IndustrialTheme.neonCyan,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      session.displayName.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    Text(
+                      session.userRol?.replaceAll('_', ' ') ?? '',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: IndustrialTheme.neonCyan,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(
+                    Icons.refresh,
+                    color: IndustrialTheme.neonCyan,
+                  ),
+                  onPressed: () => setState(() {}),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -37,106 +85,201 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _maquinaService.fetchMaquinas(),
           _otService.fetchOrdenes(),
         ]),
-        builder: (context, AsyncSnapshot<List<Object>> snapshot) {
+        builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: IndustrialTheme.neonCyan),
+            );
           }
           if (snapshot.hasError) {
-             return Center(child: Text("Error de conexión al servidor:\n${snapshot.error}", textAlign: TextAlign.center, style: TextStyle(color: Colors.red)));
+            return Center(
+              child: Text(
+                "ERROR DE ENLACE DATOS:\n${snapshot.error}",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: IndustrialTheme.criticalRed),
+              ),
+            );
           }
 
           final List<Maquina> maquinas = snapshot.data![0] as List<Maquina>;
-          final List<OrdenTrabajo> ots = snapshot.data![1] as List<OrdenTrabajo>;
+          final List<OrdenTrabajo> ots =
+              snapshot.data![1] as List<OrdenTrabajo>;
 
-          int maquinasOperativas = maquinas.where((m) => m.estado == 'OK' || m.estado == 'Operativo').length;
+          int maquinasOperativas = maquinas
+              .where((m) => m.estado == 'OK' || m.estado == 'Operativo')
+              .length;
           int alertasActivas = maquinas.length - maquinasOperativas;
-          int otPendientes = ots.where((ot) => ot.estado != 'FINALIZADA' && ot.estado != 'CERRADA').length;
+          int otPendientes = ots
+              .where(
+                (ot) => ot.estado != 'FINALIZADA' && ot.estado != 'CERRADA',
+              )
+              .length;
 
           return RefreshIndicator(
-            onRefresh: () async { setState(() {}); },
+            onRefresh: () async {
+              setState(() {});
+            },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(),
-                  
+
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 10),
-                        
-                        // KPI OVERVIEW CARDS
+
+                        // KPI CARDS INDUSTRIAL
                         Row(
                           children: [
-                            _buildKpiCard("MÁQUINAS OK", "$maquinasOperativas/${maquinas.length}", Icons.precision_manufacturing, Colors.green),
+                            _buildKpiCard(
+                              "ESTADO PLANTA",
+                              "$maquinasOperativas/${maquinas.length}",
+                              Icons.precision_manufacturing,
+                              IndustrialTheme.operativeGreen,
+                            ),
                             const SizedBox(width: 12),
-                            _buildKpiCard("ALERTAS", "$alertasActivas", Icons.warning_amber_rounded, alertasActivas > 0 ? Colors.red : Colors.grey),
+                            _buildKpiCard(
+                              "ALERTAS CRÍTICAS",
+                              "$alertasActivas",
+                              Icons.warning_amber_rounded,
+                              alertasActivas > 0
+                                  ? IndustrialTheme.criticalRed
+                                  : IndustrialTheme.slateGray,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            _buildKpiCard("OT TOTALES", "${ots.length}", Icons.assignment_outlined, Colors.blue),
+                            _buildKpiCard(
+                              "TOTAL TAREAS",
+                              "${ots.length}",
+                              Icons.assignment_outlined,
+                              IndustrialTheme.electricBlue,
+                            ),
                             const SizedBox(width: 12),
-                            _buildKpiCard("OT PENDIENTES", "$otPendientes", Icons.assignment_late_outlined, Colors.orange),
+                            _buildKpiCard(
+                              "OT PENDIENTES",
+                              "$otPendientes",
+                              Icons.assignment_late_outlined,
+                              IndustrialTheme.warningOrange,
+                            ),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 30),
-                        
-                        // ALERTAS SECCIÓN (Render solo si hay alertas)
+
+                        // ALERTAS SECCIÓN
                         if (alertasActivas > 0) ...[
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.notification_important, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text("Alertas en Fábrica", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              Icon(
+                                Icons.sensors_off,
+                                color: IndustrialTheme.criticalRed,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                "INCIDENCIAS ACTIVAS",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.1,
+                                  color: Colors.white70,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 12),
-                          ...maquinas.where((m) => m.estado != 'OK' && m.estado != 'Operativo').map((m) {
-                            return _buildAlertaItem(m);
-                          }),
+                          ...maquinas
+                              .where(
+                                (m) =>
+                                    m.estado != 'OK' && m.estado != 'Operativo',
+                              )
+                              .map((m) {
+                                return _buildAlertaItem(m);
+                              }),
                           const SizedBox(height: 20),
                         ],
-                        
-                        const Text("Maquinaria", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+
+                        const Text(
+                          "MONITOREO DE ACTIVOS",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.1,
+                            color: Colors.white70,
+                          ),
+                        ),
                         const SizedBox(height: 12),
-                        if (maquinas.isEmpty) const Text("No hay máquinas registradas.")
-                        else _buildHorizontalMachineList(maquinas),
+                        if (maquinas.isEmpty)
+                          const Text(
+                            "Sin equipos vinculados",
+                            style: TextStyle(color: IndustrialTheme.slateGray),
+                          )
+                        else
+                          _buildHorizontalMachineList(maquinas),
 
                         const SizedBox(height: 30),
-                        
+
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("Órdenes de Trabajo", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            Text("Ver todas", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
+                            Text(
+                              "RECENT ACTIVITY LOG",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.1,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            Text(
+                              "HISTORY",
+                              style: TextStyle(
+                                color: IndustrialTheme.neonCyan,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
-                        if (ots.isEmpty) const Text("No hay OTs registradas.")
-                        else ...ots.take(5).map((ot) => _buildOtDetailedItem(context, ot)),
-                        
+                        if (ots.isEmpty)
+                          const Text(
+                            "Registro vacío",
+                            style: TextStyle(color: IndustrialTheme.slateGray),
+                          )
+                        else
+                          ...ots
+                              .take(5)
+                              .map((ot) => _buildOtDetailedItem(context, ot)),
+
                         const SizedBox(height: 40),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
           );
-        }
+        },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.blue[900],
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: AppSession.instance.isJefe
+          ? FloatingActionButton(
+              onPressed: () {},
+              backgroundColor: IndustrialTheme.neonCyan,
+              child: const Icon(Icons.add, color: IndustrialTheme.spaceCadet),
+            )
+          : null,
     );
   }
 
@@ -144,92 +287,156 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(left: 20, right: 20, bottom: 30, top: 10),
-      decoration: BoxDecoration(
-        color: Colors.blue[900],
-        borderRadius: const BorderRadius.only(
+      decoration: const BoxDecoration(
+        color: IndustrialTheme.spaceCadet,
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Bienvenido al área \nde mantenimiento.",
-            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, height: 1.2),
+            "INTERFAZ DE CONTROL",
+            style: TextStyle(
+              color: IndustrialTheme.neonCyan,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 4,
+            ),
           ),
-          SizedBox(height: 8),
-          Text(
-            "Aquí tienes un resumen del estado de planta.",
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+          const SizedBox(height: 8),
+          const Text(
+            "ESTADO OPERATIVO \nDE FÁBRICA",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              height: 1.1,
+            ),
           ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.1, end: 0);
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      backgroundColor: IndustrialTheme.spaceCadet,
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: IndustrialTheme.claudCloud),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  backgroundColor: IndustrialTheme.neonCyan,
+                  radius: 30,
+                  child: Text(
+                    session.userNombre?.isNotEmpty == true
+                        ? session.userNombre![0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      color: IndustrialTheme.spaceCadet,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  session.displayName.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: IndustrialTheme.neonCyan.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    session.userRol?.replaceAll('_', ' ') ?? 'OPERARIO',
+                    style: const TextStyle(
+                      color: IndustrialTheme.neonCyan,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _drawerItem(
+            Icons.dashboard_outlined,
+            "CONTROL PANEL",
+            () => Navigator.pop(context),
+            active: true,
+          ),
+          _drawerItem(Icons.people_outline, "PERSONAL", () {
+            Navigator.pop(context);
+            Navigator.pushNamed(context, '/usuarios');
+          }),
+          _drawerItem(Icons.assignment_outlined, "ORDENES DE TRABAJO", () {
+            Navigator.pop(context);
+            Navigator.pushNamed(context, '/ordenes');
+          }),
+          _drawerItem(
+            Icons.precision_manufacturing_outlined,
+            "ACTIVOS PLC",
+            () {
+              Navigator.pop(context);
+            },
+          ),
+          const Spacer(),
+          const Divider(color: Colors.white10),
+          _drawerItem(
+            Icons.logout,
+            "DESCONECTAR",
+            () => Navigator.pushReplacementNamed(context, '/'),
+            color: IndustrialTheme.criticalRed,
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: Column(
-        children: [
-          UserAccountsDrawerHeader(
-            decoration: BoxDecoration(color: Colors.blue[900]),
-            accountName: const Text("Técnico / Admin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            accountEmail: const Text("Gestión GMAO"),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 40, color: Colors.blue),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.dashboard_outlined),
-            title: const Text('Dashboard'),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people_outline),
-            title: const Text('Usuarios'),
-            onTap: () {
-               Navigator.pop(context);
-               Navigator.pushNamed(context, '/usuarios');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.assignment_outlined),
-            title: const Text('Órdenes de Trabajo'),
-            onTap: () {
-               Navigator.pop(context);
-               Navigator.pushNamed(context, '/ordenes');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.precision_manufacturing_outlined),
-            title: const Text('Máquinas'),
-            onTap: () {
-               // Navegación futura
-               Navigator.pop(context);
-               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pantalla del Parque de Máquinas en desarrollo")));
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: const Text('Configuración'),
-            onTap: () {
-              // Navegación futura
-              Navigator.pop(context);
-            },
-          ),
-          const Spacer(),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            onTap: () => Navigator.pushReplacementNamed(context, '/'),
-          ),
-          const SizedBox(height: 20),
-        ],
+  Widget _drawerItem(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool active = false,
+    Color? color,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color:
+            color ??
+            (active ? IndustrialTheme.neonCyan : IndustrialTheme.slateGray),
       ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: color ?? (active ? Colors.white : IndustrialTheme.slateGray),
+          fontSize: 13,
+          fontWeight: active ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 
@@ -238,28 +445,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: IndustrialTheme.claudCloud,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.2)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
-          ]
+            BoxShadow(
+              color: color.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, color: color, size: 28),
-                Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.grey[800])),
-              ],
-            ),
+            Icon(icon, color: color, size: 20),
             const SizedBox(height: 12),
-            Text(title, style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: const TextStyle(
+                color: IndustrialTheme.slateGray,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
-    );
+    ).animate().scale(duration: 400.ms, curve: Curves.easeOut);
   }
 
   Widget _buildAlertaItem(Maquina m) {
@@ -267,50 +490,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red[100]!),
-        boxShadow: [
-          BoxShadow(color: Colors.red.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
-        ]
+        border: Border.all(color: IndustrialTheme.criticalRed.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Container(
-             padding: const EdgeInsets.all(10),
-             decoration: BoxDecoration(color: Colors.red[50], shape: BoxShape.circle),
-             child: const Icon(Icons.warning_rounded, color: Colors.red),
-          ),
+          const Icon(Icons.error_outline, color: IndustrialTheme.criticalRed),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Alerta en ${m.nombre}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[900], fontSize: 16)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text("Estado: ", style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                    Text(m.estado, style: const TextStyle(fontSize: 13, color: Colors.red, fontWeight: FontWeight.bold)),
-                  ],
+                Text(
+                  m.nombre,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  "Corte de telemetría detectado",
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: IndustrialTheme.criticalRed.withOpacity(0.7),
+                  ),
                 ),
               ],
             ),
           ),
-          ElevatedButton(
-             onPressed: () {},
-             style: ElevatedButton.styleFrom(
-               backgroundColor: Colors.white,
-               foregroundColor: Colors.red[700],
-               elevation: 0,
-               side: BorderSide(color: Colors.red[200]!),
-               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-             ),
-             child: const Text("VER"),
-          )
+          Icon(
+            Icons.arrow_forward_ios,
+            color: IndustrialTheme.slateGray,
+            size: 14,
+          ),
         ],
       ),
-    );
+    ).animate().shake(duration: 1.seconds);
   }
 
   Widget _buildHorizontalMachineList(List<Maquina> maquinas) {
@@ -322,26 +539,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemBuilder: (context, index) {
           final m = maquinas[index];
           bool isOk = m.estado == 'OK' || m.estado == 'Operativo';
-          Color mColor = isOk ? Colors.green : Colors.red;
-          
+          Color mColor = isOk
+              ? IndustrialTheme.operativeGreen
+              : IndustrialTheme.criticalRed;
+
           return GestureDetector(
-            onTap: () {
-               Navigator.pushNamed(
-                context,
-                '/machine-detail',
-                arguments: {'id': m.id, 'name': m.nombre, 'status': m.estado, 'location': m.modelo}, // 'modelo' is the closest to location right now based on the dart model
-              );
-            },
+            onTap: () => Navigator.pushNamed(
+              context,
+              '/machine-detail',
+              arguments: m.toJson(),
+            ),
             child: Container(
               width: 160,
               margin: const EdgeInsets.only(right: 16, bottom: 8),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: IndustrialTheme.claudCloud,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
-                ]
+                border: Border.all(color: Colors.white.withOpacity(0.05)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,34 +565,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(12)),
-                        child: Icon(Icons.precision_manufacturing, color: Colors.blue[800], size: 24),
+                      Icon(
+                        Icons.memory,
+                        color: IndustrialTheme.neonCyan,
+                        size: 24,
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: mColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: mColor)),
-                            const SizedBox(width: 4),
-                            Text(isOk ? "OK" : "ERR", style: TextStyle(color: mColor, fontSize: 10, fontWeight: FontWeight.bold)),
-                          ],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
                         ),
-                      )
+                        decoration: BoxDecoration(
+                          color: mColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          isOk ? "LIVE" : "DOWN",
+                          style: TextStyle(
+                            color: mColor,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                       Text(m.nombre, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey[800]), maxLines: 1, overflow: TextOverflow.ellipsis),
-                       const SizedBox(height: 4),
-                       Text(m.modelo, style: TextStyle(color: Colors.grey[500], fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        m.nombre,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                      ),
+                      Text(
+                        m.ubicacion,
+                        style: const TextStyle(
+                          color: IndustrialTheme.slateGray,
+                          fontSize: 10,
+                        ),
+                      ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -388,64 +621,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildOtDetailedItem(BuildContext context, OrdenTrabajo ot) {
-    Color statusColor = Colors.orange;
-    if (ot.estado == 'FINALIZADA' || ot.estado == 'CERRADA') statusColor = Colors.green;
-    
-    Color priorityColor = Colors.grey;
-    if (ot.prioridad == 'ALTA') priorityColor = Colors.red;
-    if (ot.prioridad == 'MEDIA') priorityColor = Colors.orange;
+    Color statusColor = IndustrialTheme.warningOrange;
+    if (ot.estado == 'FINALIZADA' || ot.estado == 'CERRADA')
+      statusColor = IndustrialTheme.operativeGreen;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 4))],
-      ),
+    return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(12)),
-          child: Icon(Icons.build_circle, color: Colors.blue[900]),
+        leading: Icon(
+          Icons.build_circle_outlined,
+          color: IndustrialTheme.neonCyan,
         ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(child: Text(ot.maquinaNombre ?? 'Sin Máquina Asignada', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: priorityColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-              child: Text(ot.prioridad, style: TextStyle(color: priorityColor, fontSize: 10, fontWeight: FontWeight.w900)),
-            ),
-          ],
+        title: Text(
+          ot.maquinaNombre ?? 'EQ_IND_GENERIC',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(ot.descripcion, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                       Icon(Icons.calendar_today, size: 12, color: Colors.grey[400]),
-                       const SizedBox(width: 4),
-                       Text((ot.fechaCreacion != null && ot.fechaCreacion!.length >= 10) ? ot.fechaCreacion!.substring(0,10) : "", style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                    ],
-                  ),
-                  Text(ot.estado, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ],
+        subtitle: Text(
+          ot.descripcion,
+          maxLines: 1,
+          style: const TextStyle(
+            color: IndustrialTheme.slateGray,
+            fontSize: 11,
           ),
         ),
-        onTap: () {
-          // TODO: Navegar al detalle
-        },
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            ot.estado,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -6,6 +6,10 @@ import '../services/api_config.dart';
 import '../services/app_session.dart';
 import '../services/usuario_service.dart';
 
+import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:ui';
+import '../theme/industrial_theme.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -36,27 +40,47 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _startRfidPolling() {
-    // Poll cada 2 segundos buscando una tarjeta nueva
-    _rfidTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-      if (_isLoading) return; 
+    bool _initialized = false;
 
+    _rfidTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (_isLoading) return;
       try {
         final data = await UsuarioService().fetchLastRfid();
-        final rfid = data['rfid'] ?? '';
+        final rfid = (data['rfid'] ?? '') as String;
         final timestamp = data['timestamp']?.toString();
 
-        // Si hay una tarjeta y el timestamp ha cambiado desde la última vez que logueamos/vimos
-        if (rfid.isNotEmpty && 
-            rfid != "Ninguna tarjeta detectada" && 
-            timestamp != null && 
-            timestamp != _lastRfidTimestamp) {
-          
+        // --- Filtros de seguridad ---
+        // 1. Ignorar valores vacíos, el placeholder del firmware y el valor N/A por defecto
+        // 2. Exigir formato hex RFID (debe contener ':')
+        final bool esRfidValido =
+            rfid.isNotEmpty &&
+            rfid != 'Ninguna tarjeta detectada' &&
+            rfid != 'N/A' &&
+            rfid.contains(':');
+
+        if (!esRfidValido || timestamp == null) {
+          // Sin tarjeta válida: inicializar el baseline de timestamp igualmente
+          // para no quedar bloqueado en estado no-inicializado
+          if (!_initialized) {
+            _lastRfidTimestamp = timestamp;
+            _initialized = true;
+          }
+          return;
+        }
+
+        if (!_initialized) {
+          // Primera lectura con tarjeta real: guardar baseline y NO logear
+          _lastRfidTimestamp = timestamp;
+          _initialized = true;
+          return;
+        }
+
+        // Solo proceder si el timestamp cambió (nueva pasada de tarjeta)
+        if (timestamp != _lastRfidTimestamp) {
           _lastRfidTimestamp = timestamp;
           _handleRfidLogin(rfid);
         }
-      } catch (e) {
-        // En el login automático somos silenciosos con los errores de red
-      }
+      } catch (_) {}
     });
   }
 
@@ -65,9 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _showError("Por favor, rellena todos los campos");
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
@@ -77,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
           "password": _passwordController.text,
         }),
       );
-
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
         AppSession.instance.fromJson(userData);
@@ -87,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _showError("Email o contraseña incorrectos");
       }
     } catch (e) {
-      _showError("Error de conexión: comprueba que el Backend esté encendido");
+      _showError("Error de conexión con el servidor industrial");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -101,20 +122,14 @@ class _LoginScreenState extends State<LoginScreen> {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"rfidTag": rfidTag}),
       );
-
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
         AppSession.instance.fromJson(userData);
         if (!mounted) return;
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Acceso concedido mediante RFID'), backgroundColor: Colors.green),
-        );
-        
+        _showSuccess("Acceso concedido mediante RFID");
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
-        // Solo mostramos error si el login falla (ej. tarjeta no vinculada)
-        _showError("Tarjeta RFID no reconocida o usuario inactivo");
+        _showError("Tarjeta RFID no reconocida");
       }
     } catch (e) {
       _showError("Error al validar tarjeta RFID");
@@ -125,138 +140,201 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: IndustrialTheme.criticalRed,
+      ),
+    );
+  }
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: IndustrialTheme.operativeGreen,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(
-              children: [
-                // ── Logo ──────────────────────────────────────
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.settings_suggest, size: 60, color: Colors.blue[800]),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "MELTIC GMAO",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text("Sistema de Gestión de Mantenimiento", style: TextStyle(color: Colors.grey[500], fontSize: 13)),
-                const SizedBox(height: 40),
-
-                // ── Campo Email ───────────────────────────────
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    hintText: "usuario@meltic.com",
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Campo Contraseña con toggle ───────────────
-                TextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: "Contraseña",
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                        color: Colors.grey[500],
-                      ),
-                      tooltip: _obscurePassword ? 'Mostrar contraseña' : 'Ocultar contraseña',
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                    ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                  ),
-                  onSubmitted: (_) => _handleLogin(),
-                ),
-                const SizedBox(height: 30),
-
-                // ── Botón Entrar ──────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          onPressed: _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[900],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 2,
-                          ),
-                          child: const Text("ENTRAR", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                        ),
-                ),
-                const SizedBox(height: 30),
-                
-                // ── Login Automático RFID ────────────────────
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.nfc, color: Colors.blue[900], size: 30),
-                      const SizedBox(height: 8),
-                      const Text(
-                        "Identificación por RFID",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Pasa tu tarjeta por el lector para entrar automáticamente",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      body: Stack(
+        children: [
+          // Fondo Decorativo Industrial
+          Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topLeft,
+                radius: 1.5,
+                colors: [Color(0xFF112240), IndustrialTheme.spaceCadet],
+              ),
             ),
           ),
-        ),
+
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(30),
+                      decoration: BoxDecoration(
+                        color: IndustrialTheme.claudCloud.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // LOGO NEON
+                          Icon(
+                                Icons.settings_suggest,
+                                size: 70,
+                                color: IndustrialTheme.neonCyan,
+                              )
+                              .animate(
+                                onPlay: (controller) => controller.repeat(),
+                              )
+                              .shimmer(
+                                duration: 2000.ms,
+                                color: IndustrialTheme.electricBlue.withOpacity(
+                                  0.3,
+                                ),
+                              ),
+
+                          const SizedBox(height: 20),
+                          Text(
+                            "GMAO INDUSTRIAL",
+                            style: IndustrialTheme.dark.textTheme.displayLarge
+                                ?.copyWith(
+                                  fontSize: 26,
+                                  color: Colors.white,
+                                  letterSpacing: 2,
+                                ),
+                          ),
+                          Text(
+                            "CONTROL INDUSTRIAL 4.0",
+                            style: TextStyle(
+                              color: IndustrialTheme.neonCyan,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          TextField(
+                            controller: _emailController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(
+                              labelText: "Identificador de Usuario",
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: "Código de Acceso",
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                              ),
+                            ),
+                            onSubmitted: (_) => _handleLogin(),
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: _isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(
+                                      color: IndustrialTheme.neonCyan,
+                                    ),
+                                  )
+                                : ElevatedButton(
+                                    onPressed: _handleLogin,
+                                    child: const Text("CONECTAR AL SISTEMA"),
+                                  ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          // SECCIÓN RFID GLASS
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: IndustrialTheme.neonCyan.withOpacity(
+                                  0.2,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.nfc,
+                                      color: IndustrialTheme.neonCyan,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "SENSOR RFID ACTIVO",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  "Aproxime su credencial al lector externo",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: IndustrialTheme.slateGray,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ).animate().fade(duration: 800.ms).slideY(begin: 0.1, end: 0),
+            ),
+          ),
+        ],
       ),
     );
   }

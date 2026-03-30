@@ -14,6 +14,8 @@ public class OrdenTrabajo {
     private String descripcion;
     private String prioridad; // ALTA, MEDIA, BAJA
     private String estado;    // PENDIENTE, EN_PROCESO, CERRADA
+    private String tipo;      // CORRECTIVA, PREVENTIVA
+
     private LocalDateTime fechaCreacion;
 
     // ── Nuevos campos de ejecución ─────────────────────────────────────────────
@@ -31,6 +33,18 @@ public class OrdenTrabajo {
     @Lob
     @Column(columnDefinition = "MEDIUMTEXT")
     private String firmaCliente;   // Base64 de la firma del cliente
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String checklists;     // JSON String con las tareas checkeadas
+
+    @Lob
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String fotoBase64;     // Evidencia fotográfica del trabajo
+
+    @Lob
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String reportePdfBase64; // Archivo PDF del reporte generado y cerrado
 
     // ── Relaciones ─────────────────────────────────────────────────────────────
     @ManyToOne
@@ -81,4 +95,16 @@ public class OrdenTrabajo {
 
     public Usuario getTecnico() { return tecnico; }
     public void setTecnico(Usuario tecnico) { this.tecnico = tecnico; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public String getChecklists() { return checklists; }
+    public void setChecklists(String checklists) { this.checklists = checklists; }
+
+    public String getFotoBase64() { return fotoBase64; }
+    public void setFotoBase64(String fotoBase64) { this.fotoBase64 = fotoBase64; }
+
+    public String getReportePdfBase64() { return reportePdfBase64; }
+    public void setReportePdfBase64(String reportePdfBase64) { this.reportePdfBase64 = reportePdfBase64; }
 }

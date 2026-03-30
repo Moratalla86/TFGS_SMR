@@ -11,8 +11,7 @@ class AppSession {
   String? userApellido1;
   String? userRol; // ADMIN | JEFE_MANTENIMIENTO | TECNICO
 
-  bool get isJefe =>
-      userRol == 'ADMIN' || userRol == 'JEFE_MANTENIMIENTO';
+  bool get isJefe => userRol == 'ADMIN' || userRol == 'JEFE_MANTENIMIENTO';
   bool get isTecnico => userRol == 'TECNICO';
 
   /// Rellena la sesión desde el JSON devuelto por /api/auth/login
@@ -32,8 +31,7 @@ class AppSession {
     userRol = null;
   }
 
-  String get displayName =>
-      (userNombre != null && userApellido1 != null)
-          ? '$userNombre $userApellido1'
-          : userEmail ?? 'Usuario';
+  String get displayName => (userNombre != null && userApellido1 != null)
+      ? '$userNombre $userApellido1'
+      : userEmail ?? 'Usuario';
 }

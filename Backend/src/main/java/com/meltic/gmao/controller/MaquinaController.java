@@ -36,4 +36,23 @@ public class MaquinaController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Maquina> actualizar(@PathVariable Long id, @RequestBody Maquina maquinaDetalles) {
+        return maquinaRepository.findById(id)
+                .map(maquina -> {
+                    maquina.setNombre(maquinaDetalles.getNombre());
+                    maquina.setUbicacion(maquinaDetalles.getUbicacion());
+                    maquina.setEstado(maquinaDetalles.getEstado());
+                    // Actualizar límites
+                    maquina.setLimiteMB(maquinaDetalles.getLimiteMB());
+                    maquina.setLimiteB(maquinaDetalles.getLimiteB());
+                    maquina.setLimiteA(maquinaDetalles.getLimiteA());
+                    maquina.setLimiteMA(maquinaDetalles.getLimiteMA());
+                    
+                    Maquina actualizada = maquinaRepository.save(maquina);
+                    return ResponseEntity.ok(actualizada);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

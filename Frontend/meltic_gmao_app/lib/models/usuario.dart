@@ -53,7 +53,8 @@ class Usuario {
       'apellido1': apellido1,
       if (apellido2 != null) 'apellido2': apellido2,
       if (telefonoPersonal != null) 'telefonoPersonal': telefonoPersonal,
-      if (telefonoProfesional != null) 'telefonoProfesional': telefonoProfesional,
+      if (telefonoProfesional != null)
+        'telefonoProfesional': telefonoProfesional,
       if (emailPersonal != null) 'emailPersonal': emailPersonal,
       if (password != null) 'password': password,
       'rol': rol,
@@ -68,5 +69,6 @@ class Usuario {
     return '${nombre[0].toLowerCase()}${apellido1.toLowerCase()}@meltic.com';
   }
 
-  String get nombreCompleto => '$nombre $apellido1${apellido2 != null ? ' $apellido2' : ''}';
+  String get nombreCompleto =>
+      '$nombre $apellido1${apellido2 != null ? ' $apellido2' : ''}';
 }

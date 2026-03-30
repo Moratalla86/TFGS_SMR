@@ -16,6 +16,8 @@ public class Telemetria {
     private Double humedad;
     private String rfidTag;
     private String usuarioNombre;
+    private Boolean motorOn;
+    private String alarma;
     private LocalDateTime timestamp;
 
     public Telemetria() {
@@ -39,6 +41,12 @@ public class Telemetria {
 
     public String getUsuarioNombre() { return usuarioNombre; }
     public void setUsuarioNombre(String usuarioNombre) { this.usuarioNombre = usuarioNombre; }
+
+    public Boolean getMotorOn() { return motorOn; }
+    public void setMotorOn(Boolean motorOn) { this.motorOn = motorOn; }
+
+    public String getAlarma() { return alarma; }
+    public void setAlarma(String alarma) { this.alarma = alarma; }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

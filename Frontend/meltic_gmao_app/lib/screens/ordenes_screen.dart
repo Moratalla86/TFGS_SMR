@@ -7,6 +7,11 @@ import '../services/maquina_service.dart';
 import '../models/maquina.dart';
 import '../services/app_session.dart';
 import 'ot_detail_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../theme/industrial_theme.dart';
+import 'package:intl/intl.dart';
+import 'dart:convert';
+import '../utils/pdf_generator.dart';
 
 class OrdenesScreen extends StatefulWidget {
   const OrdenesScreen({super.key});
@@ -16,12 +21,19 @@ class OrdenesScreen extends StatefulWidget {
 }
 
 class _OrdenesScreenState extends State<OrdenesScreen> {
+  final _maquinaService = MaquinaService();
   final _otService = OrdenTrabajoService();
+
   List<OrdenTrabajo> _ordenes = [];
+  List<Maquina> _maquinas = [];
   bool _loading = true;
   String? _error;
-
   final _session = AppSession.instance;
+
+  // Estado de filtros
+  String _searchQuery = "";
+  int? _selectedMaquinaId;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -35,22 +47,87 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       _error = null;
     });
     try {
-      List<OrdenTrabajo> data;
+      final List<OrdenTrabajo> data;
       if (_session.isJefe) {
         data = await _otService.fetchOrdenes();
       } else {
-        // Técnico: solo sus OTs
         data = await _otService.fetchOrdenesPorTecnico(_session.userId!);
       }
+
+      final List<Maquina> maq = await _maquinaService.fetchMaquinas();
+
       setState(() {
         _ordenes = data;
+        _maquinas = maq;
         _loading = false;
       });
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  List<OrdenTrabajo> get _filteredOrdenes {
+    return _ordenes.where((ot) {
+      // Filtrar por ID (Contiene búsqueda parcial)
+      final bool matchesId =
+          _searchQuery.isEmpty || ot.id.toString().contains(_searchQuery);
+
+      // Filtrar por Máquina
+      final bool matchesMaquina =
+          _selectedMaquinaId == null || ot.maquinaId == _selectedMaquinaId;
+
+      // Filtrar por Fecha (solo día/mes/año)
+      bool matchesDate = true;
+      if (_selectedDate != null && ot.fechaCreacion != null) {
+        final date = DateTime.tryParse(ot.fechaCreacion!);
+        if (date != null) {
+          matchesDate =
+              date.year == _selectedDate!.year &&
+              date.month == _selectedDate!.month &&
+              date.day == _selectedDate!.day;
+        } else {
+          matchesDate = false;
+        }
+      }
+
+      return matchesId && matchesMaquina && matchesDate;
+    }).toList();
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _searchQuery = "";
+      _selectedMaquinaId = null;
+      _selectedDate = null;
+    });
+  }
+
+  Future<void> _verReportePdf(OrdenTrabajo ot) async {
+    if (ot.reportePdfBase64 != null) {
+      await PdfGenerator.viewLocalPdf(
+        ot.reportePdfBase64!,
+        'Reporte_OT_${ot.id}.pdf',
+      );
+    } else {
+      // Si no existe el PDF, lo generamos al vuelo. Decodificamos checklists.
+      Map<String, bool> checklists = {};
+      if (ot.checklists != null && ot.checklists!.isNotEmpty) {
+        try {
+          checklists = Map<String, bool>.from(json.decode(ot.checklists!));
+        } catch (_) {}
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Generando reporte PDF instantáneo...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      await PdfGenerator.generarYVerPdf(ot, checklists);
     }
   }
 
@@ -58,18 +135,27 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Confirmar eliminación'),
-        content: Text('¿Eliminar OT #${ot.id}? Esta acción es irreversible.'),
+        backgroundColor: IndustrialTheme.claudCloud,
+        title: const Text(
+          'BAJA DE ORDEN',
+          style: TextStyle(letterSpacing: 1.2),
+        ),
+        content: Text(
+          '¿Confirmar eliminación de la OT #${ot.id}? El registro se perderá permanentemente.',
+          style: const TextStyle(color: IndustrialTheme.slateGray),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('CANCELAR'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: IndustrialTheme.criticalRed,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Eliminar',
+              'ELIMINAR TAREA',
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -83,7 +169,10 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       } catch (e) {
         if (mounted)
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Fallo: $e'),
+              backgroundColor: IndustrialTheme.criticalRed,
+            ),
           );
       }
     }
@@ -101,79 +190,80 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
   Color _estadoColor(String estado) {
     switch (estado) {
       case 'EN_PROCESO':
-        return Colors.orange;
+        return IndustrialTheme.warningOrange;
       case 'CERRADA':
-        return Colors.green;
+        return IndustrialTheme.operativeGreen;
       default:
-        return Colors.blue[700]!;
+        return IndustrialTheme.electricBlue;
     }
   }
 
   String _estadoLabel(String estado) {
     switch (estado) {
       case 'EN_PROCESO':
-        return 'En Proceso';
+        return 'EN CURSO';
       case 'CERRADA':
-        return 'Cerrada';
+        return 'FINALIZADA';
       default:
-        return 'Pendiente';
+        return 'PENDIENTE';
     }
   }
 
   Color _prioridadColor(String p) {
     switch (p) {
       case 'ALTA':
-        return Colors.red;
+        return IndustrialTheme.criticalRed;
       case 'MEDIA':
-        return Colors.orange;
+        return IndustrialTheme.warningOrange;
       default:
-        return Colors.grey;
+        return IndustrialTheme.slateGray;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(
-          _session.isJefe ? 'Gestión de OTs' : 'Mis Órdenes de Trabajo',
+        title: const Text(
+          'GESTIÓN DE ÓRDENES (OT)',
+          style: TextStyle(letterSpacing: 2, fontSize: 16),
         ),
-        backgroundColor: Colors.blue[900],
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
-        ],
+        centerTitle: false,
+        actions: [IconButton(icon: const Icon(Icons.sync), onPressed: _load)],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: IndustrialTheme.neonCyan),
+            )
           : _error != null
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.wifi_off, size: 60, color: Colors.red),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 40,
+                    color: IndustrialTheme.criticalRed,
+                  ),
                   const SizedBox(height: 12),
-                  Text(
-                    'Error de conexión',
+                  const Text(
+                    'DATA SYNC ERROR',
                     style: TextStyle(
-                      color: Colors.grey[700],
-                      fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
                     ),
                   ),
-                  const SizedBox(height: 6),
                   Text(
                     _error!,
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
-                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: IndustrialTheme.slateGray,
+                      fontSize: 10,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
+                  ElevatedButton(
                     onPressed: _load,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Reintentar'),
+                    child: const Text('REINTENTAR LINK'),
                   ),
                 ],
               ),
@@ -181,34 +271,29 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
           : Column(
               children: [
                 _buildSummaryBar(),
+                _buildFilterSection(),
                 Expanded(
-                  child: _ordenes.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.assignment_outlined,
-                                size: 60,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'No hay órdenes de trabajo',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ],
+                  child: _filteredOrdenes.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'SIN RESULTADOS CON LOS FILTROS ACTUALES',
+                            style: TextStyle(
+                              color: IndustrialTheme.slateGray,
+                              fontSize: 9,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         )
                       : RefreshIndicator(
                           onRefresh: _load,
                           child: ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _ordenes.length,
-                            itemBuilder: (_, i) => _buildOTCard(_ordenes[i]),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            itemCount: _filteredOrdenes.length,
+                            itemBuilder: (_, i) =>
+                                _buildOTCard(_filteredOrdenes[i]),
                           ),
                         ),
                 ),
@@ -217,10 +302,18 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       floatingActionButton: _session.isJefe
           ? FloatingActionButton.extended(
               onPressed: _abrirCrear,
-              backgroundColor: Colors.blue[900],
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add_task),
-              label: const Text('Nueva OT'),
+              backgroundColor: IndustrialTheme.neonCyan,
+              icon: Icon(
+                Icons.assignment_add,
+                color: IndustrialTheme.spaceCadet,
+              ),
+              label: Text(
+                'NUEVA OT',
+                style: TextStyle(
+                  color: IndustrialTheme.spaceCadet,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           : null,
     );
@@ -232,9 +325,9 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
     final cerradas = _ordenes.where((o) => o.estado == 'CERRADA').length;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.blue[900],
-        borderRadius: const BorderRadius.only(
+      decoration: const BoxDecoration(
+        color: IndustrialTheme.claudCloud,
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
@@ -243,85 +336,245 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _summaryItem(
-            'Pendientes',
+            'HOLD',
             '$pendientes',
-            Icons.hourglass_empty,
-            Colors.white70,
+            Icons.hourglass_top,
+            IndustrialTheme.slateGray,
           ),
           _summaryItem(
-            'En Proceso',
+            'ACTIVE',
             '$enProceso',
-            Icons.play_circle_outlined,
-            Colors.orangeAccent,
+            Icons.settings_input_component,
+            IndustrialTheme.warningOrange,
           ),
           _summaryItem(
-            'Cerradas',
+            'DONE',
             '$cerradas',
-            Icons.check_circle_outlined,
-            Colors.greenAccent,
+            Icons.verified,
+            IndustrialTheme.operativeGreen,
+          ),
+        ],
+      ),
+    ).animate().slideY(begin: -0.5, end: 0);
+  }
+
+  Widget _summaryItem(String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: IndustrialTheme.slateGray,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterSection() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: IndustrialTheme.spaceCadet.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search, size: 16),
+                    hintText: "BUSCAR POR ID...",
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    filled: true,
+                    fillColor: Colors.black.withOpacity(0.2),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int?>(
+                      value: _selectedMaquinaId,
+                      isExpanded: true,
+                      dropdownColor: IndustrialTheme.claudCloud,
+                      icon: const Icon(
+                        Icons.filter_list,
+                        size: 16,
+                        color: IndustrialTheme.neonCyan,
+                      ),
+                      hint: const Text(
+                        "TODAS LAS MÁQUINAS",
+                        style: TextStyle(
+                          color: IndustrialTheme.slateGray,
+                          fontSize: 10,
+                        ),
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text(
+                            "TODAS LAS MÁQUINAS",
+                            style: TextStyle(fontSize: 10),
+                          ),
+                        ),
+                        ..._maquinas.map(
+                          (m) => DropdownMenuItem(
+                            value: m.id,
+                            child: Text(
+                              m.nombre.toUpperCase(),
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() => _selectedMaquinaId = v),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate ?? DateTime.now(),
+                    firstDate: DateTime(2023),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    builder: (context, child) => Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: IndustrialTheme.neonCyan,
+                          surface: IndustrialTheme.spaceCadet,
+                        ),
+                      ),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) setState(() => _selectedDate = picked);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _selectedDate != null
+                        ? IndustrialTheme.neonCyan.withValues(alpha: 0.1)
+                        : Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _selectedDate != null
+                          ? IndustrialTheme.neonCyan
+                          : Colors.transparent,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 12,
+                        color: _selectedDate != null
+                            ? IndustrialTheme.neonCyan
+                            : IndustrialTheme.slateGray,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _selectedDate == null
+                            ? "FILTRAR FECHA"
+                            : DateFormat('dd/MM/yyyy').format(_selectedDate!),
+                        style: TextStyle(
+                          color: _selectedDate != null
+                              ? IndustrialTheme.neonCyan
+                              : IndustrialTheme.slateGray,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_searchQuery.isNotEmpty ||
+                  _selectedMaquinaId != null ||
+                  _selectedDate != null)
+                TextButton.icon(
+                  onPressed: _clearFilters,
+                  icon: const Icon(
+                    Icons.filter_alt_off,
+                    size: 14,
+                    color: IndustrialTheme.criticalRed,
+                  ),
+                  label: const Text(
+                    "LIMPIAR",
+                    style: TextStyle(
+                      color: IndustrialTheme.criticalRed,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _summaryItem(
-    String label,
-    String value,
-    IconData icon,
-    Color iconColor,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, color: iconColor, size: 20),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 11),
-        ),
-      ],
-    );
-  }
-
   Widget _buildOTCard(OrdenTrabajo ot) {
     final estadoColor = _estadoColor(ot.estado);
     final prioColor = _prioridadColor(ot.prioridad);
-    return GestureDetector(
-      onTap: () async {
-        final changed = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(builder: (_) => OTDetailScreen(ot: ot)),
-        );
-        if (changed == true) _load();
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          final changed = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(builder: (_) => OTDetailScreen(ot: ot)),
+          );
+          if (changed == true) _load();
+        },
         child: Column(
           children: [
-            // ── Cabecera ───────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: estadoColor.withValues(alpha: 0.08),
+                color: Colors.white.withOpacity(0.03),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -330,46 +583,29 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
               child: Row(
                 children: [
                   Text(
-                    'OT #${ot.id}',
-                    style: TextStyle(
+                    'TICKET #${ot.id}',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
+                      fontSize: 11,
+                      color: IndustrialTheme.slateGray,
                     ),
                   ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                      horizontal: 8,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: estadoColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
+                      color: estadoColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: estadoColor.withOpacity(0.2)),
                     ),
                     child: Text(
                       _estadoLabel(ot.estado),
                       style: TextStyle(
                         color: estadoColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: prioColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      ot.prioridad,
-                      style: TextStyle(
-                        color: prioColor,
-                        fontSize: 10,
+                        fontSize: 8,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -377,197 +613,151 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                 ],
               ),
             ),
-            // ── Contenido ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    ot.descripcion,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          ot.descripcion,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Icon(Icons.priority_high, color: prioColor, size: 14),
+                    ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
+                  const Divider(color: Colors.white10),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 16,
-                    runSpacing: 4,
+                    runSpacing: 8,
                     children: [
                       if (ot.maquinaNombre != null)
-                        _chip(
-                          Icons.precision_manufacturing_outlined,
+                        _infoLabel(
+                          Icons.precision_manufacturing,
                           ot.maquinaNombre!,
                         ),
                       if (ot.tecnicoNombre != null)
-                        _chip(Icons.engineering_outlined, ot.tecnicoNombre!),
+                        _infoLabel(Icons.engineering, ot.tecnicoNombre!),
                       if (ot.fechaInicio != null)
-                        _chip(
-                          Icons.play_arrow_outlined,
-                          'Inicio: ${_formatDate(ot.fechaInicio!)}',
-                          color: Colors.orange,
-                        ),
-                      if (ot.fechaFin != null)
-                        _chip(
-                          Icons.stop_circle_outlined,
-                          'Fin: ${_formatDate(ot.fechaFin!)}',
-                          color: Colors.green,
+                        _infoLabel(
+                          Icons.access_time,
+                          _formatDate(ot.fechaInicio!),
+                          color: IndustrialTheme.neonCyan,
                         ),
                     ],
                   ),
+                  if (_session.isJefe) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (ot.estado == 'CERRADA')
+                          IconButton(
+                            icon: const Icon(
+                              Icons.picture_as_pdf,
+                              color: IndustrialTheme.neonCyan,
+                            ),
+                            onPressed: () => _verReportePdf(ot),
+                            tooltip: "Ver Reporte",
+                          ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => _eliminar(ot),
+                          child: const Text(
+                            'BORRAR',
+                            style: TextStyle(
+                              color: IndustrialTheme.criticalRed,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final changed = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => OTDetailScreen(ot: ot),
+                              ),
+                            );
+                            if (changed == true) _load();
+                          },
+                          child: const Text('GESTIONAR'),
+                        ),
+                      ],
+                    ),
+                  ] else if (ot.estado == 'CERRADA') ...[
+                    const SizedBox(height: 8),
+                    const Divider(color: Colors.white10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () => _verReportePdf(ot),
+                          icon: const Icon(Icons.picture_as_pdf, size: 16),
+                          label: const Text(
+                            "REPORTE PDF",
+                            style: TextStyle(fontSize: 10),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: IndustrialTheme.electricBlue,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
-            // ── Acciones rápidas ────────────────────────────────────
-            if (_session.isJefe)
-              Padding(
-                padding: const EdgeInsets.only(right: 12, bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final changed = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => OTDetailScreen(ot: ot),
-                          ),
-                        );
-                        if (changed == true) _load();
-                      },
-                      icon: const Icon(Icons.open_in_new, size: 14),
-                      label: const Text('Ver / Editar'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue[800],
-                        side: BorderSide(color: Colors.blue[200]!),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: () => _eliminar(ot),
-                      icon: const Icon(Icons.delete_outline, size: 14),
-                      label: const Text('Eliminar'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red[700],
-                        side: BorderSide(color: Colors.red[200]!),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (ot.estado == 'PENDIENTE')
-              Padding(
-                padding: const EdgeInsets.only(right: 12, bottom: 12),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => OTDetailScreen(ot: ot),
-                        ),
-                      );
-                      if (changed == true) _load();
-                    },
-                    icon: const Icon(Icons.play_arrow, size: 16),
-                    label: const Text('Iniciar OT'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else if (ot.estado == 'EN_PROCESO')
-              Padding(
-                padding: const EdgeInsets.only(right: 12, bottom: 12),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => OTDetailScreen(ot: ot),
-                        ),
-                      );
-                      if (changed == true) _load();
-                    },
-                    icon: const Icon(Icons.edit_document, size: 16),
-                    label: const Text('Ver / Cerrar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[800],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.05, end: 0);
   }
 
-  Widget _chip(IconData icon, String label, {Color? color}) {
-    final c = color ?? Colors.grey[600]!;
+  Widget _infoLabel(IconData icon, String text, {Color? color}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: c),
+        Icon(icon, size: 12, color: color ?? IndustrialTheme.slateGray),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(color: c, fontSize: 12)),
+        Text(
+          text,
+          style: TextStyle(
+            color: color ?? IndustrialTheme.slateGray,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
 
   String _formatDate(String dt) {
     try {
-      final parts = dt.split('T');
-      return parts[0];
+      final date = DateTime.parse(dt);
+      return DateFormat.yMMMd('es_ES').format(date);
     } catch (_) {
       return dt;
     }
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Diálogo de creación de OT (Jefe)
-// ─────────────────────────────────────────────────────────────────────────────
 class _CrearOTDialog extends StatefulWidget {
   const _CrearOTDialog();
-
   @override
   State<_CrearOTDialog> createState() => _CrearOTDialogState();
 }
@@ -577,13 +767,12 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
   final _otService = OrdenTrabajoService();
   final _usuarioService = UsuarioService();
   final _maquinaService = MaquinaService();
-
   final _desc = TextEditingController();
   String _prioridad = 'MEDIA';
+  String _tipo = 'CORRECTIVA';
   int? _tecnicoId;
   int? _maquinaId;
   bool _saving = false;
-
   List<Usuario> _tecnicos = [];
   List<Maquina> _maquinas = [];
 
@@ -607,9 +796,127 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
   }
 
   @override
-  void dispose() {
-    _desc.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: IndustrialTheme.spaceCadet,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white10),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "GENERAR ORDEN DE TRABAJO",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _desc,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: "DESCRIPCIÓN DE LA AVERÍA",
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _prioridad,
+                  decoration: const InputDecoration(
+                    labelText: "GRAVIDAD / PRIORIDAD",
+                    prefixIcon: Icon(Icons.priority_high),
+                  ),
+                  items: ['ALTA', 'MEDIA', 'BAJA']
+                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _prioridad = v!),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _tipo,
+                  decoration: const InputDecoration(
+                    labelText: "TIPO DE MANTENIMIENTO",
+                    prefixIcon: Icon(Icons.build_circle_outlined),
+                  ),
+                  items: ['CORRECTIVA', 'PREVENTIVA']
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _tipo = v!),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int?>(
+                  value: _tecnicoId,
+                  decoration: const InputDecoration(
+                    labelText: "ASIGNAR OPERARIO",
+                    prefixIcon: Icon(Icons.person_search),
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text("SIN ASIGNAR"),
+                    ),
+                    ..._tecnicos.map(
+                      (u) => DropdownMenuItem(
+                        value: u.id,
+                        child: Text(u.nombreCompleto),
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) => setState(() => _tecnicoId = v),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int?>(
+                  value: _maquinaId,
+                  decoration: const InputDecoration(
+                    labelText: "ACTIVO AFECTADO",
+                    prefixIcon: Icon(Icons.precision_manufacturing),
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text("GENERAL/OTRO"),
+                    ),
+                    ..._maquinas.map(
+                      (m) =>
+                          DropdownMenuItem(value: m.id, child: Text(m.nombre)),
+                    ),
+                  ],
+                  onChanged: (v) => setState(() => _maquinaId = v),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("CANCELAR"),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _saving ? null : _guardar,
+                      child: _saving
+                          ? const CircularProgressIndicator()
+                          : const Text("CARGAR ORDEN"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _guardar() async {
@@ -621,6 +928,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
         descripcion: _desc.text.trim(),
         prioridad: _prioridad,
         estado: 'PENDIENTE',
+        tipo: _tipo,
       );
       await _otService.crearOrden(
         ot,
@@ -630,176 +938,6 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       setState(() => _saving = false);
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
     }
-  }
-
-  InputDecoration _deco(String label, IconData icon) => InputDecoration(
-    labelText: label,
-    prefixIcon: Icon(icon, size: 18),
-    filled: true,
-    fillColor: Colors.grey[50],
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: Colors.grey[300]!),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: Colors.grey[300]!),
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Cabecera
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.blue[50],
-                      child: Icon(Icons.add_task, color: Colors.blue[900]),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Nueva Orden de Trabajo',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[900],
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context, false),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Descripción
-                TextFormField(
-                  controller: _desc,
-                  maxLines: 3,
-                  decoration: _deco(
-                    'Descripción del trabajo *',
-                    Icons.description_outlined,
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty
-                      ? 'Campo obligatorio'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                // Prioridad
-                DropdownButtonFormField<String>(
-                  initialValue: _prioridad,
-                  decoration: _deco('Prioridad', Icons.flag_outlined),
-                  items: ['ALTA', 'MEDIA', 'BAJA']
-                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _prioridad = v!),
-                ),
-                const SizedBox(height: 12),
-                // Técnico
-                DropdownButtonFormField<int?>(
-                  initialValue: _tecnicoId,
-                  decoration: _deco(
-                    'Asignar Técnico',
-                    Icons.engineering_outlined,
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('Sin asignar'),
-                    ),
-                    ..._tecnicos.map(
-                      (u) => DropdownMenuItem<int?>(
-                        value: u.id,
-                        child: Text(u.nombreCompleto),
-                      ),
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _tecnicoId = v),
-                ),
-                const SizedBox(height: 12),
-                // Máquina
-                DropdownButtonFormField<int?>(
-                  initialValue: _maquinaId,
-                  decoration: _deco(
-                    'Máquina afectada',
-                    Icons.precision_manufacturing_outlined,
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('Sin especificar'),
-                    ),
-                    ..._maquinas.map(
-                      (m) => DropdownMenuItem<int?>(
-                        value: m.id,
-                        child: Text(m.nombre),
-                      ),
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _maquinaId = v),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: _saving
-                          ? null
-                          : () => Navigator.pop(context, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      onPressed: _saving ? null : _guardar,
-                      icon: _saving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.save_outlined),
-                      label: const Text('Crear OT'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[900],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

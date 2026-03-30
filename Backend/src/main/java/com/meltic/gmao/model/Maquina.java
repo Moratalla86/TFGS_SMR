@@ -16,6 +16,12 @@ public class Maquina {
     private String ubicacion;
     private String estado; // OK, WARNING, ERROR [cite: 34]
 
+    // Límites de temperatura
+    private Double limiteMB; // Muy Bajo
+    private Double limiteB;  // Bajo
+    private Double limiteA;  // Alto
+    private Double limiteMA; // Muy Alto
+
     public Maquina() {}
 
     // Getters y Setters
@@ -36,4 +42,16 @@ public class Maquina {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public Double getLimiteMB() { return limiteMB; }
+    public void setLimiteMB(Double limiteMB) { this.limiteMB = limiteMB; }
+
+    public Double getLimiteB() { return limiteB; }
+    public void setLimiteB(Double limiteB) { this.limiteB = limiteB; }
+
+    public Double getLimiteA() { return limiteA; }
+    public void setLimiteA(Double limiteA) { this.limiteA = limiteA; }
+
+    public Double getLimiteMA() { return limiteMA; }
+    public void setLimiteMA(Double limiteMA) { this.limiteMA = limiteMA; }
 }

@@ -44,7 +44,7 @@ public class DataInitializer {
             adminUser.setEmail("admin@meltic.com");
             adminUser.setPassword(encoder.encode("admin"));
             adminUser.setRol("ADMIN");
-            adminUser.setRfidTag("RFID_ADMIN"); // Cambiado para que sea más claro
+            adminUser.setRfidTag("40:91:F3:61"); // Tu tarjeta real detectada
             adminUser.setActivo(true);
             usuarioRepo.save(adminUser);
             System.out.println("👤 Usuario Admin creado: admin@meltic.com / admin");
@@ -67,6 +67,7 @@ public class DataInitializer {
             ot1.setDescripcion("Revisión preventiva mensual");
             ot1.setPrioridad("MEDIA");
             ot1.setEstado("PENDIENTE");
+            ot1.setTipo("PREVENTIVA");
             ot1.setMaquina(m1);
             ot1.setTecnico(tecnico);
             ordenTrabajoRepo.save(ot1);

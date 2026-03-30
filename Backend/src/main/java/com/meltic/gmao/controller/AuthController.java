@@ -11,9 +11,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
+@Tag(name = "Seguridad - Autenticación", description = "Endpoints para el control de acceso mediante credenciales y RFID")
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -23,6 +28,9 @@ public class AuthController {
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
+    @Operation(summary = "Login con Credenciales", description = "Permite el acceso al sistema mediante email y contraseña (bcrypt)")
+    @ApiResponse(responseCode = "200", description = "Usuario autenticado con éxito")
+    @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         final String email = credentials.get("email");
@@ -47,16 +55,25 @@ public class AuthController {
                 });
     }
 
+    @Operation(summary = "Login mediante RFID", description = "Permite el acceso rápido escaneando una tarjeta física vinculada a un usuario")
+    @ApiResponse(responseCode = "200", description = "Usuario identificado con éxito")
+    @ApiResponse(responseCode = "401", description = "Tarjeta no vinculada o inválida")
     @PostMapping("/rfid-login")
     public ResponseEntity<?> loginWithRfid(@RequestBody Map<String, String> body) {
         String rawTag = body.get("rfidTag");
-        final String rfidTag = (rawTag != null) ? rawTag.trim() : "";
-        
-        logger.info("Tentativa de login RFID para tag: {}", rfidTag);
-        
-        if (rfidTag.isEmpty()) {
-            return ResponseEntity.badRequest().body("RFID tag is required");
+        final String rfidTag = (rawTag != null) ? rawTag.trim().toUpperCase() : "";
+
+        // --- Validación de seguridad server-side ---
+        // Rechazar valores vacíos, placeholders del firmware y tags sin formato hex (xx:xx:xx...)
+        final java.util.Set<String> INVALID_TAGS = java.util.Set.of(
+            "", "N/A", "NULL", "NINGUNA TARJETA DETECTADA", "UNDEFINED"
+        );
+        if (INVALID_TAGS.contains(rfidTag) || !rfidTag.contains(":")) {
+            logger.warn("Intento de login RFID con tag inválido o de firmware: '{}'", rfidTag);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("RFID tag inválido");
         }
+
+        logger.info("Tentativa de login RFID para tag: {}", rfidTag);
 
         return usuarioRepo.findByRfidTag(rfidTag)
                 .map(user -> {

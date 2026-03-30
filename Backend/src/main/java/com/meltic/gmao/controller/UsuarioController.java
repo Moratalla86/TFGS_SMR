@@ -1,14 +1,25 @@
 package com.meltic.gmao.controller;
 
-import com.meltic.gmao.model.Usuario;
-import com.meltic.gmao.repository.sql.OrdenTrabajoRepository;
-import com.meltic.gmao.repository.sql.UsuarioRepository;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.meltic.gmao.model.Usuario;
+import com.meltic.gmao.repository.sql.OrdenTrabajoRepository;
+import com.meltic.gmao.repository.sql.UsuarioRepository;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -86,7 +97,8 @@ public class UsuarioController {
         if (!usuarioRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
-        // Desasignar al técnico de todas sus OTs antes de borrarlo (evita FK constraint)
+        // Desasignar al técnico de todas sus OTs antes de borrarlo (evita FK
+        // constraint)
         ordenTrabajoRepository.findByTecnicoId(id).forEach(ot -> {
             ot.setTecnico(null);
             ordenTrabajoRepository.save(ot);
@@ -116,7 +128,8 @@ public class UsuarioController {
 
     // ── Helper: genera email corporativo ────────────────────────────────────────
     private String generarEmailCorporativo(String nombre, String apellido1) {
-        if (nombre == null || apellido1 == null) return "usuario@meltic.com";
+        if (nombre == null || nombre.isBlank() || apellido1 == null || apellido1.isBlank())
+            return "usuario@meltic.com";
         String inicial = nombre.trim().substring(0, 1);
         String ap1 = apellido1.trim().replaceAll("\\s+", "");
         return (inicial + ap1).toLowerCase() + "@meltic.com";

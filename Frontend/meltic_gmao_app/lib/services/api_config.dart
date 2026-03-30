@@ -13,7 +13,7 @@ class ApiConfig {
       return "http://localhost:8080";
     } else {
       // móvil real por WiFi
-      return "http://192.168.1.XX:8080";
+      return "http://192.168.1.69:8080";
     }
   }
 }

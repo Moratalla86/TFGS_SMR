@@ -9,8 +9,13 @@ class OrdenTrabajo {
   final String? trabajosRealizados;
   final String? firmaTecnico;
   final String? firmaCliente;
+  final String? tipo;
+  final String? checklists;
+  final String? fotoBase64;
+  final String? reportePdfBase64;
   final int? maquinaId;
   final String? maquinaNombre;
+  final String? maquinaModelo;
   final int? tecnicoId;
   final String? tecnicoNombre;
 
@@ -25,8 +30,13 @@ class OrdenTrabajo {
     this.trabajosRealizados,
     this.firmaTecnico,
     this.firmaCliente,
+    this.tipo,
+    this.checklists,
+    this.fotoBase64,
+    this.reportePdfBase64,
     this.maquinaId,
     this.maquinaNombre,
+    this.maquinaModelo,
     this.tecnicoId,
     this.tecnicoNombre,
   });
@@ -43,11 +53,17 @@ class OrdenTrabajo {
       trabajosRealizados: json['trabajosRealizados'],
       firmaTecnico: json['firmaTecnico'],
       firmaCliente: json['firmaCliente'],
+      tipo: json['tipo'],
+      checklists: json['checklists'],
+      fotoBase64: json['fotoBase64'],
+      reportePdfBase64: json['reportePdfBase64'],
       maquinaId: json['maquina'] != null ? json['maquina']['id'] : null,
       maquinaNombre: json['maquina'] != null ? json['maquina']['nombre'] : null,
+      maquinaModelo: json['maquina'] != null ? json['maquina']['modelo'] : null,
       tecnicoId: json['tecnico'] != null ? json['tecnico']['id'] : null,
       tecnicoNombre: json['tecnico'] != null
-          ? ('${json['tecnico']['nombre'] ?? ''} ${json['tecnico']['apellido1'] ?? ''}').trim()
+          ? ('${json['tecnico']['nombre'] ?? ''} ${json['tecnico']['apellido1'] ?? ''}')
+                .trim()
           : null,
     );
   }
@@ -57,6 +73,12 @@ class OrdenTrabajo {
       'descripcion': descripcion,
       'prioridad': prioridad,
       'estado': estado,
+      if (tipo != null) 'tipo': tipo,
+      if (checklists != null) 'checklists': checklists,
+      if (fotoBase64 != null) 'fotoBase64': fotoBase64,
+      if (reportePdfBase64 != null) 'reportePdfBase64': reportePdfBase64,
+      if (maquinaId != null) 'maquina': {'id': maquinaId},
+      if (tecnicoId != null) 'tecnico': {'id': tecnicoId},
     };
   }
 }
