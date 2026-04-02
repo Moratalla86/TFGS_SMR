@@ -24,53 +24,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: Builder(
+          builder: (context) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => Scaffold.of(context).openDrawer(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ColorFiltered(
+                    colorFilter: const ColorFilter.matrix(<double>[
+                      1, 0, 0, 0, 0,
+                      0, 1, 0, 0, 0,
+                      0, 0, 1, 0, 0,
+                      -1, -1, -1, 1, 2.55,
+                    ]),
+                    child: Image.asset(
+                      'assets/images/logo_meltic_clean.png',
+                      height: 28,
+                      width: 28,
+                      errorBuilder: (context, error, stackTrace) => 
+                        Image.asset('assets/images/logo_meltic.png', height: 28, width: 28),
+                    ),
+                  ),
+                  const Icon(Icons.menu, color: Colors.white, size: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+        leadingWidth: 72,
         title: const Text(
           'PANEL PRINCIPAL',
-          style: TextStyle(letterSpacing: 2, fontSize: 16),
+          style: TextStyle(letterSpacing: 2, fontSize: 14),
         ),
         centerTitle: false,
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: const EdgeInsets.only(right: 4.0),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 CircleAvatar(
-                  backgroundColor: IndustrialTheme.neonCyan.withOpacity(0.15),
-                  radius: 16,
+                  backgroundColor: IndustrialTheme.neonCyan.withValues(alpha: 0.15),
+                  radius: 14,
                   child: const Icon(
                     Icons.person,
                     color: IndustrialTheme.neonCyan,
-                    size: 18,
+                    size: 16,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      session.displayName.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
+                const SizedBox(width: 6),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 100),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        session.displayName.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                    Text(
-                      session.userRol?.replaceAll('_', ' ') ?? '',
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: IndustrialTheme.neonCyan,
-                        letterSpacing: 0.5,
+                      Text(
+                        session.userRol?.replaceAll('_', ' ') ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 8,
+                          color: IndustrialTheme.neonCyan,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(
                     Icons.refresh,
                     color: IndustrialTheme.neonCyan,
+                    size: 20,
                   ),
                   onPressed: () => setState(() {}),
                 ),
@@ -93,10 +131,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                "ERROR DE ENLACE DATOS:\n${snapshot.error}",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: IndustrialTheme.criticalRed),
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.wifi_off_rounded,
+                      size: 64,
+                      color: IndustrialTheme.slateGray.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'SERVIDOR NO DISPONIBLE',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: Colors.white54,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Comprueba la conexión de red\ny que el servidor esté activo.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.white30),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () => setState(() {}),
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('REINTENTAR'),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -331,21 +399,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  backgroundColor: IndustrialTheme.neonCyan,
-                  radius: 30,
-                  child: Text(
-                    session.userNombre?.isNotEmpty == true
-                        ? session.userNombre![0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      color: IndustrialTheme.spaceCadet,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ColorFiltered(
+                  colorFilter: const ColorFilter.matrix(<double>[
+                    1, 0, 0, 0, 0,
+                    0, 1, 0, 0, 0,
+                    0, 0, 1, 0, 0,
+                    -1, -1, -1, 1, 2.55,
+                  ]),
+                  child: Image.asset(
+                    'assets/images/logo_meltic_clean.png',
+                    height: 56,
+                    width: 56,
+                    errorBuilder: (context, error, stackTrace) => 
+                      Image.asset('assets/images/logo_meltic.png', height: 56, width: 56),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
                   session.displayName.toUpperCase(),
                   style: const TextStyle(
@@ -405,7 +474,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _drawerItem(
             Icons.logout,
             "DESCONECTAR",
-            () => Navigator.pushReplacementNamed(context, '/'),
+            () {
+              AppSession.instance.clear();
+              Navigator.pushReplacementNamed(context, '/');
+            },
             color: IndustrialTheme.criticalRed,
           ),
           const SizedBox(height: 20),
@@ -622,8 +694,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildOtDetailedItem(BuildContext context, OrdenTrabajo ot) {
     Color statusColor = IndustrialTheme.warningOrange;
-    if (ot.estado == 'FINALIZADA' || ot.estado == 'CERRADA')
+    if (ot.estado == 'FINALIZADA' || ot.estado == 'CERRADA') {
       statusColor = IndustrialTheme.operativeGreen;
+    }
 
     return Card(
       child: ListTile(

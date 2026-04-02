@@ -1,0 +1,47 @@
+﻿
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          table { border-collapse: collapse; font-family: sans-serif; font-size: 13px; }
+          td, th { border: 1px solid #cbd5e1; }
+        </style>
+      </head>
+      <body>
+        <table>
+          
+      <tr>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">ID</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Nombre</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Actores</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Descripción</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Precondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Flujo Principal</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Postcondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de entrada</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de salida</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Tablas</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Clases</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Interfaces</th>
+      </tr>
+    
+          
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #4f46e5; font-family: monospace;"><b>uc_02</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;"><b>Gestión de Usuarios</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #16a34a;">Jefe Mantenimiento</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">Alta, modificación y baja de técnicos y operarios en el sistema administrativo.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Sesión con privilegios de Administrador</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">1. Navegación al panel de personal.<br>2. Creación de perfil con datos y rol.<br>3. Vinculación (opcional) a llavero RFID.<br>4. Persistencia en base de datos.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Censo de trabajadores actualizado</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Nombre<br>• Apellidos<br>• Rol<br>• RFID_Tag<br>• Email</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Objeto Usuario serializado<br>• Status HTTP</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• USUARIOS</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• UsuarioController.java<br>• UsuarioRepository.java</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• usuarios_screen.dart<br>• usuario_service.dart</td>
+        </tr>
+      
+        </table>
+      </body>
+      </html>
+    

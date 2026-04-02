@@ -1,0 +1,47 @@
+﻿
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          table { border-collapse: collapse; font-family: sans-serif; font-size: 13px; }
+          td, th { border: 1px solid #cbd5e1; }
+        </style>
+      </head>
+      <body>
+        <table>
+          
+      <tr>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">ID</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Nombre</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Actores</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Descripción</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Precondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Flujo Principal</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Postcondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de entrada</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de salida</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Tablas</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Clases</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Interfaces</th>
+      </tr>
+    
+          
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #4f46e5; font-family: monospace;"><b>uc_06</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;"><b>Ver Gráficas Telemetría</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #16a34a;">Jefe Mantenimiento, Técnico / Operario, Hardware PLC</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">Inspección analítica remota sobre los datos en tiempo real (Temperaturas, Vibración...) ingeridos desde la planta industrial.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Hardware emitiendo tramas de datos hacia el Gateway</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">1. Hardware transmite a base de datos de series temporales (MongoDB).<br>2. El usuario accede al perfil de máquina y despliega la pestaña IoT.<br>3. La app regenera las librerías gráficas cruzando datos históricos + LIVE.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Se muestran widgets visuales de monitorización</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Petición Fetch por ID Máquina</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Arrays de temperatura<br>• Arrays de Humedad<br>• Boolean Motor</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• TELEMETRIA_NOSQL</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• TelemetriaController.java<br>• TelemetriaRepository.java</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• machine_detail_screen.dart<br>• industrial_chart.dart</td>
+        </tr>
+      
+        </table>
+      </body>
+      </html>
+    

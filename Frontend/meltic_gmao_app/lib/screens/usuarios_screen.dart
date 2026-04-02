@@ -141,35 +141,40 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
             )
           : _error != null
           ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.wifi_off,
-                    size: 40,
-                    color: IndustrialTheme.criticalRed,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'LINK FAILURE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.wifi_off_rounded,
+                      size: 64,
+                      color: IndustrialTheme.slateGray.withOpacity(0.5),
                     ),
-                  ),
-                  Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: IndustrialTheme.slateGray,
-                      fontSize: 10,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'SERVIDOR NO DISPONIBLE',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: Colors.white54,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _loadUsuarios,
-                    child: const Text('REINTENTAR LINK'),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Comprueba la conexión de red\ny que el servidor esté activo.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.white30),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _loadUsuarios,
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('REINTENTAR'),
+                    ),
+                  ],
+                ),
               ),
             )
           : RefreshIndicator(
@@ -191,8 +196,13 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
-                            itemCount: _usuarios.length,
-                            itemBuilder: (_, i) => _buildUserCard(_usuarios[i]),
+                            itemCount: _usuarios.length + 1,
+                            itemBuilder: (_, i) {
+                              if (i == _usuarios.length) {
+                                return const SizedBox(height: 80);
+                              }
+                              return _buildUserCard(_usuarios[i]);
+                            },
                           ),
                   ),
                 ],
@@ -231,9 +241,9 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _summaryItem('TOTAL_REG', '$total', Icons.badge_outlined),
-          _summaryItem('ACTIVOS', '$activos', Icons.check_circle_outline),
-          _summaryItem('OFFLINE', '${total - activos}', Icons.cancel_outlined),
+          Expanded(child: _summaryItem('TOTAL', '$total', Icons.badge_outlined)),
+          Expanded(child: _summaryItem('ACTIVOS', '$activos', Icons.check_circle_outline)),
+          Expanded(child: _summaryItem('OFF', '${total - activos}', Icons.cancel_outlined)),
         ],
       ),
     ).animate().slideY(begin: -0.5, end: 0);
@@ -309,24 +319,24 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: rolColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: rolColor.withOpacity(0.2)),
-                  ),
-                  child: Text(
-                    _rolLabel(u.rol),
-                    style: TextStyle(
-                      color: rolColor,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: rolColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: rolColor.withOpacity(0.2)),
+                    ),
+                    child: Text(
+                      _rolLabel(u.rol),
+                      style: TextStyle(
+                        color: rolColor,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -504,7 +514,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _rol,
+                  initialValue: _rol,
                   decoration: const InputDecoration(
                     labelText: "RANGO OPERATIVO",
                     prefixIcon: Icon(Icons.badge),
@@ -631,10 +641,11 @@ class _UserFormDialogState extends State<_UserFormDialog> {
         activo: true,
         rfidTag: _rfid.text.isEmpty ? null : _rfid.text,
       );
-      if (widget.usuario != null)
+      if (widget.usuario != null) {
         await widget.service.actualizarUsuario(widget.usuario!.id!, u);
-      else
+      } else {
         await widget.service.crearUsuario(u);
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       setState(() => _saving = false);

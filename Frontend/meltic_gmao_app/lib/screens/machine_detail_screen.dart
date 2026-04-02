@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/telemetria_service.dart';
 import '../models/telemetria.dart';
 import '../models/maquina.dart';
+import '../models/metric_config.dart';
 import '../widgets/industrial_chart.dart';
-import '../services/plc_service.dart';
 import '../services/maquina_service.dart';
 import '../theme/industrial_theme.dart';
 import '../utils/metric_definitions.dart';
@@ -25,13 +24,11 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
   final MaquinaService _maquinaService = MaquinaService();
   Timer? _timer;
   Map<String, dynamic>? _machineMap;
-  Telemetria? _currentTelemetria;
 
   List<Telemetria> _playbackHistory = [];
   bool _isUsingDigitalTwin = false;
   bool _isPaused = false;
   int _playbackOffset = 0;
-  DateTimeRange? _selectedDateRange;
 
   DateTime? _analysisStart;
   DateTime? _analysisEnd;
@@ -128,14 +125,16 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         enriched.add(_generateVirtualPoint(DateTime.now(), m));
       }
     }
-    if (enriched.length > 200)
+    if (enriched.length > 200) {
       enriched = enriched.sublist(enriched.length - 200);
+    }
     return enriched;
   }
 
   Telemetria _fillMissingSensors(Telemetria t, Maquina m) {
     Map<String, double> newSensores = Map.from(t.sensores);
-    for (String sensorId in m.sensoresConfigurados) {
+    for (var config in m.configs) {
+      final sensorId = config.nombreMetrica;
       if (sensorId == 'temperatura' || sensorId == 'humedad') continue;
       if (!newSensores.containsKey(sensorId)) {
         newSensores[sensorId] = _generateRealisticValue(sensorId);
@@ -159,7 +158,8 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
 
   Telemetria _generateVirtualPoint(DateTime ts, Maquina m) {
     Map<String, double> extra = {};
-    for (String id in m.sensoresConfigurados) {
+    for (var config in m.configs) {
+      final id = config.nombreMetrica;
       if (id != 'temperatura' && id != 'humedad') {
         extra[id] = _generateRealisticValue(id);
       }
@@ -228,6 +228,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     );
     if (start == null) return;
 
+    if (!mounted) return;
     final TimeOfDay? end = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(
@@ -270,8 +271,9 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_machineMap == null)
+    if (_machineMap == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final Maquina maquina = Maquina.fromJson(_machineMap!);
 
     return Scaffold(
@@ -353,29 +355,33 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              status,
-              style: TextStyle(
-                color: col,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-                letterSpacing: 1.5,
-              ),
-            ),
-            if (_analysisStart != null)
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                "${DateFormat.Hm().format(_analysisStart!)} - ${DateFormat.Hm().format(_analysisEnd!)}",
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
+                status,
+                style: TextStyle(
+                  color: col,
                   fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                  letterSpacing: 1.5,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
-          ],
+              if (_analysisStart != null)
+                Text(
+                  "${DateFormat.Hm().format(_analysisStart!)} - ${DateFormat.Hm().format(_analysisEnd!)}",
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -455,7 +461,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _playbackIcon(
                 Icons.keyboard_double_arrow_left,
@@ -485,18 +491,18 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                     _playbackOffset = 0;
                     _analysisStart = null;
                     _analysisEnd = null;
-                    _refreshData(); // Salto inmediato al "ahora"
+                    _refreshData();
                   }
                 }),
                 child: CircleAvatar(
                   backgroundColor: _isPaused
                       ? IndustrialTheme.warningOrange
                       : IndustrialTheme.neonCyan,
-                  radius: 24,
+                  radius: 22,
                   child: Icon(
                     _isPaused ? Icons.play_arrow : Icons.pause,
                     color: IndustrialTheme.spaceCadet,
-                    size: 28,
+                    size: 24,
                   ),
                 ),
               ),
@@ -504,8 +510,9 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
               _playbackIcon(
                 Icons.arrow_forward_ios,
                 () => setState(() {
-                  if (_playbackOffset > 0)
+                  if (_playbackOffset > 0) {
                     _playbackOffset = math.max(0, _playbackOffset - 2);
+                  }
                 }),
               ),
               _playbackIcon(
@@ -541,6 +548,11 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
   Widget _buildBottomMetadata(Maquina maquina) {
     return Column(
       children: [
+        _buildActionItem(
+          Icons.sensors,
+          "GESTIÓN DE MÉTRICAS ACTIVAS",
+          () => _showIndustrialConfigDialog(maquina),
+        ),
         _buildActionItem(
           Icons.settings_applications,
           "PANEL DE CONFIGURACIÓN AVANZADA",
@@ -600,19 +612,16 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
 
   void _showIndustrialConfigDialog(Maquina maquina) {
     final allMetrics = MetricDefinition.all;
-    List<String> tempSelection = List.from(maquina.sensoresConfigurados);
+    List<MetricConfig> tempConfigs = List.from(maquina.configs);
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: IndustrialTheme.claudCloud,
           title: const Text(
-            "CONFIGURACIÓN DE SENSORES",
-            style: TextStyle(
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            "GESTIÓN DE MÉTRICAS ACTIVAS",
+            style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14),
           ),
           content: SizedBox(
             width: double.maxFinite,
@@ -620,32 +629,32 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
               shrinkWrap: true,
               itemCount: allMetrics.length,
               itemBuilder: (context, i) {
-                final m = allMetrics[i];
-                final isSelected = tempSelection.contains(m.id);
+                final def = allMetrics[i];
+                final configIndex = tempConfigs.indexWhere((c) => c.nombreMetrica == def.id);
+                final bool isEnabled = configIndex != -1 && tempConfigs[configIndex].habilitado;
+
                 return CheckboxListTile(
-                  title: Text(
-                    m.label,
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
-                  ),
-                  subtitle: Text(
-                    "${m.unit}",
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: IndustrialTheme.slateGray,
-                    ),
-                  ),
-                  secondary: Icon(
-                    m.icon,
-                    color: isSelected ? m.color : IndustrialTheme.slateGray,
-                  ),
-                  value: isSelected,
+                  title: Text(def.label, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                  secondary: Icon(def.icon, color: isEnabled ? def.color : IndustrialTheme.slateGray),
+                  value: isEnabled,
                   activeColor: IndustrialTheme.neonCyan,
                   onChanged: (val) {
                     setDialogState(() {
                       if (val == true) {
-                        tempSelection.add(m.id);
+                        if (configIndex == -1) {
+                          tempConfigs.add(MetricConfig(
+                            nombreMetrica: def.id,
+                            unidadSeleccionada: def.unit,
+                            habilitado: true,
+                            limiteMB: 10.0, limiteB: 15.0, limiteA: 45.0, limiteMA: 60.0,
+                          ));
+                        } else {
+                          tempConfigs[configIndex] = tempConfigs[configIndex].copyWith(habilitado: true);
+                        }
                       } else {
-                        tempSelection.remove(m.id);
+                        if (configIndex != -1) {
+                          tempConfigs[configIndex] = tempConfigs[configIndex].copyWith(habilitado: false);
+                        }
                       }
                     });
                   },
@@ -654,27 +663,17 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("CANCELAR"),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
             ElevatedButton(
               onPressed: () async {
-                final n = Maquina(
-                  id: maquina.id,
-                  nombre: maquina.nombre,
-                  ubicacion: maquina.ubicacion,
-                  estado: maquina.estado,
-                  limiteA: maquina.limiteA,
-                  limiteMA: maquina.limiteMA,
-                  sensoresConfigurados: tempSelection,
-                );
+                final n = maquina.copyWith(configs: tempConfigs);
                 await _maquinaService.update(n);
+                if (!mounted) return;
                 setState(() => _machineMap = n.toJson());
                 Navigator.pop(context);
                 _refreshData();
               },
-              child: const Text("APLICAR CAMBIOS"),
+              child: const Text("GUARDAR"),
             ),
           ],
         ),
@@ -683,19 +682,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
   }
 
   void _showAdvancedConfigDialog(Maquina maquina) {
-    final cMA = TextEditingController(
-      text: (maquina.limiteMA ?? 0.0).toStringAsFixed(1),
-    );
-    final cA = TextEditingController(
-      text: (maquina.limiteA ?? 0.0).toStringAsFixed(1),
-    );
-    final cB = TextEditingController(
-      text: (maquina.limiteB ?? 0.0).toStringAsFixed(1),
-    );
-    final cMB = TextEditingController(
-      text: (maquina.limiteMB ?? 0.0).toStringAsFixed(1),
-    );
-    bool rf = false;
+    List<MetricConfig> tempConfigs = List.from(maquina.configs.where((c) => c.habilitado));
 
     showDialog(
       context: context,
@@ -703,84 +690,101 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: IndustrialTheme.claudCloud,
           title: const Text(
-            "CONSIGNAS GEMELO DIGITAL",
-            style: TextStyle(
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            "AJUSTE DE UMBRALES DINÁMICOS",
+            style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 12),
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildThresholdField(
-                  "Límite MUY ALTO (HH)",
-                  cMA,
-                  IndustrialTheme.criticalRed,
-                ),
-                _buildThresholdField(
-                  "Límite ALTO (H)",
-                  cA,
-                  IndustrialTheme.warningOrange,
-                ),
-                _buildThresholdField(
-                  "Límite BAJO (L)",
-                  cB,
-                  IndustrialTheme.neonCyan,
-                ),
-                _buildThresholdField(
-                  "Límite MUY BAJO (LL)",
-                  cMB,
-                  Colors.deepPurple,
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text(
-                    "Forzar Relé Virtual",
-                    style: TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                  subtitle: const Text(
-                    "Ignora límites físicos temporales",
-                    style: TextStyle(
-                      color: IndustrialTheme.slateGray,
-                      fontSize: 8,
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: tempConfigs.map((config) {
+                  final def = MetricDefinition.getById(config.nombreMetrica);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: IndustrialTheme.spaceCadet,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: def.color.withOpacity(0.3)),
                     ),
-                  ),
-                  value: rf,
-                  activeColor: IndustrialTheme.neonCyan,
-                  onChanged: (v) => setDialogState(() => rf = v),
-                ),
-              ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                def.label.toUpperCase(),
+                                style: TextStyle(
+                                  color: def.color,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownButton<String>(
+                              value: config.unidadSeleccionada,
+                              dropdownColor: IndustrialTheme.spaceCadet,
+                              style: TextStyle(color: def.color, fontSize: 11, fontWeight: FontWeight.bold),
+                              onChanged: (newUnit) {
+                                setDialogState(() {
+                                  final oldUnit = config.unidadSeleccionada;
+                                  config.limiteMB = MetricDefinition.convert(config.limiteMB ?? 0, oldUnit, newUnit!, config.nombreMetrica);
+                                  config.limiteB = MetricDefinition.convert(config.limiteB ?? 0, oldUnit, newUnit, config.nombreMetrica);
+                                  config.limiteA = MetricDefinition.convert(config.limiteA ?? 0, oldUnit, newUnit, config.nombreMetrica);
+                                  config.limiteMA = MetricDefinition.convert(config.limiteMA ?? 0, oldUnit, newUnit, config.nombreMetrica);
+                                  config.unidadSeleccionada = newUnit;
+                                });
+                              },
+                              items: def.supportedUnits.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const SizedBox(height: 10),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 2.5,
+                          children: [
+                            _buildLimitInput("M. BAJO", config.limiteMB, (v) => config.limiteMB = v),
+                            _buildLimitInput("BAJO", config.limiteB, (v) => config.limiteB = v),
+                            _buildLimitInput("ALTO", config.limiteA, (v) => config.limiteA = v),
+                            _buildLimitInput("M. ALTO", config.limiteMA, (v) => config.limiteMA = v),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("CANCELAR"),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
             ElevatedButton(
               onPressed: () async {
-                final payload = {
-                  "muyAlto": double.tryParse(cMA.text) ?? 0.0,
-                  "alto": double.tryParse(cA.text) ?? 0.0,
-                  "bajo": double.tryParse(cB.text) ?? 0.0,
-                  "muyBajo": double.tryParse(cMB.text) ?? 0.0,
-                  "releForzado": rf,
-                };
-                await _maquinaService.updateConfig(maquina.id, payload);
+                final List<MetricConfig> finalConfigs = List.from(maquina.configs);
+                for (var tc in tempConfigs) {
+                  final idx = finalConfigs.indexWhere((c) => c.nombreMetrica == tc.nombreMetrica);
+                  if (idx != -1) finalConfigs[idx] = tc;
+                }
+                
+                final n = maquina.copyWith(configs: finalConfigs);
+                await _maquinaService.update(n);
+                if (!mounted) return;
+                setState(() => _machineMap = n.toJson());
                 Navigator.pop(context);
                 _refreshData();
-                if (mounted)
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        "Consignas actualizadas en servidor central",
-                      ),
-                    ),
-                  );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Configuración de proceso actualizada")));
               },
-              child: const Text("APLICAR CONFIG"),
+              child: const Text("APLICAR"),
             ),
           ],
         ),
@@ -788,61 +792,64 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     );
   }
 
-  Widget _buildThresholdField(
-    String label,
-    TextEditingController ctrl,
-    Color c,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: ctrl,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: TextStyle(color: c, fontWeight: FontWeight.bold, fontSize: 14),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: c, fontSize: 10, letterSpacing: 1),
-          suffixText: '°C',
-          suffixStyle: TextStyle(color: c, fontSize: 12),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: c.withValues(alpha: 0.5)),
+  Widget _buildLimitInput(String label, double? value, Function(double) onChanged) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 7, color: IndustrialTheme.slateGray)),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 30,
+            child: TextFormField(
+              initialValue: value?.toStringAsFixed(1),
+              keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 10, color: Colors.white),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                fillColor: IndustrialTheme.claudCloud,
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide.none),
+              ),
+              onChanged: (v) {
+                final d = double.tryParse(v);
+                if (d != null) onChanged(d);
+              },
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: c, width: 2),
-          ),
-          filled: true,
-          fillColor: c.withValues(alpha: 0.07),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 10,
-          ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildAnomalyTracker(Maquina maquina, Telemetria? lastData) {
     if (lastData == null) return const SizedBox();
-    double temp = lastData.temperatura;
-
-    // Evaluador de Consignas
-    String level = 'NORMAL';
+    
+    // Evaluador de Consignas Dinámico
+    String? level;
     Color alertColor = IndustrialTheme.operativeGreen;
-    if (maquina.limiteMA != null && temp >= maquina.limiteMA!) {
-      level = 'MUY ALTO';
-      alertColor = IndustrialTheme.criticalRed;
-    } else if (maquina.limiteA != null && temp >= maquina.limiteA!) {
-      level = 'ALTO';
-      alertColor = IndustrialTheme.warningOrange;
-    } else if (maquina.limiteMB != null && temp <= maquina.limiteMB!) {
-      level = 'MUY BAJO';
-      alertColor = Colors.deepPurple;
-    } else if (maquina.limiteB != null && temp <= maquina.limiteB!) {
-      level = 'BAJO';
-      alertColor = IndustrialTheme.neonCyan;
+    String metricLabel = "";
+
+    for (var config in maquina.configs.where((c) => c.habilitado)) {
+      final id = config.nombreMetrica;
+      double val = 0.0;
+      if (id == 'temperatura') {
+        val = lastData.temperatura;
+      } else if (id == 'humedad') val = lastData.humedad;
+      else val = lastData.sensores[id] ?? 0.0;
+
+      if (config.limiteMA != null && val >= config.limiteMA!) {
+        level = 'MUY ALTO'; alertColor = IndustrialTheme.criticalRed; metricLabel = id; break;
+      } else if (config.limiteA != null && val >= config.limiteA!) {
+        level = 'ALTO'; alertColor = IndustrialTheme.warningOrange; metricLabel = id; break;
+      } else if (config.limiteMB != null && val <= config.limiteMB!) {
+        level = 'MUY BAJO'; alertColor = Colors.deepPurple; metricLabel = id; break;
+      } else if (config.limiteB != null && val <= config.limiteB!) {
+        level = 'BAJO'; alertColor = IndustrialTheme.neonCyan; metricLabel = id; break;
+      }
     }
 
-    if (level == 'NORMAL') return const SizedBox();
+    if (level == null) return const SizedBox();
 
     return Container(
           padding: const EdgeInsets.all(12),
@@ -862,12 +869,8 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "ANOMALÍA: \$level",
-                        style: TextStyle(
-                          color: alertColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                        ),
+                        "ANOMALÍA ${metricLabel.toUpperCase()}: $level",
+                        style: TextStyle(color: alertColor, fontWeight: FontWeight.bold, fontSize: 10),
                       ),
                       const Text(
                         "Umbral de seguridad rebasado.",
@@ -878,35 +881,16 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                 ],
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: alertColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 0,
-                  ),
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: alertColor, padding: EdgeInsets.zero),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        "Aviso de anomalía creado: Diríjase a 'OTs' para gestionarlo.",
-                      ),
-                    ),
+                    const SnackBar(content: Text("Aviso de anomalía creado: Diríjase a 'OTs' para gestionarlo.")),
                   );
                 },
-                child: const Text(
-                  "GEN. AVISO",
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: const Text("GEN. AVISO", style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-        )
-        .animate(onPlay: (ctrl) => ctrl.repeat(reverse: true))
-        .shimmer(duration: 2.seconds, color: alertColor.withValues(alpha: 0.3));
+        ).animate(onPlay: (ctrl) => ctrl.repeat(reverse: true)).shimmer(duration: 2.seconds, color: alertColor.withOpacity(0.3));
   }
 }

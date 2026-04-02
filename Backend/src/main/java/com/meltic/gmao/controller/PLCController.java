@@ -59,9 +59,20 @@ public class PLCController {
     @GetMapping("/last-rfid")
     public ResponseEntity<Map<String, Object>> obtenerUltimoRfid() {
         Map<String, Object> response = new HashMap<>();
-        response.put("rfid", plcPollingService.getLastRfidRead());
+        String rfid = plcPollingService.getLastRfidRead();
+        String maskedRfid = rfid.length() > 4 ? "****" + rfid.substring(rfid.length() - 4) : "****";
+        response.put("rfid", rfid);
         response.put("timestamp", plcPollingService.getLastRfidTimestamp());
+        logger.debug("Solicitud de último RFID: {} (Status: {})", maskedRfid, rfid.isEmpty() ? "VACÍO" : "DETECTADO");
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "SIMULADOR RFID (DEMO)", description = "Permite simular una lectura de tarjeta sin necesidad del hardware PLC")
+    @GetMapping("/simulate/{tag}")
+    public ResponseEntity<String> simularRfid(@PathVariable String tag) {
+        logger.info("🛠️ SIMULACIÓN RFID ACTIVADA: {}", tag);
+        plcPollingService.registrarLecturaRfid(tag);
+        return ResponseEntity.ok("Lectura simulada: " + tag);
     }
 
     @Operation(summary = "Historial por Máquina", description = "Obtiene la serie temporal de telemetrías (MongoDB) para una máquina específica")

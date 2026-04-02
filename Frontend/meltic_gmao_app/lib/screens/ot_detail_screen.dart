@@ -80,13 +80,14 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
         _changed = true;
       });
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fallo: $e'),
             backgroundColor: IndustrialTheme.criticalRed,
           ),
         );
+      }
     } finally {
       setState(() => _saving = false);
     }
@@ -104,13 +105,14 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
         _changed = true;
       });
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fallo: $e'),
             backgroundColor: IndustrialTheme.criticalRed,
           ),
         );
+      }
     } finally {
       setState(() => _saving = false);
     }
@@ -175,34 +177,25 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
         _ot = updated;
         _changed = true;
       });
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ ORDEN CERRADA Y REGISTRADA'),
             backgroundColor: IndustrialTheme.operativeGreen,
           ),
         );
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fallo: $e'),
             backgroundColor: IndustrialTheme.criticalRed,
           ),
         );
+      }
     } finally {
       setState(() => _saving = false);
-    }
-  }
-
-  Color _estadoColor(String e) {
-    switch (e) {
-      case 'EN_PROCESO':
-        return IndustrialTheme.warningOrange;
-      case 'CERRADA':
-        return IndustrialTheme.operativeGreen;
-      default:
-        return IndustrialTheme.electricBlue;
     }
   }
 
@@ -213,7 +206,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (!didPop) Navigator.pop(context, _changed);
       },
       child: Scaffold(
@@ -234,10 +227,13 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
               ),
           ],
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.opaque,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildModernStepper(),
               const SizedBox(height: 24),
@@ -290,8 +286,9 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildModernStepper() {
     return Container(
@@ -465,7 +462,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
                   dense: true,
                 ),
               )
-              .toList(),
+              ,
         ],
       ),
     );
@@ -709,6 +706,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
                     onPanStart: disabled
                         ? null
                         : (d) {
+                            FocusScope.of(context).unfocus();
                             strokes.add([d.localPosition]);
                             onDirty();
                             setState(() {});
@@ -786,8 +784,9 @@ class _SignaturePainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     for (final stroke in strokes) {
       for (int i = 0; i < stroke.length - 1; i++) {
-        if (stroke[i] != null && stroke[i + 1] != null)
+        if (stroke[i] != null && stroke[i + 1] != null) {
           canvas.drawLine(stroke[i]!, stroke[i + 1]!, paint);
+        }
       }
     }
   }

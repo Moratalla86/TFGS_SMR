@@ -1,0 +1,47 @@
+﻿
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          table { border-collapse: collapse; font-family: sans-serif; font-size: 13px; }
+          td, th { border: 1px solid #cbd5e1; }
+        </style>
+      </head>
+      <body>
+        <table>
+          
+      <tr>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">ID</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Nombre</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Actores</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Descripción</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Precondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Flujo Principal</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Postcondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de entrada</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de salida</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Tablas</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Clases</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Interfaces</th>
+      </tr>
+    
+          
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #4f46e5; font-family: monospace;"><b>uc_05</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;"><b>Cierre de OT</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #16a34a;">Técnico / Operario</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">El técnico documenta en situ los trabajos completados, adjuntando imágenes y firmando el cierre.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Tener asignada una OT en estado EN_PROCESO</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">1. Lectura de las especificaciones de avería.<br>2. Validación del listado de tareas reparadas (checklist).<br>3. Adjunto de evidencia gráfica (Foto).<br>4. Inserción de Firma Digital y confirmación de envío final.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• OT clausurada e inmutable<br>• Alerta automática a central</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• ID_OT<br>• Array Checklists<br>• Foto RAW (Base64)<br>• Firma Vectorial (Base64)</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• HTTP 200 Finalizada<br>• Timestamp de cierre</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• ORDENES_TRABAJO</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• OrdenTrabajo.java<br>• MantenimientoService.java</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• ot_detail_screen.dart</td>
+        </tr>
+      
+        </table>
+      </body>
+      </html>
+    

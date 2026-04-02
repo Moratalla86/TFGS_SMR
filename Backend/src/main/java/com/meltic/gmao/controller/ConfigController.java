@@ -41,6 +41,7 @@ public class ConfigController {
             @PathVariable Long maquinaId,
             @RequestBody Map<String, Object> payload) {
 
+        if (maquinaId == null) return ResponseEntity.badRequest().build();
         Optional<Maquina> optMaquina = maquinaRepository.findById(maquinaId);
         if (optMaquina.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -48,25 +49,29 @@ public class ConfigController {
 
         Maquina maquina = optMaquina.get();
 
-        if (payload.containsKey("muyAlto")) {
-            maquina.setLimiteMA(safeParseDouble(payload.get("muyAlto")));
+        // Si hay cambios en los límites, los aplicamos a la métrica "temperatura" por defecto
+        if (payload.containsKey("muyAlto") || payload.containsKey("alto") || 
+            payload.containsKey("bajo") || payload.containsKey("muyBajo")) {
+            
+            maquina.getConfigs().stream()
+                .filter(c -> "temperatura".equals(c.getNombreMetrica()))
+                .findFirst()
+                .ifPresent(config -> {
+                    if (payload.containsKey("muyAlto")) config.setLimiteMA(safeParseDouble(payload.get("muyAlto")));
+                    if (payload.containsKey("alto")) config.setLimiteA(safeParseDouble(payload.get("alto")));
+                    if (payload.containsKey("bajo")) config.setLimiteB(safeParseDouble(payload.get("bajo")));
+                    if (payload.containsKey("muyBajo")) config.setLimiteMB(safeParseDouble(payload.get("muyBajo")));
+                });
         }
-        if (payload.containsKey("alto")) {
-            maquina.setLimiteA(safeParseDouble(payload.get("alto")));
-        }
-        if (payload.containsKey("bajo")) {
-            maquina.setLimiteB(safeParseDouble(payload.get("bajo")));
-        }
-        if (payload.containsKey("muyBajo")) {
-            maquina.setLimiteMB(safeParseDouble(payload.get("muyBajo")));
-        }
+
         if (payload.containsKey("releForzado")) {
             boolean rele = Boolean.parseBoolean(payload.get("releForzado").toString());
             // Transmitir al PLC usando el servicio real
             plcPollingService.setMotorOnSimulated(rele);
         }
 
-        maquinaRepository.save(maquina);
+        java.util.Optional.ofNullable(maquinaRepository.save(maquina))
+                .orElseThrow(() -> new RuntimeException("Error al guardar la configuración de la máquina"));
         logger.info("Sincronización Meltic 4.0 aplicada en equipo: {}", maquina.getNombre());
 
         return ResponseEntity.ok(maquina);

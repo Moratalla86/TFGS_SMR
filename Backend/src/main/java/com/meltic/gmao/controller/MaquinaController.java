@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/maquinas")
@@ -25,6 +26,7 @@ public class MaquinaController {
     // Crear una nueva máquina
     @PostMapping
     public ResponseEntity<Maquina> crear(@RequestBody Maquina maquina) {
+        if (maquina == null) return ResponseEntity.badRequest().build();
         Maquina nuevaMaquina = maquinaRepository.save(maquina);
         return ResponseEntity.ok(nuevaMaquina);
     }
@@ -32,23 +34,29 @@ public class MaquinaController {
     // Opcional: Obtener una por ID
     @GetMapping("/{id}")
     public ResponseEntity<Maquina> obtenerPorId(@PathVariable Long id) {
-        return maquinaRepository.findById(id)
+        if (id == null) return ResponseEntity.badRequest().build();
+        Optional<Maquina> opt = maquinaRepository.findById(id);
+        return opt
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Maquina> actualizar(@PathVariable Long id, @RequestBody Maquina maquinaDetalles) {
+        if (id == null || maquinaDetalles == null) return ResponseEntity.badRequest().build();
         return maquinaRepository.findById(id)
                 .map(maquina -> {
-                    maquina.setNombre(maquinaDetalles.getNombre());
-                    maquina.setUbicacion(maquinaDetalles.getUbicacion());
                     maquina.setEstado(maquinaDetalles.getEstado());
-                    // Actualizar límites
-                    maquina.setLimiteMB(maquinaDetalles.getLimiteMB());
-                    maquina.setLimiteB(maquinaDetalles.getLimiteB());
-                    maquina.setLimiteA(maquinaDetalles.getLimiteA());
-                    maquina.setLimiteMA(maquinaDetalles.getLimiteMA());
+                    
+                    // Actualizar configuraciones de métricas (Deep Update)
+                    if (maquina.getConfigs() != null) {
+                        maquina.getConfigs().clear();
+                    }
+                    if (maquinaDetalles.getConfigs() != null) {
+                        for (com.meltic.gmao.model.MetricConfig config : maquinaDetalles.getConfigs()) {
+                            maquina.addConfig(config);
+                        }
+                    }
                     
                     Maquina actualizada = maquinaRepository.save(maquina);
                     return ResponseEntity.ok(actualizada);

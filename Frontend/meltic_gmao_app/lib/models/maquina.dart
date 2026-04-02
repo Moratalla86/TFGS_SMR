@@ -1,26 +1,22 @@
+import 'metric_config.dart';
+
 class Maquina {
   final int id;
   final String nombre;
   final String ubicacion;
   final String estado;
-  final double? limiteMB;
-  final double? limiteB;
-  final double? limiteA;
-  final double? limiteMA;
-
-  // Lista de métricas industriales configuradas para esta máquina
-  final List<String> sensoresConfigurados;
+  final String? modelo;
+  final String? descripcion;
+  final List<MetricConfig> configs;
 
   Maquina({
     required this.id,
     required this.nombre,
     required this.ubicacion,
     required this.estado,
-    this.limiteMB,
-    this.limiteB,
-    this.limiteA,
-    this.limiteMA,
-    this.sensoresConfigurados = const ['temperatura', 'humedad'],
+    this.modelo,
+    this.descripcion,
+    required this.configs,
   });
 
   factory Maquina.fromJson(Map<String, dynamic> json) {
@@ -29,13 +25,12 @@ class Maquina {
       nombre: json['nombre'],
       ubicacion: json['ubicacion'],
       estado: json['estado'],
-      limiteMB: json['limiteMB']?.toDouble(),
-      limiteB: json['limiteB']?.toDouble(),
-      limiteA: json['limiteA']?.toDouble(),
-      limiteMA: json['limiteMA']?.toDouble(),
-      sensoresConfigurados: json['sensoresConfigurados'] != null
-          ? List<String>.from(json['sensoresConfigurados'])
-          : ['temperatura', 'humedad'],
+      modelo: json['modelo'],
+      descripcion: json['descripcion'],
+      configs: (json['configs'] as List?)
+              ?.map((c) => MetricConfig.fromJson(c))
+              .toList() ??
+          [],
     );
   }
 
@@ -45,11 +40,29 @@ class Maquina {
       'nombre': nombre,
       'ubicacion': ubicacion,
       'estado': estado,
-      'limiteMB': limiteMB,
-      'limiteB': limiteB,
-      'limiteA': limiteA,
-      'limiteMA': limiteMA,
-      'sensoresConfigurados': sensoresConfigurados,
+      'modelo': modelo,
+      'descripcion': descripcion,
+      'configs': configs.map((c) => c.toJson()).toList(),
     };
+  }
+
+  Maquina copyWith({
+    int? id,
+    String? nombre,
+    String? ubicacion,
+    String? estado,
+    String? modelo,
+    String? descripcion,
+    List<MetricConfig>? configs,
+  }) {
+    return Maquina(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      ubicacion: ubicacion ?? this.ubicacion,
+      estado: estado ?? this.estado,
+      modelo: modelo ?? this.modelo,
+      descripcion: descripcion ?? this.descripcion,
+      configs: configs ?? this.configs,
+    );
   }
 }

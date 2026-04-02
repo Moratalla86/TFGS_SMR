@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.List;
-
 @Configuration
 public class DataInitializer {
 
@@ -34,6 +32,11 @@ public class DataInitializer {
             m1.setModelo("Alpha-2000");
             m1.setUbicacion("Planta Norte");
             m1.setEstado("OK");
+
+            // Añadir configuraciones de métricas por defecto
+            m1.addConfig(new MetricConfig("temperatura", "°C", 10.0, 15.0, 45.0, 60.0));
+            m1.addConfig(new MetricConfig("humedad", "%", 20.0, 30.0, 70.0, 85.0));
+
             maquinaRepo.save(m1);
 
             // Usuario Admin
@@ -72,11 +75,7 @@ public class DataInitializer {
             ot1.setTecnico(tecnico);
             ordenTrabajoRepo.save(ot1);
 
-            List<Usuario> usuarios = usuarioRepo.findAll();
-            System.out.println("✅ Base de datos inicializada. Total usuarios: " + usuarios.size());
-            for (Usuario u : usuarios) {
-                System.out.println("   - " + u.getEmail() + " [Tag: " + u.getRfidTag() + "]");
-            }
+            System.out.println("✅ Base de datos inicializada. Total usuarios: " + usuarioRepo.count());
         };
     }
 }

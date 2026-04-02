@@ -8,11 +8,10 @@ class PLCService {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/api/plc/comando'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'accion': accion, if (tipo != null) 'tipo': tipo}),
+        body: jsonEncode({'accion': accion, 'tipo': ?tipo}),
       );
       return response.statusCode == 200;
-    } catch (e) {
-      print('Error enviando comando PLC: $e');
+    } catch (_) {
       return false;
     }
   }

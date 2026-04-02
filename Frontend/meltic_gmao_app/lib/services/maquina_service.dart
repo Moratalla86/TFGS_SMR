@@ -30,6 +30,15 @@ class MaquinaService {
     return response.statusCode == 200;
   }
 
+  Future<bool> crearMaquina(Maquina maquina) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/api/maquinas'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(maquina.toJson()),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
   Future<bool> updateConfig(int maquinaId, Map<String, dynamic> payload) async {
     final response = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/api/config/$maquinaId'),

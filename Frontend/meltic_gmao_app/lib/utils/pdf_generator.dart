@@ -61,7 +61,7 @@ class PdfGenerator {
                     ),
                   ),
                 )
-                .toList(),
+                ,
             pw.SizedBox(height: 20),
           ],
         );

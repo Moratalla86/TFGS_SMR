@@ -75,7 +75,7 @@ public class AuthController {
 
         logger.info("Tentativa de login RFID para tag: {}", rfidTag);
 
-        return usuarioRepo.findByRfidTag(rfidTag)
+        return usuarioRepo.findByRfidTagIgnoreCase(rfidTag)
                 .map(user -> {
                     logger.info("Login RFID exitoso para usuario: {}", user.getEmail());
                     return ResponseEntity.ok(user);

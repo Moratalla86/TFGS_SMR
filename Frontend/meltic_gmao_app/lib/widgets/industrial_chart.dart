@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide SelectionDetails;
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../models/telemetria.dart';
 import '../models/maquina.dart';
+import '../models/metric_config.dart';
 import '../theme/industrial_theme.dart';
 import '../utils/metric_definitions.dart';
 import 'package:intl/intl.dart';
@@ -20,7 +21,7 @@ class IndustrialChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activas = maquina.sensoresConfigurados;
+    final activeConfigs = maquina.configs.where((c) => c.habilitado).toList();
 
     return Container(
       height: 450,
@@ -28,7 +29,7 @@ class IndustrialChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: SfCartesianChart(
         plotAreaBorderWidth: 0,
@@ -55,15 +56,13 @@ class IndustrialChart extends StatelessWidget {
           enableDoubleTapZooming: true,
           zoomMode: ZoomMode.x,
         ),
-        // Sustituimos Tooltip y Crosshair por Trackball Magnético (UX mejorada para Windows/Android)
         trackballBehavior: TrackballBehavior(
           enable: true,
-          activationMode:
-              ActivationMode.singleTap, // Reacciona al instante al tocar
+          activationMode: ActivationMode.singleTap,
           tooltipDisplayMode: TrackballDisplayMode.nearestPoint,
           lineType: TrackballLineType.vertical,
           lineDashArray: const [5, 5],
-          lineColor: IndustrialTheme.neonCyan.withOpacity(0.5),
+          lineColor: IndustrialTheme.neonCyan.withValues(alpha: 0.5),
           lineWidth: 1,
           tooltipSettings: const InteractiveTooltip(
             enable: true,
@@ -77,25 +76,15 @@ class IndustrialChart extends StatelessWidget {
             }
 
             final Telemetria t = telemetria[details.pointIndex!];
-            final String timeStr = DateFormat(
-              'HH:mm:ss',
-              'es_ES',
-            ).format(t.timestamp);
+            final String timeStr = DateFormat('HH:mm:ss', 'es_ES').format(t.timestamp);
 
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: IndustrialTheme.spaceCadet,
-                border: Border.all(
-                  color: IndustrialTheme.neonCyan.withOpacity(0.5),
-                ),
+                border: Border.all(color: IndustrialTheme.neonCyan.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 10,
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 10)],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -103,36 +92,23 @@ class IndustrialChart extends StatelessWidget {
                 children: [
                   Text(
                     'REGISTRO CRONOLÓGICO $timeStr',
-                    style: const TextStyle(
-                      color: IndustrialTheme.slateGray,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 9, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  if (activas.contains('temperatura'))
-                    _tooltipRow(
-                      'TEMP',
-                      '${t.temperatura.toStringAsFixed(1)}°C',
-                      IndustrialTheme.criticalRed,
-                    ),
-                  if (activas.contains('humedad'))
-                    _tooltipRow(
-                      'HUM',
-                      '${t.humedad.toStringAsFixed(1)}%',
-                      IndustrialTheme.electricBlue,
-                    ),
-                  ...activas
-                      .where((id) => id != 'temperatura' && id != 'humedad')
-                      .map((id) {
-                        final def = MetricDefinition.getById(id);
-                        final val = t.sensores[id] ?? 0.0;
-                        return _tooltipRow(
-                          def.label,
-                          '${val.toStringAsFixed(1)}${def.unit}',
-                          def.color,
-                        );
-                      }),
+                  ...activeConfigs.map((config) {
+                    final def = MetricDefinition.getById(config.nombreMetrica);
+                    double val = 0.0;
+                    if (config.nombreMetrica == 'temperatura') {
+                      val = t.temperatura;
+                    } else if (config.nombreMetrica == 'humedad') val = t.humedad;
+                    else val = t.sensores[config.nombreMetrica] ?? 0.0;
+                    
+                    return _tooltipRow(
+                      def.label,
+                      '${val.toStringAsFixed(1)}${config.unidadSeleccionada}',
+                      def.color,
+                    );
+                  }),
                 ],
               ),
             );
@@ -140,63 +116,41 @@ class IndustrialChart extends StatelessWidget {
         ),
         primaryXAxis: DateTimeAxis(
           dateFormat: DateFormat.Hms('es_ES'),
-          labelStyle: const TextStyle(
-            color: IndustrialTheme.slateGray,
-            fontSize: 9,
-          ),
+          labelStyle: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 9),
           majorGridLines: const MajorGridLines(width: 0),
           edgeLabelPlacement: EdgeLabelPlacement.shift,
           intervalType: DateTimeIntervalType.auto,
-          // Mantenemos el cartel inferior (Eje X) solicitado
-          interactiveTooltip: const InteractiveTooltip(
-            enable: true,
-            color: IndustrialTheme.spaceCadet,
-          ),
+          interactiveTooltip: const InteractiveTooltip(enable: true, color: IndustrialTheme.spaceCadet),
         ),
         primaryYAxis: NumericAxis(
-          labelStyle: const TextStyle(
-            color: IndustrialTheme.slateGray,
-            fontSize: 9,
-          ),
+          labelStyle: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 9),
           axisLine: const AxisLine(width: 0),
-          majorGridLines: MajorGridLines(
-            color: Colors.white.withOpacity(0.05),
-            dashArray: const [5, 5],
-          ),
-          // Desactivado cartel lateral
+          majorGridLines: MajorGridLines(color: Colors.white.withValues(alpha: 0.05), dashArray: const [5, 5]),
           interactiveTooltip: const InteractiveTooltip(enable: false),
         ),
         axes: <ChartAxis>[
           NumericAxis(
             name: 'highScaleAxis',
             opposedPosition: true,
-            labelStyle: const TextStyle(
-              color: IndustrialTheme.warningOrange,
-              fontSize: 8,
-            ),
+            labelStyle: const TextStyle(color: IndustrialTheme.warningOrange, fontSize: 8),
             majorGridLines: const MajorGridLines(width: 0),
-            title: AxisTitle(
-              text: 'RPM / V',
-              textStyle: const TextStyle(
-                color: IndustrialTheme.slateGray,
-                fontSize: 8,
-              ),
-            ),
+            title: AxisTitle(text: 'RPM / V', textStyle: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 8)),
             interactiveTooltip: const InteractiveTooltip(enable: false),
           ),
         ],
-        series: _buildDynamicSeries(activas, telemetria),
+        series: _buildDynamicSeries(activeConfigs, telemetria),
       ),
     );
   }
 
   List<CartesianSeries<Telemetria, DateTime>> _buildDynamicSeries(
-    List<String> activas,
+    List<MetricConfig> configs,
     List<Telemetria> data,
   ) {
     List<CartesianSeries<Telemetria, DateTime>> list = [];
 
-    for (String id in activas) {
+    for (var config in configs) {
+      final id = config.nombreMetrica;
       final def = MetricDefinition.getById(id);
       final isHighScale = id == 'rpm' || id == 'voltaje_fase';
 
@@ -208,20 +162,13 @@ class IndustrialChart extends StatelessWidget {
             xValueMapper: (Telemetria t, _) => t.timestamp,
             yValueMapper: (Telemetria t, _) => t.temperatura,
             gradient: LinearGradient(
-              colors: [
-                IndustrialTheme.criticalRed.withOpacity(0.3),
-                IndustrialTheme.criticalRed.withOpacity(0.0),
-              ],
+              colors: [IndustrialTheme.criticalRed.withValues(alpha: 0.3), IndustrialTheme.criticalRed.withValues(alpha: 0.0)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
             borderColor: IndustrialTheme.criticalRed,
             borderWidth: 2,
-            markerSettings: const MarkerSettings(
-              isVisible: true,
-              width: 2,
-              height: 2,
-            ),
+            markerSettings: const MarkerSettings(isVisible: true, width: 2, height: 2),
           ),
         );
       } else {
@@ -237,11 +184,7 @@ class IndustrialChart extends StatelessWidget {
             },
             color: def.color,
             width: 2,
-            markerSettings: const MarkerSettings(
-              isVisible: true,
-              width: 2,
-              height: 2,
-            ),
+            markerSettings: const MarkerSettings(isVisible: true, width: 2, height: 2),
           ),
         );
       }

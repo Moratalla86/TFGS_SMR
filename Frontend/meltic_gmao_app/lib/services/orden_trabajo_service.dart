@@ -53,22 +53,25 @@ class OrdenTrabajoService {
     if (tecnicoId != null) url += 'tecnicoId=$tecnicoId&';
     if (maquinaId != null) url += 'maquinaId=$maquinaId';
     final res = await http.patch(Uri.parse(url));
-    if (res.statusCode == 200)
+    if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
+    }
     throw Exception('Error al asignar OT: ${res.statusCode}');
   }
 
   Future<OrdenTrabajo> actualizarEstado(int id, String estado) async {
     final res = await http.patch(Uri.parse('$_base/$id/estado?estado=$estado'));
-    if (res.statusCode == 200)
+    if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
+    }
     throw Exception('Error al actualizar estado: ${res.statusCode}');
   }
 
   Future<OrdenTrabajo> iniciarOT(int id) async {
     final res = await http.patch(Uri.parse('$_base/$id/iniciar'));
-    if (res.statusCode == 200)
+    if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
+    }
     throw Exception('Error al iniciar OT: ${res.statusCode}');
   }
 
@@ -78,8 +81,9 @@ class OrdenTrabajoService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'trabajosRealizados': trabajos}),
     );
-    if (res.statusCode == 200)
+    if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
+    }
     throw Exception('Error al actualizar acciones: ${res.statusCode}');
   }
 
@@ -104,14 +108,16 @@ class OrdenTrabajoService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode(body),
     );
-    if (res.statusCode == 200)
+    if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
+    }
     throw Exception('Error al cerrar OT: ${res.statusCode}');
   }
 
   Future<void> eliminarOT(int id) async {
     final res = await http.delete(Uri.parse('$_base/$id'));
-    if (res.statusCode != 204)
+    if (res.statusCode != 204) {
       throw Exception('Error al eliminar OT: ${res.statusCode}');
+    }
   }
 }

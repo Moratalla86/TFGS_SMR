@@ -1,0 +1,47 @@
+﻿
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          table { border-collapse: collapse; font-family: sans-serif; font-size: 13px; }
+          td, th { border: 1px solid #cbd5e1; }
+        </style>
+      </head>
+      <body>
+        <table>
+          
+      <tr>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">ID</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Nombre</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Actores</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Descripción</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Precondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Flujo Principal</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Postcondiciones</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de entrada</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Datos de salida</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Tablas</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Clases</th>
+        <th style="background-color: #f1f5f9; font-weight: bold; padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Interfaces</th>
+      </tr>
+    
+          
+        <tr>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #4f46e5; font-family: monospace;"><b>uc_04</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;"><b>Emitir Nueva Orden de Trabajo</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #16a34a;">Jefe Mantenimiento</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">Planificación y asignación de mantenimiento preventivo/correctivo a un técnico sobre una máquina.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Existir Técnicos Activos y Máquinas Registradas</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">1. Se lanza el Wizard de creación de OT.<br>2. Se documentan causa y urgencia de la avería.<br>3. Se designa Máquina afectada y Técnico responsable.<br>4. Publicación bidireccional.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Nueva OT visible para el equipo Técnico</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Tipo<br>• Prioridad<br>• Descripción<br>• ID_Tecnico<br>• ID_Maquina</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Estado OT: PENDIENTE<br>• Fecha Registro</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• ORDENES_TRABAJO</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• OrdenTrabajoController.java<br>• OrdenTrabajoRepository.java</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• crear_ot_screen.dart<br>• orden_trabajo_service.dart</td>
+        </tr>
+      
+        </table>
+      </body>
+      </html>
+    

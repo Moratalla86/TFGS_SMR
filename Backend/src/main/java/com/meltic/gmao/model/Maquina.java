@@ -1,5 +1,7 @@
 package com.meltic.gmao.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,18 +13,25 @@ public class Maquina {
     private Long id;
 
     private String nombre;
-    private String modelo; // Campo necesario para el DataInitializer
+    private String modelo; 
     private String descripcion;
     private String ubicacion;
-    private String estado; // OK, WARNING, ERROR [cite: 34]
+    private String estado; // OK, WARNING, ERROR
 
-    // Límites de temperatura
-    private Double limiteMB; // Muy Bajo
-    private Double limiteB;  // Bajo
-    private Double limiteA;  // Alto
-    private Double limiteMA; // Muy Alto
+    @OneToMany(mappedBy = "maquina", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MetricConfig> configs = new ArrayList<>();
 
     public Maquina() {}
+
+    public void addConfig(MetricConfig config) {
+        configs.add(config);
+        config.setMaquina(this);
+    }
+
+    public void removeConfig(MetricConfig config) {
+        configs.remove(config);
+        config.setMaquina(null);
+    }
 
     // Getters y Setters
     public Long getId() { return id; }
@@ -43,15 +52,6 @@ public class Maquina {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
-    public Double getLimiteMB() { return limiteMB; }
-    public void setLimiteMB(Double limiteMB) { this.limiteMB = limiteMB; }
-
-    public Double getLimiteB() { return limiteB; }
-    public void setLimiteB(Double limiteB) { this.limiteB = limiteB; }
-
-    public Double getLimiteA() { return limiteA; }
-    public void setLimiteA(Double limiteA) { this.limiteA = limiteA; }
-
-    public Double getLimiteMA() { return limiteMA; }
-    public void setLimiteMA(Double limiteMA) { this.limiteMA = limiteMA; }
+    public List<MetricConfig> getConfigs() { return configs; }
+    public void setConfigs(List<MetricConfig> configs) { this.configs = configs; }
 }

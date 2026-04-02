@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _startRfidPolling() {
-    bool _initialized = false;
+    bool initialized = false;
 
     _rfidTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
       if (_isLoading) return;
@@ -61,17 +61,17 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!esRfidValido || timestamp == null) {
           // Sin tarjeta válida: inicializar el baseline de timestamp igualmente
           // para no quedar bloqueado en estado no-inicializado
-          if (!_initialized) {
+          if (!initialized) {
             _lastRfidTimestamp = timestamp;
-            _initialized = true;
+            initialized = true;
           }
           return;
         }
 
-        if (!_initialized) {
+        if (!initialized) {
           // Primera lectura con tarjeta real: guardar baseline y NO logear
           _lastRfidTimestamp = timestamp;
-          _initialized = true;
+          initialized = true;
           return;
         }
 
@@ -101,8 +101,15 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
+        
+        // --- EVITAR CONFLICTO RFID ---
+        // Cancelamos el timer inmediatamente al detectar éxito manual
+        _rfidTimer?.cancel();
+        
         AppSession.instance.fromJson(userData);
         if (!mounted) return;
+        
+        _showSuccess("Acceso concedido mediante credenciales");
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
         _showError("Email o contraseña incorrectos");
@@ -139,6 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String msg) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
@@ -148,6 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
@@ -193,39 +202,48 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // LOGO NEON
-                          Icon(
-                                Icons.settings_suggest,
-                                size: 70,
-                                color: IndustrialTheme.neonCyan,
-                              )
-                              .animate(
-                                onPlay: (controller) => controller.repeat(),
-                              )
-                              .shimmer(
-                                duration: 2000.ms,
-                                color: IndustrialTheme.electricBlue.withOpacity(
-                                  0.3,
-                                ),
-                              ),
+                          // LOGO CON FILTRO PARA QUITAR FONDO BLANCO
+                          ColorFiltered(
+                            colorFilter: const ColorFilter.matrix(<double>[
+                              1, 0, 0, 0, 0,
+                              0, 1, 0, 0, 0,
+                              0, 0, 1, 0, 0,
+                              -1, -1, -1, 1, 2.55, // Filtro para hacer transparente el blanco puro
+                            ]),
+                            child: Image.asset(
+                              'assets/images/logo_meltic_clean.png', // Probamos con la versión clean
+                              height: 100,
+                              width: 100,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => 
+                                Image.asset('assets/images/logo_meltic.png', height: 100, width: 100),
+                            ),
+                          ).animate(
+                            onPlay: (controller) => controller.repeat(),
+                          ).shimmer(
+                            duration: 2500.ms,
+                            color: IndustrialTheme.electricBlue.withOpacity(0.4),
+                          ),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
                           Text(
-                            "GMAO INDUSTRIAL",
-                            style: IndustrialTheme.dark.textTheme.displayLarge
-                                ?.copyWith(
-                                  fontSize: 26,
-                                  color: Colors.white,
-                                  letterSpacing: 2,
-                                ),
+                            "Mèltic 4.0",
+                            textAlign: TextAlign.center,
+                            style: IndustrialTheme.dark.textTheme.displayLarge?.copyWith(
+                              fontSize: 32,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                           Text(
-                            "CONTROL INDUSTRIAL 4.0",
+                            "Gmao Industrial",
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               color: IndustrialTheme.neonCyan,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 2,
                             ),
                           ),
 

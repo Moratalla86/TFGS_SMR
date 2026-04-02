@@ -3,6 +3,10 @@ class Telemetria {
   final int maquinaId;
   final double temperatura;
   final double humedad;
+  final double vibracion;
+  final double presion;
+  final double voltaje;
+  final double intensidad;
   final String rfidTag;
   final String? usuarioNombre;
   final bool motorOn;
@@ -17,6 +21,10 @@ class Telemetria {
     required this.maquinaId,
     required this.temperatura,
     required this.humedad,
+    required this.vibracion,
+    required this.presion,
+    required this.voltaje,
+    required this.intensidad,
     required this.rfidTag,
     required this.usuarioNombre,
     required this.motorOn,
@@ -39,6 +47,10 @@ class Telemetria {
       maquinaId: json['maquinaId'] ?? 0,
       temperatura: (json['temperatura'] ?? 0).toDouble(),
       humedad: (json['humedad'] ?? 0).toDouble(),
+      vibracion: (json['vibracion'] ?? 0).toDouble(),
+      presion: (json['presion'] ?? 0).toDouble(),
+      voltaje: (json['voltaje'] ?? 0).toDouble(),
+      intensidad: (json['intensidad'] ?? 0).toDouble(),
       rfidTag: json['rfidTag'] ?? '',
       usuarioNombre: json['usuarioNombre'],
       motorOn: json['motorOn'] ?? false,
@@ -54,6 +66,10 @@ class Telemetria {
       'maquinaId': maquinaId,
       'temperatura': temperatura,
       'humedad': humedad,
+      'vibracion': vibracion,
+      'presion': presion,
+      'voltaje': voltaje,
+      'intensidad': intensidad,
       'rfidTag': rfidTag,
       'usuarioNombre': usuarioNombre,
       'motorOn': motorOn,

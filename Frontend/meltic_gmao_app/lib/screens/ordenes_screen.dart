@@ -167,13 +167,14 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
         await _otService.eliminarOT(ot.id);
         _load();
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Fallo: $e'),
               backgroundColor: IndustrialTheme.criticalRed,
             ),
           );
+        }
       }
     }
   }
@@ -237,35 +238,40 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
             )
           : _error != null
           ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 40,
-                    color: IndustrialTheme.criticalRed,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'DATA SYNC ERROR',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.wifi_off_rounded,
+                      size: 64,
+                      color: IndustrialTheme.slateGray.withOpacity(0.5),
                     ),
-                  ),
-                  Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: IndustrialTheme.slateGray,
-                      fontSize: 10,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'SERVIDOR NO DISPONIBLE',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: Colors.white54,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _load,
-                    child: const Text('REINTENTAR LINK'),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Comprueba la conexión de red\ny que el servidor esté activo.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.white30),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _load,
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('REINTENTAR'),
+                    ),
+                  ],
+                ),
               ),
             )
           : Column(
@@ -291,9 +297,13 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                               horizontal: 16,
                               vertical: 8,
                             ),
-                            itemCount: _filteredOrdenes.length,
-                            itemBuilder: (_, i) =>
-                                _buildOTCard(_filteredOrdenes[i]),
+                            itemCount: _filteredOrdenes.length + 1,
+                            itemBuilder: (_, i) {
+                              if (i == _filteredOrdenes.length) {
+                                return const SizedBox(height: 80);
+                              }
+                              return _buildOTCard(_filteredOrdenes[i]);
+                            },
                           ),
                         ),
                 ),
@@ -335,23 +345,29 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _summaryItem(
-            'HOLD',
-            '$pendientes',
-            Icons.hourglass_top,
-            IndustrialTheme.slateGray,
+          Expanded(
+            child: _summaryItem(
+              'HOLD',
+              '$pendientes',
+              Icons.hourglass_top,
+              IndustrialTheme.slateGray,
+            ),
           ),
-          _summaryItem(
-            'ACTIVE',
-            '$enProceso',
-            Icons.settings_input_component,
-            IndustrialTheme.warningOrange,
+          Expanded(
+            child: _summaryItem(
+              'ACTIVE',
+              '$enProceso',
+              Icons.settings_input_component,
+              IndustrialTheme.warningOrange,
+            ),
           ),
-          _summaryItem(
-            'DONE',
-            '$cerradas',
-            Icons.verified,
-            IndustrialTheme.operativeGreen,
+          Expanded(
+            child: _summaryItem(
+              'DONE',
+              '$cerradas',
+              Icons.verified,
+              IndustrialTheme.operativeGreen,
+            ),
           ),
         ],
       ),
@@ -394,16 +410,18 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       ),
       child: Column(
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                flex: 2,
+              SizedBox(
+                width: (MediaQuery.of(context).size.width - 60) * 0.4,
                 child: TextField(
                   onChanged: (v) => setState(() => _searchQuery = v),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search, size: 16),
-                    hintText: "BUSCAR POR ID...",
+                    prefixIcon: const Icon(Icons.search, size: 14),
+                    hintText: "ID...",
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     filled: true,
                     fillColor: Colors.black.withOpacity(0.2),
@@ -414,9 +432,8 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
+              SizedBox(
+                width: (MediaQuery.of(context).size.width - 60) * 0.55,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
@@ -430,22 +447,22 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                       dropdownColor: IndustrialTheme.claudCloud,
                       icon: const Icon(
                         Icons.filter_list,
-                        size: 16,
+                        size: 14,
                         color: IndustrialTheme.neonCyan,
                       ),
                       hint: const Text(
-                        "TODAS LAS MÁQUINAS",
+                        "MÁQUINA",
                         style: TextStyle(
                           color: IndustrialTheme.slateGray,
-                          fontSize: 10,
+                          fontSize: 9,
                         ),
                       ),
                       items: [
                         const DropdownMenuItem(
                           value: null,
                           child: Text(
-                            "TODAS LAS MÁQUINAS",
-                            style: TextStyle(fontSize: 10),
+                            "TODAS",
+                            style: TextStyle(fontSize: 9),
                           ),
                         ),
                         ..._maquinas.map(
@@ -453,7 +470,7 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                             value: m.id,
                             child: Text(
                               m.nombre.toUpperCase(),
-                              style: const TextStyle(fontSize: 10),
+                              style: const TextStyle(fontSize: 9),
                             ),
                           ),
                         ),
@@ -832,7 +849,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _prioridad,
+                  initialValue: _prioridad,
                   decoration: const InputDecoration(
                     labelText: "GRAVIDAD / PRIORIDAD",
                     prefixIcon: Icon(Icons.priority_high),
@@ -844,7 +861,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _tipo,
+                  initialValue: _tipo,
                   decoration: const InputDecoration(
                     labelText: "TIPO DE MANTENIMIENTO",
                     prefixIcon: Icon(Icons.build_circle_outlined),
@@ -856,7 +873,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
-                  value: _tecnicoId,
+                  initialValue: _tecnicoId,
                   decoration: const InputDecoration(
                     labelText: "ASIGNAR OPERARIO",
                     prefixIcon: Icon(Icons.person_search),
@@ -877,7 +894,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
-                  value: _maquinaId,
+                  initialValue: _maquinaId,
                   decoration: const InputDecoration(
                     labelText: "ACTIVO AFECTADO",
                     prefixIcon: Icon(Icons.precision_manufacturing),

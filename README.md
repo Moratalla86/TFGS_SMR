@@ -1,7 +1,10 @@
-# MèlticGmao 4.0: Ecosistema Inteligente de Mantenimiento Industrial
+# MèlticGmao v0.8 (Alpha): Ecosistema Inteligente de Mantenimiento Industrial
+
+## 🏗️ v0.8: Estado de Desarrollo e Integración (80%)
+*Actualmente el proyecto se encuentra en una fase avanzada de integración (80%), con el núcleo de telemetría y gestión de OTs plenamente operativo, pendiente de validación final en entorno real.*
 
 ## 🚀 Visión General de Industria 4.0
-MèlticGmao 4.0 es una solución integral diseñada para la digitalización del mantenimiento en entornos industriales. Combina hardware IoT embebido (Controllino/Arduino), una arquitectura de backend robusta y una interfaz móvil multiplataforma (Flutter) para ofrecer trazabilidad total, monitorización en tiempo real y gestión eficiente de activos.
+MèlticGmao es una solución integral diseñada para la digitalización del mantenimiento en entornos industriales. Combina hardware IoT embebido (Controllino/Arduino), una arquitectura de backend robusta y una interfaz móvil multiplataforma (Flutter) para ofrecer trazabilidad total, monitorización en tiempo real y gestión eficiente de activos.
 
 ## 🏗️ Arquitectura Híbrida Políglota
 El sistema implementa una persistencia dual estratégicamente diseñada para maximizar la eficiencia según el tipo de dato:
@@ -52,18 +55,24 @@ graph TD
 | **R08** | Reporte PDF | `GET /api/ordenes/{id}/pdf` | `PdfViewer` | iText / Base64 |
 | **R09** | Gemelo Digital | `PUT /api/maquinas/{id}` | `ConfigDialog` | Configuración Límites |
 
-## 🚀 Mejoras Recientes
+## 🛠️ Avances Técnicos y Estabilidad (v0.8)
 
-### 🔧 Backend & Estabilidad
-*   **Fix de Compilación Maven:** Corregido error en `MantenimientoService` extendiendo `JpaSpecificationExecutor` en los repositorios para soportar consultas dinámicas (Criteria API).
-*   **Hardening de Seguridad RFID:** Implementado filtrado de ruido en la telemetría para evitar autenticaciones accidentales por interferencias en el firmware.
-*   **Motor de Búsqueda:** Implementado sistema de filtrado multi-parámetro (técnico, máquina, estado, prioridad y fechas) para la gestión eficiente de OTs.
-*   **Generación de Reportes:** Integrado sistema de exportación a PDF "al vuelo" con los datos finales de la intervención, incluyendo firmas y fotos.
+### 🌐 Configuración de Red
+*   **IP PLC (Ethernet):** `192.168.1.11` (Configurado en `application.properties`).
+*   **Hotspot Windows:** El PC emite una red WiFi para el móvil (IP Puerta de enlace: `192.168.137.1`).
+*   **Conectividad App:** La aplicación móvil apunta a la IP del Hotspot (`http://192.168.137.1:8080`).
 
-### 📱 Frontend (Flutter)
-*   **UI de Gemelo Digital:** Rediseño de los diálogos de configuración, sustituyendo sliders por inputs numéricos de precisión para el ajuste de umbrales térmicos y de humedad.
-*   **Experiencia de Filtros:** Implementado diálogo de filtros avanzados en la pantalla de Órdenes de Trabajo para mejorar la usabilidad en entornos con alta densidad de datos.
-*   **Integración de PDF:** Añadido soporte para previsualización y descarga de informes técnicos directamente desde la aplicación móvil.
+### 🛡️ Mecanismos de Pruebas y Simulación
+*   **Simulación RFID:** Gesto de **doble toque** sobre el icono NFC en `LoginScreen`.
+*   **Failsafe:** Lectura simulada de tarjeta maestra (`40:91:F3:61`) para validación de flujos sin hardware.
+
+### 📱 Optimización de Interfaz
+*   **Diseño Responsivo:** Pantallas adaptadas 100% a visualización vertical en smartphones.
+*   **Detalle de Máquina:** Nuevo layout 2x2 para gestión de umbrales.
+*   **UX:** Gestión de foco y teclado optimizada en paneles de firma.
+
+### ⚙️ Mejoras de Sistema
+*   **Resiliencia de Red:** Polling a 15s y timeouts de 5s para evitar bloqueos del PLC.
 
 ---
-
+© 2026 MèlticGmao - Innovación en Mantenimiento Industrial (En desarrollo).

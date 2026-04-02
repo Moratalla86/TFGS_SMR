@@ -1,19 +1,11 @@
-import 'package:flutter/foundation.dart'; // Para usar kIsWeb
+import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   static String get baseUrl {
-    if (kIsWeb) {
-      // Para Flutter Web
-      return "http://localhost:8080";
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // Para el Emulador de Android
-      return "http://10.0.2.2:8080";
-    } else if (defaultTargetPlatform == TargetPlatform.windows) {
-      // Para la aplicación de Windows Escritorio
-      return "http://localhost:8080";
-    } else {
-      // móvil real por WiFi
-      return "http://192.168.1.69:8080";
-    }
+    const String hotspotIp = "192.168.137.1";
+    if (kIsWeb) return "http://$hotspotIp:8080"; 
+    return (defaultTargetPlatform == TargetPlatform.windows) 
+        ? "http://localhost:8080" 
+        : "http://$hotspotIp:8080";
   }
 }

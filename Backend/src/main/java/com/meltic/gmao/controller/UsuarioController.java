@@ -121,7 +121,7 @@ public class UsuarioController {
     // ── Buscar por RFID ─────────────────────────────────────────────────────────
     @GetMapping("/rfid/{tag}")
     public ResponseEntity<Usuario> obtenerPorRfid(@PathVariable String tag) {
-        return usuarioRepository.findByRfidTag(tag)
+        return usuarioRepository.findByRfidTagIgnoreCase(tag)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
