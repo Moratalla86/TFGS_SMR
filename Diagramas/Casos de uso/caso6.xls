@@ -1,4 +1,4 @@
-﻿
+
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
       <head>
         <meta charset="utf-8" />
@@ -28,17 +28,17 @@
           
         <tr>
           <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #4f46e5; font-family: monospace;"><b>uc_06</b></td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;"><b>Ver Gráficas Telemetría</b></td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;"><b>Visualización Avanzada de Telemetría Multi-Variable</b></td>
           <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; color: #16a34a;">Jefe Mantenimiento, Técnico / Operario, Hardware PLC</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">Inspección analítica remota sobre los datos en tiempo real (Temperaturas, Vibración...) ingeridos desde la planta industrial.</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Hardware emitiendo tramas de datos hacia el Gateway</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">1. Hardware transmite a base de datos de series temporales (MongoDB).<br>2. El usuario accede al perfil de máquina y despliega la pestaña IoT.<br>3. La app regenera las librerías gráficas cruzando datos históricos + LIVE.</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Se muestran widgets visuales de monitorización</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Petición Fetch por ID Máquina</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Arrays de temperatura<br>• Arrays de Humedad<br>• Boolean Motor</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">Inspección analítica remota sobre hasta 15 métricas industriales (Ambientales, Mecánicas, Térmicas y Eléctricas) en tiempo real ingeridas desde la planta, con visualizado configurable y conversión de unidades.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Hardware PLPC emitiendo tramas de datos hacia el Gateway.<br>• Backend operando con el Polling Rate a 15s.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">1. Hardware transmite array completo a la base de datos de series temporales (MongoDB).<br>2. El usuario accede al perfil de máquina y despliega la estación de análisis (IoT).<br>3. El usuario puede alternar las unidades deseadas (ej. ºC a ºF, Bar a PSI, L/min a m³/h).<br>4. La app regenera los componentes gráficos cruzando un histórico (buffer 200 reg.) + flujo LIVE de WebSockets/Polling.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Renderizado de paneles industriales reactivos con alarmas dinámicas.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Id Máquina (Request Param).<br>• Filtros de unidad de medida.</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• Arrays Temp. Ambiente / Temp. Motor<br>• Arrays de Humedad, Caudal, RPM y Presión<br>• Matrices Vibración (Axial/Radial)<br>• Arrays de Voltaje, Corriente y Consumo Eléctrico<br>• Boolean estado del relé (MotorOn)</td>
           <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• TELEMETRIA_NOSQL</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• TelemetriaController.java<br>• TelemetriaRepository.java</td>
-          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• machine_detail_screen.dart<br>• industrial_chart.dart</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• TelemetriaController.java<br>• TelemetriaRepository.java<br>• PLCPollingService.java</td>
+          <td style="border: 1px solid #cbd5e1; padding: 8px; vertical-align: top;">• machine_detail_screen.dart<br>• industrial_chart.dart<br>• metric_definitions.dart</td>
         </tr>
       
         </table>
