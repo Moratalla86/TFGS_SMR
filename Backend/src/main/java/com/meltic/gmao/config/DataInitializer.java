@@ -19,12 +19,12 @@ public class DataInitializer {
             OrdenTrabajoRepository ordenTrabajoRepo) {
 
         return args -> {
-            System.out.println("🚀 Invocando DataInitializer...");
+            if (usuarioRepo.count() > 0) {
+                System.out.println("✅ Base de datos ya inicializada. Omitiendo DataInitializer.");
+                return;
+            }
 
-            // Limpieza si es necesario (con ddl-auto=create ya está vacío, pero por si acaso)
-            ordenTrabajoRepo.deleteAll();
-            usuarioRepo.deleteAll();
-            maquinaRepo.deleteAll();
+            System.out.println("🚀 Invocando DataInitializer por primera vez...");
 
             // Máquina de prueba
             Maquina m1 = new Maquina();
@@ -51,6 +51,19 @@ public class DataInitializer {
             adminUser.setActivo(true);
             usuarioRepo.save(adminUser);
             System.out.println("👤 Usuario Admin creado: admin@meltic.com / admin");
+
+            // Usuario Jefe de Mantenimiento
+            Usuario jefe = new Usuario();
+            jefe.setNombre("Carlos");
+            jefe.setApellido1("Gómez");
+            jefe.setUsername("jefe@meltic.com");
+            jefe.setEmail("jefe@meltic.com");
+            jefe.setPassword(encoder.encode("jefe"));
+            jefe.setRol("JEFE_MANTENIMIENTO");
+            jefe.setRfidTag("RFID_JEFE");
+            jefe.setActivo(true);
+            usuarioRepo.save(jefe);
+            System.out.println("👤 Usuario Jefe creado: jefe@meltic.com / jefe");
 
             // Usuario Técnico
             Usuario tecnico = new Usuario();

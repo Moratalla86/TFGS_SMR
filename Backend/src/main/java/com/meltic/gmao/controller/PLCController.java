@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.meltic.gmao.model.nosql.Telemetria;
 import com.meltic.gmao.service.PLCPollingService;
 import com.meltic.gmao.service.TelemetriaService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,7 +29,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/plc")
-@CrossOrigin(origins = "*")
 @Tag(name = "IoT - PLC Controller", description = "Monitorización y control de telemetría de máquinas en tiempo real")
 public class PLCController {
 
@@ -39,20 +40,29 @@ public class PLCController {
     @Autowired
     private PLCPollingService plcPollingService;
 
-    @Operation(summary = "Recepción de Telemetría", description = "Endpoint crítico donde el Hardware (Controllino) envía los datos de sensores y estado. Los datos se almacenan en MongoDB.")
-    @ApiResponse(responseCode = "200", description = "Telemetría procesada y almacenada satisfactoriamente")
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @PostMapping("/data")
-    public ResponseEntity<Telemetria> recibirTelemetria(@RequestBody Telemetria telemetria) {
-        // Sincronizar estado de la máquina y registrar datos históricos
-        plcPollingService.procesarAlertas(telemetria);
-        Telemetria guardada = telemetriaService.guardar(telemetria);
+    public ResponseEntity<?> recibirTelemetria(@RequestBody String rawJson) {
+        logger.info("📦 [RAW PLC DATA]: {}", rawJson);
+        
+        try {
+            Telemetria telemetria = objectMapper.readValue(rawJson, Telemetria.class);
+            
+            // Sincronizar estado de la máquina y registrar datos históricos
+            plcPollingService.procesarAlertas(telemetria);
+            Telemetria guardada = telemetriaService.guardar(telemetria);
 
-        if (guardada.getRfidTag() != null && !guardada.getRfidTag().isEmpty()) {
-            plcPollingService.registrarLecturaRfid(guardada.getRfidTag());
+            if (guardada.getRfidTag() != null && !guardada.getRfidTag().isEmpty()) {
+                logger.info("📡 TAG RECONOCIDO (MAPPING OK): {}", guardada.getRfidTag());
+                plcPollingService.registrarLecturaRfid(guardada.getRfidTag());
+            }
+
+            return ResponseEntity.ok(guardada);
+        } catch (JsonProcessingException e) {
+            logger.error("❌ Error al procesar JSON del PLC: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Error format: " + e.getMessage());
         }
-
-        logger.info("Telemetría recibida de máquina: {}", guardada.getMaquinaId());
-        return ResponseEntity.ok(guardada);
     }
 
     @Operation(summary = "Obtener último ID RFID", description = "Devuelve la última lectura de tarjeta capturada por el sensor RFID del PLC")

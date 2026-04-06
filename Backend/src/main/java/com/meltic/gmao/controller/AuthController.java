@@ -17,7 +17,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 @Tag(name = "Seguridad - Autenticación", description = "Endpoints para el control de acceso mediante credenciales y RFID")
 public class AuthController {
 

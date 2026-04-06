@@ -4,6 +4,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Document(collection = "telemetria")
 public class Telemetria {
@@ -18,6 +20,9 @@ public class Telemetria {
     private Double presion;
     private Double voltaje;
     private Double intensidad;
+    
+    @JsonProperty("rfidTag") // Mantiene el nombre original para la salida JSON
+    @JsonAlias({"rfid"})    // Acepta "rfid" como alias en la entrada
     private String rfidTag;
     private String usuarioNombre;
     private Boolean motorOn;

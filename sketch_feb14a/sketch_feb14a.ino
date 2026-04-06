@@ -3,10 +3,10 @@
 #include <MFRC522.h>
 #include <DHT.h>
 
-// --- RED CONFIG ---
+// --- CONFIGURACIÓN DE RED (Manteniendo tus IPs actuales que conectan bien) ---
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-IPAddress ip(192, 168, 1, 11);          // IP del Controllino (estática)
-IPAddress server(192, 168, 1, 10);     // IP de tu PC (Ethernet 4)
+IPAddress ip(192, 168, 1, 11);
+IPAddress server(192, 168, 1, 10); 
 int port = 8080;
 
 EthernetClient client;
@@ -21,84 +21,125 @@ EthernetClient client;
 MFRC522 rfid(RFID_CS, RST_PIN);
 DHT dht(DHTPIN, DHTTYPE);
 
-// --- VARIABLES DE ESTADO ---
 String ultimoID = "N/A";
 unsigned long ultimoEnvio = 0;
-const unsigned long intervalo = 30000; // 30 segundos
+const unsigned long intervalo = 30000; // Volvemos a los 30s originales
 
 void setup() {
   Serial.begin(9600);
   
-  // 1. Limpieza del bus SPI (Específico para Controllino Mega)
-  pinMode(ETH_CS, OUTPUT);  digitalWrite(ETH_CS, HIGH);
-  pinMode(RFID_CS, OUTPUT); digitalWrite(RFID_CS, HIGH);
-  pinMode(4, OUTPUT);       digitalWrite(4, HIGH); 
-  pinMode(11, OUTPUT);      digitalWrite(11, HIGH); // RTC (Reloj interno)
+  // 1. Aislamiento CRÍTICO: Desactivar Ethernet antes de nada
+  pinMode(ETH_CS, OUTPUT);  digitalWrite(ETH_CS, HIGH); // Pin 10
+  pinMode(RFID_CS, OUTPUT); digitalWrite(RFID_CS, HIGH); // Pin 53
+  pinMode(4, OUTPUT);       digitalWrite(4, HIGH);       // SD Card
+  pinMode(RST_PIN, OUTPUT); digitalWrite(RST_PIN, HIGH); // Reset RFID
 
-  delay(500);
+  delay(1000);
   SPI.begin();
 
-  // 2. Inicio de sensores
+  // 2. Inicializar Sensores con la red apagada
   rfid.PCD_Init();
   dht.begin();
+  Serial.println(F("--- Sensores RFID/DHT Listos ---"));
 
-  // 3. Conexión Directa (Modo TFG)
+  // 3. Inicializar Red
   Ethernet.begin(mac, ip);
-
-  Serial.println(F("🚀 MODO TFG LISTO (Directo al PC)"));
-  Serial.print(F("IP Controllino: ")); Serial.println(Ethernet.localIP());
-  Serial.print(F("Servidor (PC): ")); Serial.println(server);
+  Serial.println(F("🚀 SISTEMA MELTIC 4.0 OPERATIVO"));
 }
+
+unsigned long tiempoUltimaLectura = 0;
+unsigned long ultimoSensorUpdate = 0;
+const unsigned long delayLimpieza = 2500; 
+float tActual = 0.0, hActual = 0.0;
 
 void loop() {
-  // 1. GESTIÓN RFID
+  // 1. Actualizar Sensores cada 5 segundos (DHT11 es lento)
+  if (millis() - ultimoSensorUpdate > 5000 || ultimoSensorUpdate == 0) {
+    float nt = dht.readTemperature();
+    float nh = dht.readHumidity();
+    if (!isnan(nt) && !isnan(nh) && nt > 0.5) {
+      tActual = nt;
+      hActual = nh;
+    }
+    ultimoSensorUpdate = millis();
+  }
+
+  // Aislamiento SPI para el lector RFID
   digitalWrite(ETH_CS, HIGH); 
+  digitalWrite(4, HIGH);
   digitalWrite(RFID_CS, LOW);
 
+  // 2. Lógica RFID: ¿Hay tarjeta nueva?
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    ultimoID = "";
+    String currentID = "";
     for (byte i = 0; i < rfid.uid.size; i++) {
-      ultimoID += (rfid.uid.uidByte[i] < 0x10 ? "0" : "");
-      ultimoID += String(rfid.uid.uidByte[i], HEX);
-      if (i < rfid.uid.size - 1) ultimoID += ":";
+      currentID += (rfid.uid.uidByte[i] < 0x10 ? "0" : "");
+      currentID += String(rfid.uid.uidByte[i], HEX);
+      if (i < rfid.uid.size - 1) currentID += ":";
     }
-    ultimoID.toUpperCase();
-    
-    Serial.print(F("💳 RFID DETECTADO: "));
-    Serial.println(ultimoID);
-    
-    enviarAlBackend(ultimoID); // Envío inmediato por evento
-    rfid.PICC_HaltA();
-  }
-  digitalWrite(RFID_CS, HIGH);
+    currentID.toUpperCase();
 
-  // 2. ENVÍO PERIÓDICO (Cada 30s)
+    if (currentID != ultimoID) {
+      ultimoID = currentID;
+      Serial.print(F("💳 TARJETA: "));
+      Serial.println(ultimoID);
+      enviarAlBackend(ultimoID, tActual, hActual);
+    }
+    
+    tiempoUltimaLectura = millis(); 
+    rfid.PICC_HaltA();
+    rfid.PCD_StopCrypto1();
+  } else {
+    // Si no hay tarjeta, ¿ha pasado el tiempo de gracia?
+    if (ultimoID != "N/A" && (millis() - tiempoUltimaLectura > delayLimpieza)) {
+      Serial.println(F("🔄 Lector disponible"));
+      ultimoID = "N/A";
+      enviarAlBackend("N/A", tActual, hActual);
+    }
+  }
+
+  // 3. ENVÍO PERIÓDICO (Telemetría de seguridad cada 30s)
   if (millis() - ultimoEnvio > intervalo) {
-    enviarAlBackend(ultimoID);
+    enviarAlBackend(ultimoID, tActual, hActual);
     ultimoEnvio = millis();
   }
+
+  digitalWrite(RFID_CS, HIGH);
+  delay(150); 
 }
 
-void enviarAlBackend(String rfidTag) {
+void enviarAlBackend(String tag, float t, float h) {
+  // Aislamiento SPI para Red
+  digitalWrite(RFID_CS, HIGH);
+  delay(100); // Margen de seguridad para el bus SPI
   digitalWrite(ETH_CS, LOW);
-  float t = dht.readTemperature();
-  float h = dht.readHumidity();
+  
+  bool conectado = false;
+  int intentos = 0;
 
-  if (isnan(t) || isnan(h)) {
-    Serial.println(F("❌ Error leyendo sensores DHT"));
-    return;
+  // Reintento 3 veces antes de rendirse
+  while (!conectado && intentos < 3) {
+    if (client.connect(server, port)) {
+      conectado = true;
+    } else {
+      intentos++;
+      Serial.print(F("⚠️ Reintentando conexión... ("));
+      Serial.print(intentos);
+      Serial.println(F("/3)"));
+      delay(500);
+    }
   }
 
-  Serial.println(F("Connecting to backend..."));
-  if (client.connect(server, port)) {
-    Serial.println(F("✅ Conectado. Enviando POST..."));
-    
-    // Construir JSON manualmente para evitar librerías pesadas
+  if (conectado) {
+    Serial.print(F("🛰️ Enviando... (TAG: "));
+    Serial.print(tag);
+    Serial.println(F(")"));
+
     String json = "{";
-    json += "\"maquinaId\": 1,"; // Asumimos ID 1 para este PLC
+    json += "\"maquinaId\": 1,";
     json += "\"temperatura\": " + String(t) + ",";
     json += "\"humedad\": " + String(h) + ",";
-    json += "\"rfidTag\": \"" + rfidTag + "\",";
+    json += "\"rfidTag\": \"" + tag + "\",";
     json += "\"motorOn\": true,";
     json += "\"alarma\": null";
     json += "}";
@@ -110,11 +151,17 @@ void enviarAlBackend(String rfidTag) {
     client.println("Connection: close");
     client.println();
     client.println(json);
-
-    Serial.println(F("📤 Datos enviados correctamente"));
+    
+    Serial.print(F("✅ Envío OK (Temp: "));
+    Serial.print(t);
+    Serial.print(F(" C)"));
+    if (tag != "N/A") Serial.println(F(" - LOGIN OK")); else Serial.println();
+    
   } else {
-    Serial.println(F("❌ Fallo en la conexión al backend"));
+    Serial.println(F("❌ ERROR FINAL: No se pudo conectar tras 3 intentos."));
   }
+  
   client.stop();
+  delay(50); // Pausa post-conexión
   digitalWrite(ETH_CS, HIGH);
 }

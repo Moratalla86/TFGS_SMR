@@ -33,6 +33,40 @@ class Telemetria {
     this.sensores = const {},
   });
 
+  Telemetria copyWith({
+    String? id,
+    int? maquinaId,
+    double? temperatura,
+    double? humedad,
+    double? vibracion,
+    double? presion,
+    double? voltaje,
+    double? intensidad,
+    String? rfidTag,
+    String? usuarioNombre,
+    bool? motorOn,
+    String? alarma,
+    DateTime? timestamp,
+    Map<String, double>? sensores,
+  }) {
+    return Telemetria(
+      id: id ?? this.id,
+      maquinaId: maquinaId ?? this.maquinaId,
+      temperatura: temperatura ?? this.temperatura,
+      humedad: humedad ?? this.humedad,
+      vibracion: vibracion ?? this.vibracion,
+      presion: presion ?? this.presion,
+      voltaje: voltaje ?? this.voltaje,
+      intensidad: intensidad ?? this.intensidad,
+      rfidTag: rfidTag ?? this.rfidTag,
+      usuarioNombre: usuarioNombre ?? this.usuarioNombre,
+      motorOn: motorOn ?? this.motorOn,
+      alarma: alarma ?? this.alarma,
+      timestamp: timestamp ?? this.timestamp,
+      sensores: sensores ?? this.sensores,
+    );
+  }
+
   factory Telemetria.fromJson(Map<String, dynamic> json) {
     // Extraer sensores dinámicos si existen en el JSON
     final Map<String, double> extra = {};

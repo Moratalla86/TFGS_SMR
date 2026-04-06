@@ -11,8 +11,17 @@ class AppSession {
   String? userApellido1;
   String? userRol; // ADMIN | JEFE_MANTENIMIENTO | TECNICO
 
-  bool get isJefe => userRol == 'ADMIN' || userRol == 'JEFE_MANTENIMIENTO';
-  bool get isTecnico => userRol == 'TECNICO';
+  bool get isJefe {
+    final r = userRol?.toUpperCase().trim() ?? '';
+    return r == 'ADMIN' || 
+           r == 'JEFE_MANTENIMIENTO' || 
+           r == 'JEFE DE MANTENIMIENTO';
+  }
+
+  bool get isTecnico {
+    final r = userRol?.toUpperCase().trim() ?? '';
+    return r == 'TECNICO' || r == 'TÉCNICO';
+  }
 
   /// Rellena la sesión desde el JSON devuelto por /api/auth/login
   void fromJson(Map<String, dynamic> json) {

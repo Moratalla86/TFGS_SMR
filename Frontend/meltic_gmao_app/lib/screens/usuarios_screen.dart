@@ -3,6 +3,7 @@ import '../models/usuario.dart';
 import '../services/usuario_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/industrial_theme.dart';
+import '../services/app_session.dart';
 
 class UsuariosScreen extends StatefulWidget {
   const UsuariosScreen({super.key});
@@ -20,7 +21,22 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
   @override
   void initState() {
     super.initState();
+    _checkAccess();
     _loadUsuarios();
+  }
+
+  void _checkAccess() {
+    if (!AppSession.instance.isJefe) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ACCESO DENEGADO: RANGO INSUFICIENTE'),
+            backgroundColor: IndustrialTheme.criticalRed,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      });
+    }
   }
 
   Future<void> _loadUsuarios() async {
@@ -569,18 +585,24 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    IconButton.filled(
-                      onPressed: _isScanning ? null : _scanRfid,
-                      icon: _isScanning
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.sensors),
-                      style: IconButton.styleFrom(
-                        backgroundColor: IndustrialTheme.claudCloud,
-                        foregroundColor: IndustrialTheme.neonCyan,
+                    GestureDetector(
+                      onLongPress: _simulateScan,
+                      child: Tooltip(
+                        message: "Clic: Escanear Hardware | Largo: Simular TFG",
+                        child: IconButton.filled(
+                          onPressed: _isScanning ? null : _scanRfid,
+                          icon: _isScanning
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.sensors),
+                          style: IconButton.styleFrom(
+                            backgroundColor: IndustrialTheme.claudCloud,
+                            foregroundColor: IndustrialTheme.neonCyan,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -610,16 +632,45 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     );
   }
 
+  Future<void> _simulateScan() async {
+    setState(() => _isScanning = true);
+    try {
+      await widget.service.simulateRfid("40:91:F3:61");
+      if (mounted) {
+        setState(() {
+          _rfid.text = "40:91:F3:61";
+          _isScanning = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('MODO TFG: LECTURA FORZADA'),
+            backgroundColor: IndustrialTheme.electricBlue,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isScanning = false);
+    }
+  }
+
   Future<void> _scanRfid() async {
     setState(() => _isScanning = true);
     try {
-      final data = await widget.service.fetchLastRfid();
-      String r = data['rfid'] ?? '';
-      if (r.isNotEmpty && r != "Ninguna tarjeta detectada") {
-        setState(() => _rfid.text = r);
+      // Intentar 4 veces en 3 segundos (Burst scan) para capturar el buffer del servidor
+      for (int i = 0; i < 4; i++) {
+        final data = await widget.service.fetchLastRfid();
+        String r = data['rfid'] ?? '';
+        if (r.isNotEmpty && r != "Ninguna tarjeta detectada" && r != "VACÍO" && r != "N/A") {
+          setState(() => _rfid.text = r);
+          break; // Capturado con éxito
+        }
+        if (i < 3) await Future.delayed(const Duration(milliseconds: 800));
       }
+    } catch (_) {
+      // Errores silenciosos en escaneo
     } finally {
-      setState(() => _isScanning = false);
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 

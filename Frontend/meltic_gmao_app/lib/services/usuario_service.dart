@@ -55,4 +55,13 @@ class UsuarioService {
     }
     throw Exception('Error al obtener RFID: ${res.statusCode}');
   }
+
+  Future<void> simulateRfid(String tag) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/plc/simulate/$tag'),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Error al simular RFID: ${res.statusCode}');
+    }
+  }
 }

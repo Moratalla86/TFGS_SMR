@@ -31,6 +31,7 @@ public class PLCPollingService {
 
     private String lastRfidRead = "";
     private LocalDateTime lastRfidTimestamp;
+    private LocalDateTime lastRfidReadTime; // Para persistencia de lectura (Sticky Buffer)
 
     // --- Simulación ---
     private boolean motorOnSimulated = false;
@@ -74,11 +75,17 @@ public class PLCPollingService {
                 this.lastRfidTimestamp = LocalDateTime.now();
                 logger.info("NUEVA TARJETA DETECTADA (PLC): {}", rfid);
             }
+            this.lastRfidReadTime = LocalDateTime.now(); // Actualizar tiempo de última presencia real
         } else {
-            // Resetear el estado para permitir volver a leer la misma tarjeta si se retira y se vuelve a poner
-            if (!"".equals(this.lastRfidRead)) {
-                this.lastRfidRead = "";
-                logger.debug("Sensor RFID liberado (Sin tarjeta)");
+            // "STICKY BUFFER": Reducido a 2 segundos para mayor agilidad
+            // Esto da tiempo al polling del frontend (1.5s) a capturar el dato
+            if (this.lastRfidReadTime != null && 
+                java.time.Duration.between(this.lastRfidReadTime, LocalDateTime.now()).getSeconds() >= 2) {
+                
+                if (!"".equals(this.lastRfidRead)) {
+                    this.lastRfidRead = "";
+                    logger.debug("Buffer RFID liberado tras 2s de inactividad");
+                }
             }
         }
     }

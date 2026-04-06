@@ -454,10 +454,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             () => Navigator.pop(context),
             active: true,
           ),
-          _drawerItem(Icons.people_outline, "PERSONAL", () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/usuarios');
-          }),
+          if (session.isJefe)
+            _drawerItem(Icons.people_outline, "PERSONAL", () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/usuarios');
+            }),
           _drawerItem(Icons.assignment_outlined, "ORDENES DE TRABAJO", () {
             Navigator.pop(context);
             Navigator.pushNamed(context, '/ordenes');

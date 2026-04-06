@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _startRfidPolling() {
     bool initialized = false;
 
-    _rfidTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+    _rfidTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) async {
       if (_isLoading) return;
       try {
         final data = await UsuarioService().fetchLastRfid();
@@ -202,27 +202,37 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // LOGO CON FILTRO PARA QUITAR FONDO BLANCO
-                          ColorFiltered(
-                            colorFilter: const ColorFilter.matrix(<double>[
-                              1, 0, 0, 0, 0,
-                              0, 1, 0, 0, 0,
-                              0, 0, 1, 0, 0,
-                              -1, -1, -1, 1, 2.55, // Filtro para hacer transparente el blanco puro
-                            ]),
-                            child: Image.asset(
-                              'assets/images/logo_meltic_clean.png', // Probamos con la versión clean
-                              height: 100,
-                              width: 100,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) => 
-                                Image.asset('assets/images/logo_meltic.png', height: 100, width: 100),
+                          // LOGO CON FILTRO PARA QUITAR FONDO BLANCO + BOTÓN OCULTO DE SIMULACIÓN
+                          GestureDetector(
+                            onTap: () async {
+                              try {
+                                await UsuarioService().simulateRfid("40:91:F3:61");
+                                _showSuccess("Simulación Admin activada");
+                              } catch (e) {
+                                _showError("Fallo al simular sensor");
+                              }
+                            },
+                            child: ColorFiltered(
+                              colorFilter: const ColorFilter.matrix(<double>[
+                                1, 0, 0, 0, 0,
+                                0, 1, 0, 0, 0,
+                                0, 0, 1, 0, 0,
+                                -1, -1, -1, 1, 2.55, // Filtro para hacer transparente el blanco puro
+                              ]),
+                              child: Image.asset(
+                                'assets/images/logo_meltic_clean.png', // Probamos con la versión clean
+                                height: 100,
+                                width: 100,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) => 
+                                  Image.asset('assets/images/logo_meltic.png', height: 100, width: 100),
+                              ),
+                            ).animate(
+                              onPlay: (controller) => controller.repeat(),
+                            ).shimmer(
+                              duration: 2500.ms,
+                              color: IndustrialTheme.electricBlue.withOpacity(0.4),
                             ),
-                          ).animate(
-                            onPlay: (controller) => controller.repeat(),
-                          ).shimmer(
-                            duration: 2500.ms,
-                            color: IndustrialTheme.electricBlue.withOpacity(0.4),
                           ),
 
                           const SizedBox(height: 24),

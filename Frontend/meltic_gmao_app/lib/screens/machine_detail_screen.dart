@@ -89,18 +89,9 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
 
     // Aplicamos la calibración a todos los puntos para consistencia total
     return raw
-        .map(
-          (t) => Telemetria(
-            id: t.id,
-            maquinaId: t.maquinaId,
-            temperatura: t.temperatura,
-            humedad: t.humedad,
-            rfidTag: t.rfidTag,
-            usuarioNombre: t.usuarioNombre,
-            motorOn: t.motorOn,
-            alarma: t.alarma,
+        .map<Telemetria>(
+          (t) => t.copyWith(
             timestamp: t.timestamp.add(syncOffset),
-            sensores: t.sensores,
           ),
         )
         .toList();
@@ -140,18 +131,15 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         newSensores[sensorId] = _generateRealisticValue(sensorId);
       }
     }
-    return Telemetria(
-      id: t.id,
-      maquinaId: t.maquinaId,
+    return t.copyWith(
       temperatura: t.temperatura == 0
           ? _generateRealisticValue('temperatura')
           : t.temperatura,
       humedad: t.humedad == 0 ? _generateRealisticValue('humedad') : t.humedad,
-      rfidTag: t.rfidTag,
-      usuarioNombre: t.usuarioNombre,
-      motorOn: t.motorOn,
-      alarma: t.alarma,
-      timestamp: t.timestamp,
+      vibracion: t.vibracion == 0 ? _generateRealisticValue('vibracion') : t.vibracion,
+      presion: t.presion == 0 ? _generateRealisticValue('presion') : t.presion,
+      voltaje: t.voltaje == 0 ? _generateRealisticValue('voltaje') : t.voltaje,
+      intensidad: t.intensidad == 0 ? _generateRealisticValue('intensidad') : t.intensidad,
       sensores: newSensores,
     );
   }
@@ -169,6 +157,10 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       maquinaId: m.id,
       temperatura: _generateRealisticValue('temperatura'),
       humedad: _generateRealisticValue('humedad'),
+      vibracion: _generateRealisticValue('vibracion'),
+      presion: _generateRealisticValue('presion'),
+      voltaje: _generateRealisticValue('voltaje'),
+      intensidad: _generateRealisticValue('intensidad'),
       rfidTag: "VIRTUAL-SIM",
       usuarioNombre: "GEMELO DIGITAL",
       motorOn: true,

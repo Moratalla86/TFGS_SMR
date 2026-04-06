@@ -34,17 +34,8 @@ class TelemetriaService {
   }
 
   Telemetria _applyOffset(Telemetria t) {
-    return Telemetria(
-      id: t.id,
-      maquinaId: t.maquinaId,
-      temperatura: t.temperatura,
-      humedad: t.humedad,
-      rfidTag: t.rfidTag,
-      usuarioNombre: t.usuarioNombre,
-      motorOn: t.motorOn,
-      alarma: t.alarma,
+    return t.copyWith(
       timestamp: t.timestamp.add(_serverOffset),
-      sensores: t.sensores,
     );
   }
 }

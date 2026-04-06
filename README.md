@@ -48,32 +48,39 @@ El sistema posee una topología de red aislada en dos VLANs y aplica **Persisten
 
 ---
 
-## 🚀 Despliegue Local Rápido
+## 🚀 Despliegue con Docker (Recomendado)
 
-### Prerrequisitos
-- JDK 21+ instalado de forma local o contenedor
-- MySQL 8.x en el puerto `3306` (credenciales por defecto en `application.properties`: `root`/`root`)
-- MongoDB corriendo de forma local en puerto `27017`
-- SDK de Flutter.
+Para una instalación limpia y rápida que incluya todas las dependencias (MySQL, MongoDB, Backend y Frontend Web), usa Docker:
 
-### Instrucciones
-
-1. **Clonar e Iniciar Backend:**
-   Navegar al subdirectorio `Backend` y arrancar el servidor embebido.
-   ```bash
-   cd Backend
-   ./mvnw spring-boot:run
+1. **Levantar el ecosistema completo**:
+   ```powershell
+   docker compose up --build -d
    ```
-   *El servidor inicializará las tablas en local y se pondrá a la escucha en el puerto `:8080`.*
-   *Interfaz Swagger de debug: `http://localhost:8080/swagger-ui.html`*
+2. **Acceso a las plataformas**:
+   - **Frontend Web**: `http://localhost:8081`
+   - **Backend API (Swagger)**: `http://localhost:8080/swagger-ui.html`
+3. **Gestión de contenedores**:
+   - Ver logs: `docker logs meltic-backend -f`
+   - Parar sistema: `docker compose down`
 
-2. **Capa Cliente:**
-   En una terminal diferente, levantar el Frontend (Flutter App).
-   ```bash
-   cd Frontend/meltic_gmao_app
-   flutter pub get
-   flutter run -d chrome  # (o seleccionar el simulador móvil deseado)
-   ```
+---
+
+## 🔌 Hardware Meltic 4.0 (Controllino)
+
+El firmware incluido en `sketch_feb14a/` ha sido optimizado para entornos industriales reales:
+- **Aislamiento SPI**: Gestión estricta de pines `Chip Select` para evitar conflictos entre el módulo Ethernet y el lector RFID RC522.
+- **Protocolo Swipe & Go**: Detección asíncrona de tarjetas con limpieza automática de buffer tras 2.5s.
+- **Filtrado de Ruido DHT11**: Implementación de lógica de muestreo cada 30s con eliminación de lecturas espurias (NaN/0.0).
+
+---
+
+## 🛡️ Atajos de Escena & Seguridad (Demo-Safe)
+
+- **Login Maestro**: Tocar el logo de Meltic en la pantalla inicial activa una simulación de lectura RFID Admin.
+- **Roles Securizados**: 
+    - **Admin/Jefe**: Acceso total a "Gestión de Personal".
+    - **Técnico**: Acceso restringido al Dashboard y Órdenes de Trabajo (Navegación protegida por Guard).
+- **Simulación RFID**: Toque largo en el icono de sensor en los formularios para forzar la lectura del TAG detectado.
 
 ---
 
