@@ -84,9 +84,6 @@ El firmware incluido en `sketch_feb14a/` ha sido optimizado para entornos indust
 
 ---
 
-## 📈 Trazabilidad Académica
-
-El 100% de la arquitectura mostrada corresponde íntegramente a las demandas, metodologías e investigaciones llevadas a término para su presentación y defensa como **Trabajo Fi de Grau / Proyecto Final**. Todo el código ha sido refactorizado, filtrado y optimizado de cara al pase a grado de ingeniería de los perfiles DAM y SMR.
 
 > **Autor:** Santiago Moratalla  
 > **Fecha Presentación:** *Primavera 2026*  
