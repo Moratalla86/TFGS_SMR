@@ -341,13 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
-      floatingActionButton: AppSession.instance.isJefe
-          ? FloatingActionButton(
-              onPressed: () {},
-              backgroundColor: IndustrialTheme.neonCyan,
-              child: const Icon(Icons.add, color: IndustrialTheme.spaceCadet),
-            )
-          : null,
+      floatingActionButton: null,
     );
   }
 
