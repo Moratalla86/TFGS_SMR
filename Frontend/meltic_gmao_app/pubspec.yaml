@@ -103,6 +103,7 @@ flutter_launcher_icons:
   web:
     generate: false
   windows:
-    generate: false
+    generate: true
+  image_path_windows: "assets/images/logo_meltic.png"
 
   

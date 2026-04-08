@@ -6,6 +6,10 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: meltic_gmao
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
     ports:
       - "3307:3306"
     volumes:
@@ -15,6 +19,10 @@ services:
     image: mongo:6.0
     container_name: meltic-mongo
     restart: always
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      timeout: 10s
+      retries: 5
     ports:
       - "27017:27017"
     volumes:
@@ -27,8 +35,10 @@ services:
     container_name: meltic-backend
     restart: always
     depends_on:
-      - mysql-db
-      - mongodb
+      mysql-db:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:

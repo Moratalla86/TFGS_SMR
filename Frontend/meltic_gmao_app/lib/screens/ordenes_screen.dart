@@ -12,6 +12,7 @@ import '../theme/industrial_theme.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../utils/pdf_generator.dart';
+import 'package:image_picker/image_picker.dart';
 
 class OrdenesScreen extends StatefulWidget {
   const OrdenesScreen({super.key});
@@ -194,6 +195,8 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
         return IndustrialTheme.warningOrange;
       case 'CERRADA':
         return IndustrialTheme.operativeGreen;
+      case 'SOLICITADA':
+        return IndustrialTheme.slateGray;
       default:
         return IndustrialTheme.electricBlue;
     }
@@ -205,6 +208,8 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
         return 'EN CURSO';
       case 'CERRADA':
         return 'FINALIZADA';
+      case 'SOLICITADA':
+        return 'SOLICITADA';
       default:
         return 'PENDIENTE';
     }
@@ -309,32 +314,31 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                 ),
               ],
             ),
-      floatingActionButton: _session.isJefe
-          ? FloatingActionButton.extended(
-              onPressed: _abrirCrear,
-              backgroundColor: IndustrialTheme.neonCyan,
-              icon: Icon(
-                Icons.assignment_add,
-                color: IndustrialTheme.spaceCadet,
-              ),
-              label: Text(
-                'NUEVA OT',
-                style: TextStyle(
-                  color: IndustrialTheme.spaceCadet,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _abrirCrear,
+        backgroundColor: IndustrialTheme.neonCyan,
+        icon: Icon(
+          _session.isJefe ? Icons.assignment_add : Icons.add_alert,
+          color: IndustrialTheme.spaceCadet,
+        ),
+        label: Text(
+          _session.isJefe ? 'NUEVA OT' : 'SOLICITAR OT',
+          style: TextStyle(
+            color: IndustrialTheme.spaceCadet,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildSummaryBar() {
+    final solicitadas = _ordenes.where((o) => o.estado == 'SOLICITADA').length;
     final pendientes = _ordenes.where((o) => o.estado == 'PENDIENTE').length;
     final enProceso = _ordenes.where((o) => o.estado == 'EN_PROCESO').length;
     final cerradas = _ordenes.where((o) => o.estado == 'CERRADA').length;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
       decoration: const BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.only(
@@ -345,6 +349,14 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
+          Expanded(
+            child: _summaryItem(
+              'REQS',
+              '$solicitadas',
+              Icons.add_alert,
+              IndustrialTheme.electricBlue,
+            ),
+          ),
           Expanded(
             child: _summaryItem(
               'HOLD',
@@ -790,6 +802,8 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
   int? _tecnicoId;
   int? _maquinaId;
   bool _saving = false;
+  String? _fotoBase64;
+  final ImagePicker _picker = ImagePicker();
   List<Usuario> _tecnicos = [];
   List<Maquina> _maquinas = [];
 
@@ -849,7 +863,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: _prioridad,
+                  value: _prioridad,
                   decoration: const InputDecoration(
                     labelText: "GRAVIDAD / PRIORIDAD",
                     prefixIcon: Icon(Icons.priority_high),
@@ -861,7 +875,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: _tipo,
+                  value: _tipo,
                   decoration: const InputDecoration(
                     labelText: "TIPO DE MANTENIMIENTO",
                     prefixIcon: Icon(Icons.build_circle_outlined),
@@ -872,29 +886,30 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                   onChanged: (v) => setState(() => _tipo = v!),
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<int?>(
-                  initialValue: _tecnicoId,
-                  decoration: const InputDecoration(
-                    labelText: "ASIGNAR OPERARIO",
-                    prefixIcon: Icon(Icons.person_search),
-                  ),
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text("SIN ASIGNAR"),
+                if (AppSession.instance.isJefe)
+                  DropdownButtonFormField<int?>(
+                    value: _tecnicoId,
+                    decoration: const InputDecoration(
+                      labelText: "ASIGNAR OPERARIO",
+                      prefixIcon: Icon(Icons.person_search),
                     ),
-                    ..._tecnicos.map(
-                      (u) => DropdownMenuItem(
-                        value: u.id,
-                        child: Text(u.nombreCompleto),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text("SIN ASIGNAR"),
                       ),
-                    ),
-                  ],
-                  onChanged: (v) => setState(() => _tecnicoId = v),
-                ),
+                      ..._tecnicos.map(
+                        (u) => DropdownMenuItem(
+                          value: u.id,
+                          child: Text(u.nombreCompleto),
+                        ),
+                      ),
+                    ],
+                    onChanged: (v) => setState(() => _tecnicoId = v),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
-                  initialValue: _maquinaId,
+                  value: _maquinaId,
                   decoration: const InputDecoration(
                     labelText: "ACTIVO AFECTADO",
                     prefixIcon: Icon(Icons.precision_manufacturing),
@@ -911,6 +926,61 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                   ],
                   onChanged: (v) => setState(() => _maquinaId = v),
                 ),
+                const SizedBox(height: 20),
+                const Text(
+                  "EVIDENCIA (OPCIONAL)",
+                  style: TextStyle(
+                    color: IndustrialTheme.slateGray,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_fotoBase64 != null)
+                  Stack(
+                    children: [
+                      Container(
+                        height: 100,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: MemoryImage(base64Decode(_fotoBase64!)),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                            onPressed: () => setState(() => _fotoBase64 = null),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final XFile? image = await _picker.pickImage(
+                        source: ImageSource.camera,
+                        imageQuality: 50,
+                      );
+                      if (image != null) {
+                        final bytes = await image.readAsBytes();
+                        setState(() => _fotoBase64 = base64Encode(bytes));
+                      }
+                    },
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text("CAPTURAR TICKET"),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 45),
+                    ),
+                  ),
                 const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -940,16 +1010,19 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
+      final isJefe = AppSession.instance.isJefe;
       final ot = OrdenTrabajo(
         id: 0,
         descripcion: _desc.text.trim(),
         prioridad: _prioridad,
-        estado: 'PENDIENTE',
+        estado: isJefe ? 'PENDIENTE' : 'SOLICITADA',
         tipo: _tipo,
+        fotoBase64: _fotoBase64,
+        solicitanteId: AppSession.instance.userId,
       );
       await _otService.crearOrden(
         ot,
-        tecnicoId: _tecnicoId,
+        tecnicoId: isJefe ? _tecnicoId : null,
         maquinaId: _maquinaId,
       );
       if (mounted) Navigator.pop(context, true);

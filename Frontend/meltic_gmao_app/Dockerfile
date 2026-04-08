@@ -15,6 +15,7 @@ RUN flutter config --enable-web
 
 WORKDIR /app
 COPY . .
+RUN rm -rf build
 RUN flutter pub get
 RUN flutter build web --release --no-tree-shake-icons
 

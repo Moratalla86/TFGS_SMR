@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
-import '../models/maquina.dart'; // Importamos el modelo nuevo
+import 'app_session.dart';
+import '../models/maquina.dart';
 
 class MaquinaService {
   // Ahora devuelve una lista de objetos Maquina, no dynamic
@@ -9,7 +10,8 @@ class MaquinaService {
     final response = await http.get(
       Uri.parse(
         '${ApiConfig.baseUrl}/api/maquinas',
-      ), // Usamos el getter dinámico
+      ),
+      headers: AppSession.instance.authHeaders,
     );
 
     if (response.statusCode == 200) {
@@ -24,7 +26,7 @@ class MaquinaService {
   Future<bool> update(Maquina maquina) async {
     final response = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/api/maquinas/${maquina.id}'),
-      headers: {'Content-Type': 'application/json'},
+      headers: AppSession.instance.authHeaders,
       body: json.encode(maquina.toJson()),
     );
     return response.statusCode == 200;
@@ -33,7 +35,7 @@ class MaquinaService {
   Future<bool> crearMaquina(Maquina maquina) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/api/maquinas'),
-      headers: {'Content-Type': 'application/json'},
+      headers: AppSession.instance.authHeaders,
       body: json.encode(maquina.toJson()),
     );
     return response.statusCode == 200 || response.statusCode == 201;
@@ -42,9 +44,17 @@ class MaquinaService {
   Future<bool> updateConfig(int maquinaId, Map<String, dynamic> payload) async {
     final response = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/api/config/$maquinaId'),
-      headers: {'Content-Type': 'application/json'},
+      headers: AppSession.instance.authHeaders,
       body: json.encode(payload),
     );
     return response.statusCode == 200;
+  }
+
+  Future<bool> eliminarMaquina(int id) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/api/maquinas/$id'),
+      headers: AppSession.instance.authHeaders,
+    );
+    return response.statusCode == 200 || response.statusCode == 204;
   }
 }

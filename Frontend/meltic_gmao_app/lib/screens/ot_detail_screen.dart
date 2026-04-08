@@ -9,6 +9,8 @@ import '../services/app_session.dart';
 import '../theme/industrial_theme.dart';
 import '../utils/pdf_generator.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/usuario_service.dart';
+import '../models/usuario.dart';
 import 'package:intl/intl.dart';
 
 class OTDetailScreen extends StatefulWidget {
@@ -21,10 +23,14 @@ class OTDetailScreen extends StatefulWidget {
 
 class _OTDetailScreenState extends State<OTDetailScreen> {
   final _otService = OrdenTrabajoService();
+  final _usuarioService = UsuarioService();
   final _session = AppSession.instance;
   late OrdenTrabajo _ot;
   bool _saving = false;
   bool _changed = false;
+
+  int? _tecnicoId;
+  List<Usuario> _tecnicos = [];
 
   final _accionesCtrl = TextEditingController();
 
@@ -62,6 +68,46 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
         'Calibrado de sensor de vibración': false,
         'Inspección cuadro eléctrico general': false,
       };
+    }
+    _cargarTecnicos();
+  }
+
+  Future<void> _cargarTecnicos() async {
+    if (_session.isJefe && _ot.estado == 'SOLICITADA') {
+      try {
+        final users = await _usuarioService.fetchUsuarios();
+        setState(() {
+          _tecnicos = users
+              .where((u) => u.rol == 'TECNICO' || u.rol == 'JEFE_MANTENIMIENTO')
+              .toList();
+        });
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _autorizar() async {
+    if (_tecnicoId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un operario para asignar')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      // Usamos el servicio para actualizar la OT
+      final updated = await _otService.actualizarEstado(_ot.id, 'PENDIENTE');
+      // Luego asignamos el técnico (podríamos haber hecho un endpoint de 'autorizar' pero reutilizamos)
+      final withTech = await _otService.asignar(_ot.id, tecnicoId: _tecnicoId!);
+      setState(() {
+        _ot = withTech;
+        _changed = true;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: IndustrialTheme.criticalRed),
+      );
+    } finally {
+      setState(() => _saving = false);
     }
   }
 
@@ -239,6 +285,10 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
               const SizedBox(height: 24),
               _buildMainInfoCard(),
               const SizedBox(height: 24),
+              if (_ot.estado == 'SOLICITADA') ...[
+                if (_session.isJefe) _buildAutorizacionPanel() else _buildWaitingStatus(),
+                const SizedBox(height: 24),
+              ],
               if (_ot.estado == 'PENDIENTE' && !esCerrada) _buildStartAction(),
               if (!esCerrada || !esTecnico) ...[
                 const Text(
@@ -301,8 +351,8 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _stepItem("REGISTRO", true, Icons.assignment_turned_in),
-          _stepLine(active: _ot.estado != 'PENDIENTE'),
-          _stepItem("EN CURSO", _ot.estado != 'PENDIENTE', Icons.sync),
+          _stepLine(active: _ot.estado != 'PENDIENTE' && _ot.estado != 'SOLICITADA'),
+          _stepItem("EN CURSO", _ot.estado != 'PENDIENTE' && _ot.estado != 'SOLICITADA' && _ot.estado != 'CERRADA', Icons.sync),
           _stepLine(
             active: _ot.estado == 'CERRADA',
             esCerrada: _ot.estado == 'CERRADA',
@@ -387,6 +437,13 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
             Icons.calendar_today,
             "APERTURA",
             _formatDate(_ot.fechaCreacion!),
+          ),
+          const SizedBox(height: 10),
+          _infoRow(
+            Icons.person,
+            "SOLICITANTE",
+            _ot.solicitanteNombre ?? "SISTEMA / AUTO",
+            color: IndustrialTheme.neonCyan,
           ),
         ],
       ),
@@ -598,6 +655,98 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
           backgroundColor: IndustrialTheme.warningOrange,
           minimumSize: const Size(double.infinity, 50),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAutorizacionPanel() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: IndustrialTheme.claudCloud.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: IndustrialTheme.electricBlue.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.security, color: IndustrialTheme.electricBlue, size: 18),
+              SizedBox(width: 10),
+              Text(
+                "AUTORIZACIÓN DE MANTENIMIENTO",
+                style: TextStyle(
+                  color: IndustrialTheme.electricBlue,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "Revisa la solicitud y asigna un técnico para que la orden sea visible para el equipo de planta.",
+            style: TextStyle(color: Colors.white60, fontSize: 11),
+          ),
+          const SizedBox(height: 20),
+          DropdownButtonFormField<int?>(
+            value: _tecnicoId,
+            dropdownColor: IndustrialTheme.claudCloud,
+            decoration: const InputDecoration(
+              labelText: "SELECCIONAR OPERARIO",
+              prefixIcon: Icon(Icons.engineering),
+            ),
+            items: _tecnicos.map((u) => DropdownMenuItem(
+              value: u.id,
+              child: Text(u.nombreCompleto, style: const TextStyle(fontSize: 13)),
+            )).toList(),
+            onChanged: (v) => setState(() => _tecnicoId = v),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _saving ? null : _autorizar,
+            icon: const Icon(Icons.check_circle_outline),
+            label: const Text("AUTORIZAR Y ASIGNAR TICKET"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: IndustrialTheme.electricBlue,
+              minimumSize: const Size(double.infinity, 50),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWaitingStatus() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: IndustrialTheme.spaceCadet,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: IndustrialTheme.slateGray.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.hourglass_empty, color: IndustrialTheme.slateGray, size: 32),
+          const SizedBox(height: 12),
+          const Text(
+            "SOLICITUD ENVIADA",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "Tu petición está siendo revisada por el Jefe de Mantenimiento. Recibirás una notificación cuando sea asignada.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 11),
+          ),
+        ],
       ),
     );
   }

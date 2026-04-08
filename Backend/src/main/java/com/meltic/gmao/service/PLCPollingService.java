@@ -92,7 +92,7 @@ public class PLCPollingService {
 
     // Default to 10 seconds if not configured
     // Desactivado para evitar errores de conexión (El PLC ya envía datos por PUSH)
-    // @Scheduled(fixedRateString = "${meltic.plc.polling.rate:10000}")
+    @org.springframework.scheduling.annotation.Scheduled(fixedRateString = "${meltic.plc.polling.rate:10000}")
     public void pollPLCData() {
         String url = plcUrl != null ? plcUrl : "http://localhost:8080";
         try {

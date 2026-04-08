@@ -55,6 +55,10 @@ public class OrdenTrabajo {
     @JoinColumn(name = "tecnico_id")
     private Usuario tecnico;
 
+    @ManyToOne
+    @JoinColumn(name = "solicitante_id")
+    private Usuario solicitante;
+
     public OrdenTrabajo() {
         this.fechaCreacion = LocalDateTime.now();
     }
@@ -107,4 +111,7 @@ public class OrdenTrabajo {
 
     public String getReportePdfBase64() { return reportePdfBase64; }
     public void setReportePdfBase64(String reportePdfBase64) { this.reportePdfBase64 = reportePdfBase64; }
+
+    public Usuario getSolicitante() { return solicitante; }
+    public void setSolicitante(Usuario solicitante) { this.solicitante = solicitante; }
 }

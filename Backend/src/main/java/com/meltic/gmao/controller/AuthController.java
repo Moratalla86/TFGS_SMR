@@ -1,6 +1,7 @@
 package com.meltic.gmao.controller;
 
 import com.meltic.gmao.repository.sql.UsuarioRepository;
+import com.meltic.gmao.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,9 @@ public class AuthController {
     @Autowired
     private UsuarioRepository usuarioRepo;
 
+    @Autowired
+    private TokenService tokenService;
+
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Operation(summary = "Login con Credenciales", description = "Permite el acceso al sistema mediante email y contraseña (bcrypt)")
@@ -42,7 +46,8 @@ public class AuthController {
                     boolean matches = encoder.matches(password, user.getPassword());
                     if (matches) {
                         logger.info("Login exitoso para: {}", email);
-                        return ResponseEntity.ok(user);
+                        String token = tokenService.generateToken(user);
+                        return ResponseEntity.ok(Map.of("user", user, "token", token));
                     } else {
                         logger.warn("Contraseña incorrecta para: {}", email);
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -63,7 +68,6 @@ public class AuthController {
         final String rfidTag = (rawTag != null) ? rawTag.trim().toUpperCase() : "";
 
         // --- Validación de seguridad server-side ---
-        // Rechazar valores vacíos, placeholders del firmware y tags sin formato hex (xx:xx:xx...)
         final java.util.Set<String> INVALID_TAGS = java.util.Set.of(
             "", "N/A", "NULL", "NINGUNA TARJETA DETECTADA", "UNDEFINED"
         );
@@ -77,7 +81,8 @@ public class AuthController {
         return usuarioRepo.findByRfidTagIgnoreCase(rfidTag)
                 .map(user -> {
                     logger.info("Login RFID exitoso para usuario: {}", user.getEmail());
-                    return ResponseEntity.ok(user);
+                    String token = tokenService.generateToken(user);
+                    return ResponseEntity.ok(Map.of("user", user, "token", token));
                 })
                 .orElseGet(() -> {
                     logger.warn("Tarjeta RFID no vinculada: {}", rfidTag);

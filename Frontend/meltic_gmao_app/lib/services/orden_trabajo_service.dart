@@ -1,13 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_config.dart';
+import 'app_session.dart';
 import '../models/orden_trabajo.dart';
 
 class OrdenTrabajoService {
   final String _base = '${ApiConfig.baseUrl}/api/ordenes';
 
   Future<List<OrdenTrabajo>> fetchOrdenes() async {
-    final res = await http.get(Uri.parse(_base));
+    final res = await http.get(
+      Uri.parse(_base),
+      headers: AppSession.instance.authHeaders,
+    );
     if (res.statusCode == 200) {
       final List<dynamic> body = json.decode(res.body);
       return body.map((e) => OrdenTrabajo.fromJson(e)).toList();
@@ -16,7 +20,10 @@ class OrdenTrabajoService {
   }
 
   Future<List<OrdenTrabajo>> fetchOrdenesPorTecnico(int tecnicoId) async {
-    final res = await http.get(Uri.parse('$_base/tecnico/$tecnicoId'));
+    final res = await http.get(
+      Uri.parse('$_base/tecnico/$tecnicoId'),
+      headers: AppSession.instance.authHeaders,
+    );
     if (res.statusCode == 200) {
       final List<dynamic> body = json.decode(res.body);
       return body.map((e) => OrdenTrabajo.fromJson(e)).toList();
@@ -29,17 +36,19 @@ class OrdenTrabajoService {
     int? tecnicoId,
     int? maquinaId,
   }) async {
-    // Enviamos como JSON plano con IDs para maquina y tecnico
     final body = {
       'descripcion': ot.descripcion,
       'prioridad': ot.prioridad,
-      'estado': 'PENDIENTE',
+      'estado': ot.estado,
+      'tipo': ot.tipo,
+      if (ot.fotoBase64 != null) 'fotoBase64': ot.fotoBase64,
+      if (ot.solicitanteId != null) 'solicitante': {'id': ot.solicitanteId},
       if (tecnicoId != null) 'tecnico': {'id': tecnicoId},
       if (maquinaId != null) 'maquina': {'id': maquinaId},
     };
     final res = await http.post(
       Uri.parse(_base),
-      headers: {'Content-Type': 'application/json'},
+      headers: AppSession.instance.authHeaders,
       body: json.encode(body),
     );
     if (res.statusCode == 200 || res.statusCode == 201) {
@@ -52,7 +61,10 @@ class OrdenTrabajoService {
     String url = '$_base/$id/asignar?';
     if (tecnicoId != null) url += 'tecnicoId=$tecnicoId&';
     if (maquinaId != null) url += 'maquinaId=$maquinaId';
-    final res = await http.patch(Uri.parse(url));
+    final res = await http.patch(
+      Uri.parse(url),
+      headers: AppSession.instance.authHeaders,
+    );
     if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
     }
@@ -60,7 +72,10 @@ class OrdenTrabajoService {
   }
 
   Future<OrdenTrabajo> actualizarEstado(int id, String estado) async {
-    final res = await http.patch(Uri.parse('$_base/$id/estado?estado=$estado'));
+    final res = await http.patch(
+      Uri.parse('$_base/$id/estado?estado=$estado'),
+      headers: AppSession.instance.authHeaders,
+    );
     if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
     }
@@ -68,7 +83,10 @@ class OrdenTrabajoService {
   }
 
   Future<OrdenTrabajo> iniciarOT(int id) async {
-    final res = await http.patch(Uri.parse('$_base/$id/iniciar'));
+    final res = await http.patch(
+      Uri.parse('$_base/$id/iniciar'),
+      headers: AppSession.instance.authHeaders,
+    );
     if (res.statusCode == 200) {
       return OrdenTrabajo.fromJson(json.decode(res.body));
     }
@@ -78,7 +96,7 @@ class OrdenTrabajoService {
   Future<OrdenTrabajo> actualizarAcciones(int id, String trabajos) async {
     final res = await http.patch(
       Uri.parse('$_base/$id/acciones'),
-      headers: {'Content-Type': 'application/json'},
+      headers: AppSession.instance.authHeaders,
       body: json.encode({'trabajosRealizados': trabajos}),
     );
     if (res.statusCode == 200) {
@@ -105,7 +123,7 @@ class OrdenTrabajoService {
     if (reportePdfBase64 != null) body['reportePdfBase64'] = reportePdfBase64;
     final res = await http.patch(
       Uri.parse('$_base/$id/cerrar'),
-      headers: {'Content-Type': 'application/json'},
+      headers: AppSession.instance.authHeaders,
       body: json.encode(body),
     );
     if (res.statusCode == 200) {
@@ -115,7 +133,10 @@ class OrdenTrabajoService {
   }
 
   Future<void> eliminarOT(int id) async {
-    final res = await http.delete(Uri.parse('$_base/$id'));
+    final res = await http.delete(
+      Uri.parse('$_base/$id'),
+      headers: AppSession.instance.authHeaders,
+    );
     if (res.statusCode != 204) {
       throw Exception('Error al eliminar OT: ${res.statusCode}');
     }

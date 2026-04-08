@@ -6,7 +6,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/machine_detail_screen.dart';
 import 'screens/usuarios_screen.dart';
 import 'screens/ordenes_screen.dart';
-import 'screens/crear_maquina_screen.dart';
+import 'screens/activos_plc_screen.dart';
 
 import 'theme/industrial_theme.dart';
 
@@ -40,7 +40,7 @@ class SmrGmaoApp extends StatelessWidget {
         '/machine-detail': (context) => const MachineDetailScreen(),
         '/usuarios': (context) => const UsuariosScreen(),
         '/ordenes': (context) => const OrdenesScreen(),
-        '/crear-maquina': (context) => const CrearMaquinaScreen(),
+        '/activos-plc': (context) => const ActivosPLCScreen(),
       },
     );
   }

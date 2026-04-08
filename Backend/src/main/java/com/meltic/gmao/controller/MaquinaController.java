@@ -46,6 +46,11 @@ public class MaquinaController {
         if (id == null || maquinaDetalles == null) return ResponseEntity.badRequest().build();
         return maquinaRepository.findById(id)
                 .map(maquina -> {
+                    // Actualizar campos básicos
+                    maquina.setNombre(maquinaDetalles.getNombre());
+                    maquina.setModelo(maquinaDetalles.getModelo());
+                    maquina.setUbicacion(maquinaDetalles.getUbicacion());
+                    maquina.setDescripcion(maquinaDetalles.getDescripcion());
                     maquina.setEstado(maquinaDetalles.getEstado());
                     
                     // Actualizar configuraciones de métricas (Deep Update)
@@ -62,5 +67,14 @@ public class MaquinaController {
                     return ResponseEntity.ok(actualizada);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        if (id == null) return ResponseEntity.badRequest().build();
+        if (!maquinaRepository.existsById(id)) return ResponseEntity.notFound().build();
+        
+        maquinaRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

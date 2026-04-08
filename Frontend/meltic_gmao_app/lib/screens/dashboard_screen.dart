@@ -56,7 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         leadingWidth: 72,
         title: const Text(
-          'PANEL PRINCIPAL',
+          'PANEL DE CONTROL',
           style: TextStyle(letterSpacing: 2, fontSize: 14),
         ),
         centerTitle: false,
@@ -110,7 +110,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: IndustrialTheme.neonCyan,
                     size: 20,
                   ),
-                  onPressed: () => setState(() {}),
+                  onPressed: () {
+                    // Refresca el estado completo y los servicios
+                    setState(() {});
+                  },
                 ),
               ],
             ),
@@ -139,7 +142,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Icon(
                       Icons.wifi_off_rounded,
                       size: 64,
-                      color: IndustrialTheme.slateGray.withOpacity(0.5),
+                      color: IndustrialTheme.slateGray.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -445,23 +448,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _drawerItem(
             Icons.dashboard_outlined,
             "CONTROL PANEL",
-            () => Navigator.pop(context),
+            () {
+              Navigator.of(context).pop();
+            },
             active: true,
           ),
           if (session.isJefe)
             _drawerItem(Icons.people_outline, "PERSONAL", () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/usuarios');
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed('/usuarios');
             }),
           _drawerItem(Icons.assignment_outlined, "ORDENES DE TRABAJO", () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/ordenes');
+            Navigator.of(context).pop();
+            Navigator.of(context).pushNamed('/ordenes');
           }),
           _drawerItem(
             Icons.precision_manufacturing_outlined,
             "ACTIVOS PLC",
             () {
-              Navigator.pop(context);
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed('/activos-plc');
             },
           ),
           const Spacer(),
@@ -471,7 +477,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             "DESCONECTAR",
             () {
               AppSession.instance.clear();
-              Navigator.pushReplacementNamed(context, '/');
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
             },
             color: IndustrialTheme.criticalRed,
           ),

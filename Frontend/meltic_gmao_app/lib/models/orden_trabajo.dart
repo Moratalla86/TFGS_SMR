@@ -18,6 +18,8 @@ class OrdenTrabajo {
   final String? maquinaModelo;
   final int? tecnicoId;
   final String? tecnicoNombre;
+  final int? solicitanteId;
+  final String? solicitanteNombre;
 
   OrdenTrabajo({
     required this.id,
@@ -39,6 +41,8 @@ class OrdenTrabajo {
     this.maquinaModelo,
     this.tecnicoId,
     this.tecnicoNombre,
+    this.solicitanteId,
+    this.solicitanteNombre,
   });
 
   factory OrdenTrabajo.fromJson(Map<String, dynamic> json) {
@@ -65,6 +69,11 @@ class OrdenTrabajo {
           ? ('${json['tecnico']['nombre'] ?? ''} ${json['tecnico']['apellido1'] ?? ''}')
                 .trim()
           : null,
+      solicitanteId: json['solicitante'] != null ? json['solicitante']['id'] : null,
+      solicitanteNombre: json['solicitante'] != null
+          ? ('${json['solicitante']['nombre'] ?? ''} ${json['solicitante']['apellido1'] ?? ''}')
+                .trim()
+          : null,
     );
   }
 
@@ -79,6 +88,7 @@ class OrdenTrabajo {
       if (reportePdfBase64 != null) 'reportePdfBase64': reportePdfBase64,
       if (maquinaId != null) 'maquina': {'id': maquinaId},
       if (tecnicoId != null) 'tecnico': {'id': tecnicoId},
+      if (solicitanteId != null) 'solicitante': {'id': solicitanteId},
     };
   }
 }

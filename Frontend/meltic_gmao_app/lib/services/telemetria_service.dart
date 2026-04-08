@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'api_config.dart';
+import 'app_session.dart';
 import '../models/telemetria.dart';
 
 class TelemetriaService {
@@ -10,6 +11,7 @@ class TelemetriaService {
   Future<List<Telemetria>> fetchPorMaquina(int maquinaId) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/api/plc/maquina/$maquinaId'),
+      headers: AppSession.instance.authHeaders,
     );
 
     if (response.statusCode == 200) {
