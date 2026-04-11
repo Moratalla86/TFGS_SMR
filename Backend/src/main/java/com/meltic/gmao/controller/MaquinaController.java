@@ -52,6 +52,8 @@ public class MaquinaController {
                     maquina.setUbicacion(maquinaDetalles.getUbicacion());
                     maquina.setDescripcion(maquinaDetalles.getDescripcion());
                     maquina.setEstado(maquinaDetalles.getEstado());
+                    maquina.setPlcUrl(maquinaDetalles.getPlcUrl());
+                    maquina.setSimulado(maquinaDetalles.isSimulado());
                     
                     // Actualizar configuraciones de métricas (Deep Update)
                     if (maquina.getConfigs() != null) {

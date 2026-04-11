@@ -3,15 +3,20 @@
 #include <MFRC522.h>
 #include <DHT.h>
 
-// --- CONFIGURACIÓN DE RED (Manteniendo tus IPs actuales que conectan bien) ---
+/**
+ * 🛰️ MELTIC GMAO INDUSTRIAL - FIRMWARE V5.0 (MODO SERVIDOR)
+ * Optimizada para polling dinámico desde GMAO Backend (Spring Boot).
+ * 
+ * IP Controllino: 192.168.1.11
+ * Escucha en puerto: 80
+ */
+
+// --- CONFIGURACIÓN DE RED ---
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-IPAddress ip(192, 168, 1, 11);
-IPAddress server(192, 168, 1, 10); 
-int port = 8080;
+IPAddress ip(192, 168, 1, 11); // IP fija del PLC
+EthernetServer server(80);     // Ahora actuamos como servidor
 
-EthernetClient client;
-
-// --- PINES ---
+// --- PINES CONTROLLINO ---
 #define ETH_CS    10
 #define RFID_CS   53
 #define RST_PIN   5
@@ -21,40 +26,41 @@ EthernetClient client;
 MFRC522 rfid(RFID_CS, RST_PIN);
 DHT dht(DHTPIN, DHTTYPE);
 
-String ultimoID = "N/A";
-unsigned long ultimoEnvio = 0;
-const unsigned long intervalo = 30000; // Volvemos a los 30s originales
+// --- ESTADO GLOBAL ---
+String rfidActual = "N/A";
+float tActual = 0.0, hActual = 0.0;
+unsigned long tiempoUltimaLecturaRFID = 0;
+unsigned long ultimoSensorUpdate = 0;
+const unsigned long delayLimpiezaRFID = 3000; // 3s para considerar tarjeta retirada
 
 void setup() {
   Serial.begin(9600);
   
-  // 1. Aislamiento CRÍTICO: Desactivar Ethernet antes de nada
-  pinMode(ETH_CS, OUTPUT);  digitalWrite(ETH_CS, HIGH); // Pin 10
-  pinMode(RFID_CS, OUTPUT); digitalWrite(RFID_CS, HIGH); // Pin 53
-  pinMode(4, OUTPUT);       digitalWrite(4, HIGH);       // SD Card
-  pinMode(RST_PIN, OUTPUT); digitalWrite(RST_PIN, HIGH); // Reset RFID
+  // 1. Aislamiento SPI (Crítico en Controllino/Mega)
+  pinMode(ETH_CS, OUTPUT);  digitalWrite(ETH_CS, HIGH); 
+  pinMode(RFID_CS, OUTPUT); digitalWrite(RFID_CS, HIGH); 
+  pinMode(4, OUTPUT);       digitalWrite(4, HIGH); // SD Pin
+  pinMode(RST_PIN, OUTPUT); digitalWrite(RST_PIN, HIGH);
 
   delay(1000);
   SPI.begin();
 
-  // 2. Inicializar Sensores con la red apagada
+  // 2. Inicializar Sensores 
   rfid.PCD_Init();
   dht.begin();
-  Serial.println(F("--- Sensores RFID/DHT Listos ---"));
-
+  
   // 3. Inicializar Red
   Ethernet.begin(mac, ip);
-  Serial.println(F("🚀 SISTEMA MELTIC 4.0 OPERATIVO"));
+  server.begin();
+  
+  Serial.println(F("--- MELTIC PLC SERVER OPERATIVO ---"));
+  Serial.print(F("📍 IP PLC: ")); Serial.println(Ethernet.localIP());
+  Serial.println(F("🕒 Esperando peticiones de GMAO..."));
 }
 
-unsigned long tiempoUltimaLectura = 0;
-unsigned long ultimoSensorUpdate = 0;
-const unsigned long delayLimpieza = 2500; 
-float tActual = 0.0, hActual = 0.0;
-
 void loop() {
-  // 1. Actualizar Sensores cada 5 segundos (DHT11 es lento)
-  if (millis() - ultimoSensorUpdate > 5000 || ultimoSensorUpdate == 0) {
+  // A. Actualizar Sensores DHT cada 5 segundos
+  if (millis() - ultimoSensorUpdate > 5000) {
     float nt = dht.readTemperature();
     float nh = dht.readHumidity();
     if (!isnan(nt) && !isnan(nh) && nt > 0.5) {
@@ -64,12 +70,10 @@ void loop() {
     ultimoSensorUpdate = millis();
   }
 
-  // Aislamiento SPI para el lector RFID
-  digitalWrite(ETH_CS, HIGH); 
-  digitalWrite(4, HIGH);
-  digitalWrite(RFID_CS, LOW);
-
-  // 2. Lógica RFID: ¿Hay tarjeta nueva?
+  // B. Escanear RFID (Aislamiento SPI)
+  digitalWrite(ETH_CS, HIGH); // Desactivar Ethernet temporalmente
+  digitalWrite(RFID_CS, LOW); // Activar RFID
+  
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
     String currentID = "";
     for (byte i = 0; i < rfid.uid.size; i++) {
@@ -78,90 +82,52 @@ void loop() {
       if (i < rfid.uid.size - 1) currentID += ":";
     }
     currentID.toUpperCase();
-
-    if (currentID != ultimoID) {
-      ultimoID = currentID;
-      Serial.print(F("💳 TARJETA: "));
-      Serial.println(ultimoID);
-      enviarAlBackend(ultimoID, tActual, hActual);
-    }
+    rfidActual = currentID;
+    tiempoUltimaLecturaRFID = millis();
     
-    tiempoUltimaLectura = millis(); 
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();
   } else {
-    // Si no hay tarjeta, ¿ha pasado el tiempo de gracia?
-    if (ultimoID != "N/A" && (millis() - tiempoUltimaLectura > delayLimpieza)) {
-      Serial.println(F("🔄 Lector disponible"));
-      ultimoID = "N/A";
-      enviarAlBackend("N/A", tActual, hActual);
+    // Si ha pasado el tiempo de gracia, limpiar el tag
+    if (rfidActual != "N/A" && (millis() - tiempoUltimaLecturaRFID > delayLimpiezaRFID)) {
+      rfidActual = "N/A";
     }
   }
-
-  // 3. ENVÍO PERIÓDICO (Telemetría de seguridad cada 30s)
-  if (millis() - ultimoEnvio > intervalo) {
-    enviarAlBackend(ultimoID, tActual, hActual);
-    ultimoEnvio = millis();
-  }
-
   digitalWrite(RFID_CS, HIGH);
-  delay(150); 
-}
 
-void enviarAlBackend(String tag, float t, float h) {
-  // Aislamiento SPI para Red
-  digitalWrite(RFID_CS, HIGH);
-  delay(100); // Margen de seguridad para el bus SPI
-  digitalWrite(ETH_CS, LOW);
-  
-  bool conectado = false;
-  int intentos = 0;
-
-  // Reintento 3 veces antes de rendirse
-  while (!conectado && intentos < 3) {
-    if (client.connect(server, port)) {
-      conectado = true;
-    } else {
-      intentos++;
-      Serial.print(F("⚠️ Reintentando conexión... ("));
-      Serial.print(intentos);
-      Serial.println(F("/3)"));
-      delay(500);
+  // C. Gestionar Petición Web (PULL de GMAO)
+  EthernetClient client = server.available();
+  if (client) {
+    Serial.println(F("📡 Consulta desde GMAO detectada"));
+    boolean currentLineIsBlank = true;
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        if (c == '\n' && currentLineIsBlank) {
+          // Envío de cabeceras HTTP
+          client.println(F("HTTP/1.1 200 OK"));
+          client.println(F("Content-Type: application/json"));
+          client.println(F("Access-Control-Allow-Origin: *")); // Habilitar CORS
+          client.println(F("Connection: close"));
+          client.println();
+          
+          // Envío de JSON
+          client.print(F("{"));
+          client.print(F("\"maquinaId\": 1,"));
+          client.print(F("\"temperatura\": ")); client.print(tActual); client.print(F(","));
+          client.print(F("\"humedad\": ")); client.print(hActual); client.print(F(","));
+          client.print(F("\"rfid\": \"")); client.print(rfidActual); client.print(F("\","));
+          client.print(F("\"motorOn\": true"));
+          client.println(F("}"));
+          break;
+        }
+        if (c == '\n') currentLineIsBlank = true;
+        else if (c != '\r') currentLineIsBlank = false;
+      }
     }
-  }
-
-  if (conectado) {
-    Serial.print(F("🛰️ Enviando... (TAG: "));
-    Serial.print(tag);
-    Serial.println(F(")"));
-
-    String json = "{";
-    json += "\"maquinaId\": 1,";
-    json += "\"temperatura\": " + String(t) + ",";
-    json += "\"humedad\": " + String(h) + ",";
-    json += "\"rfidTag\": \"" + tag + "\",";
-    json += "\"motorOn\": true,";
-    json += "\"alarma\": null";
-    json += "}";
-
-    client.println("POST /api/plc/data HTTP/1.1");
-    client.print("Host: "); client.println(server);
-    client.println("Content-Type: application/json");
-    client.print("Content-Length: "); client.println(json.length());
-    client.println("Connection: close");
-    client.println();
-    client.println(json);
-    
-    Serial.print(F("✅ Envío OK (Temp: "));
-    Serial.print(t);
-    Serial.print(F(" C)"));
-    if (tag != "N/A") Serial.println(F(" - LOGIN OK")); else Serial.println();
-    
-  } else {
-    Serial.println(F("❌ ERROR FINAL: No se pudo conectar tras 3 intentos."));
+    client.stop();
+    Serial.println(F("✅ Telemetría entregada"));
   }
   
-  client.stop();
-  delay(50); // Pausa post-conexión
-  digitalWrite(ETH_CS, HIGH);
+  delay(10);
 }

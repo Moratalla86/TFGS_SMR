@@ -233,7 +233,7 @@ class _ActivosPLCScreenState extends State<ActivosPLCScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: m.estado == 'OK' ? IndustrialTheme.operativeGreen.withOpacity(0.2) : IndustrialTheme.criticalRed.withOpacity(0.2),
+                    color: m.estado == 'OK' ? IndustrialTheme.operativeGreen.withValues(alpha: 0.2) : IndustrialTheme.criticalRed.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: m.estado == 'OK' ? IndustrialTheme.operativeGreen : IndustrialTheme.criticalRed),
                   ),
@@ -330,6 +330,8 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
   late TextEditingController _modeloController;
   late TextEditingController _ubicacionController;
   late TextEditingController _descripcionController;
+  late TextEditingController _plcUrlController;
+  bool _simulado = false;
   final Map<String, MetricConfig> _selectedMetrics = {};
   bool _loading = false;
 
@@ -340,6 +342,8 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
     _modeloController = TextEditingController(text: widget.maquina?.modelo);
     _ubicacionController = TextEditingController(text: widget.maquina?.ubicacion);
     _descripcionController = TextEditingController(text: widget.maquina?.descripcion);
+    _plcUrlController = TextEditingController(text: widget.maquina?.plcUrl);
+    _simulado = widget.maquina?.simulado ?? false;
     
     if (widget.maquina != null) {
       for (var config in widget.maquina!.configs) {
@@ -416,40 +420,51 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildSectionTitle("INFORMACIÓN BÁSICA"),
                       _buildTextField(_nombreController, "NOMBRE (EJ: TORNO X1)", Icons.precision_manufacturing),
                       _buildTextField(_modeloController, "MODELO / SERIE", Icons.badge),
                       _buildTextField(_ubicacionController, "UBICACIÓN", Icons.location_on),
                       _buildTextField(_descripcionController, "DESCRIPCIÓN", Icons.description, maxLines: 2),
+                      
+                      const SizedBox(height: 16),
+                      _buildSectionTitle("NODO DE COMUNICACIÓN (IOT)"),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black12,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: IndustrialTheme.neonCyan.withValues(alpha: 0.1)),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              _plcUrlController, 
+                              "DIRECCIÓN IP DEL PLC", 
+                              Icons.lan, 
+                              required: false,
+                              hint: "Ejem: 192.168.1.11"
+                            ),
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text("MODO SIMULACIÓN (TFG)", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                              subtitle: const Text("Ideal para demostraciones sin hardware físico", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 11)),
+                              value: _simulado,
+                              activeThumbColor: IndustrialTheme.neonCyan,
+                              onChanged: (v) => setState(() => _simulado = v),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
                       const SizedBox(height: 20),
-                      const Text("SENSORES Y LÍMITES", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: IndustrialTheme.neonCyan)),
-                      const SizedBox(height: 10),
+                      _buildSectionTitle("CONFIGURACIÓN DE SENSORES"),
                       ...MetricDefinition.all.map((def) => _buildMetricTile(def)),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('CANCELAR', style: TextStyle(color: IndustrialTheme.slateGray)),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: IndustrialTheme.neonCyan,
-                      foregroundColor: IndustrialTheme.spaceCadet,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    ),
-                    onPressed: _loading ? null : _save,
-                    child: _loading
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: IndustrialTheme.spaceCadet))
-                        : Text(widget.maquina == null ? 'REGISTRAR ACTIVO' : 'GUARDAR CAMBIOS', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
+              _buildActions(),
             ],
           ).animate().fadeIn(duration: 300.ms),
         ),
@@ -457,7 +472,14 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {int maxLines = 1}) {
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: IndustrialTheme.neonCyan, letterSpacing: 1.2)),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {int maxLines = 1, bool required = true, String? hint}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
@@ -467,13 +489,42 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: IndustrialTheme.neonCyan, size: 18),
           labelText: label,
+          hintText: hint,
+          hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
           labelStyle: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 11),
           fillColor: IndustrialTheme.claudCloud,
           filled: true,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+          errorStyle: const TextStyle(color: IndustrialTheme.criticalRed, fontSize: 10),
         ),
-        validator: (v) => v == null || v.isEmpty ? 'Obligatorio' : null,
+        validator: required ? (v) => v == null || v.isEmpty ? 'Este campo es obligatorio' : null : null,
       ),
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('CANCELAR', style: TextStyle(color: IndustrialTheme.slateGray)),
+        ),
+        const SizedBox(width: 16),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: IndustrialTheme.neonCyan,
+            foregroundColor: IndustrialTheme.spaceCadet,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            elevation: 8,
+            shadowColor: IndustrialTheme.neonCyan.withValues(alpha: 0.3),
+          ),
+          onPressed: _loading ? null : _save,
+          child: _loading
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: IndustrialTheme.spaceCadet))
+              : Text(widget.maquina == null ? 'REGISTRAR ACTIVO' : 'GUARDAR CAMBIOS', style: const TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
     );
   }
 
@@ -486,7 +537,7 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isSelected ? def.color.withOpacity(0.3) : Colors.transparent),
+        border: Border.all(color: isSelected ? def.color.withValues(alpha: 0.3) : Colors.transparent),
       ),
       child: Column(
         children: [
@@ -568,23 +619,33 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    // 1. Validar formulario
+    if (!_formKey.currentState!.validate()) {
+      _showToast("Por favor, rellena los campos obligatorios", isError: true);
+      return;
+    }
+
+    // 2. Validar métricas
     if (_selectedMetrics.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione al menos una métrica")));
+      _showToast("Seleccione al menos un sensor para el activo", isError: true);
       return;
     }
 
     setState(() => _loading = true);
     try {
       final data = Maquina(
-        id: widget.maquina?.id ?? 0,
-        nombre: _nombreController.text,
-        modelo: _modeloController.text,
-        ubicacion: _ubicacionController.text,
-        descripcion: _descripcionController.text,
+        id: widget.maquina?.id, // Puede ser null para nuevas máquinas
+        nombre: _nombreController.text.trim(),
+        modelo: _modeloController.text.trim(),
+        ubicacion: _ubicacionController.text.trim(),
+        descripcion: _descripcionController.text.trim(),
         estado: widget.maquina?.estado ?? 'OK',
+        plcUrl: _plcUrlController.text.trim(),
+        simulado: _simulado,
         configs: _selectedMetrics.values.toList(),
       );
+
+      debugPrint("🚀 Intentando guardar activo: ${data.toJson()}");
 
       bool success;
       if (widget.maquina == null) {
@@ -594,15 +655,29 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
       }
 
       if (success) {
+        _showToast(widget.maquina == null ? "Activo creado correctamente" : "Cambios guardados");
         widget.onSaved();
         if (mounted) Navigator.pop(context);
+      } else {
+        _showToast("El servidor rechazó la operación", isError: true);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: IndustrialTheme.criticalRed));
-      }
+      debugPrint("❌ Error crítico al guardar: $e");
+      _showToast("Error de conexión: $e", isError: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _showToast(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        backgroundColor: isError ? IndustrialTheme.criticalRed : IndustrialTheme.operativeGreen,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }

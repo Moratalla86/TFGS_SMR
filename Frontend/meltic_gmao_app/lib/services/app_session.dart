@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// Singleton que guarda la sesión del usuario logueado en memoria.
 /// Se rellena al hacer login y se borra al cerrar sesión.

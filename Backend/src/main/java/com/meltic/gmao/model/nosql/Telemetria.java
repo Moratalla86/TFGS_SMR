@@ -3,7 +3,7 @@ package com.meltic.gmao.model.nosql;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -27,10 +27,12 @@ public class Telemetria {
     private String usuarioNombre;
     private Boolean motorOn;
     private String alarma;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
+    private Long timestampMillis;
 
     public Telemetria() {
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = Instant.now();
+        this.timestampMillis = this.timestamp.toEpochMilli();
     }
 
     public String getId() { return id; }
@@ -69,6 +71,12 @@ public class Telemetria {
     public String getAlarma() { return alarma; }
     public void setAlarma(String alarma) { this.alarma = alarma; }
 
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public Instant getTimestamp() { return timestamp; }
+    public void setTimestamp(Instant timestamp) { 
+        this.timestamp = timestamp; 
+        if (timestamp != null) this.timestampMillis = timestamp.toEpochMilli();
+    }
+
+    public Long getTimestampMillis() { return timestampMillis; }
+    public void setTimestampMillis(Long timestampMillis) { this.timestampMillis = timestampMillis; }
 }

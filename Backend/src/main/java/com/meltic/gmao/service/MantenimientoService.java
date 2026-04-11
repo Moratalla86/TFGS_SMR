@@ -34,6 +34,7 @@ public class MantenimientoService {
     }
 
     public Optional<OrdenTrabajo> obtenerPorId(Long id) {
+        if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id);
     }
 
@@ -89,6 +90,7 @@ public class MantenimientoService {
 
     // ── Asignación (Jefe) ──────────────────────────────────────────────────────
     public Optional<OrdenTrabajo> asignarTecnicoYMaquina(Long id, Long tecnicoId, Long maquinaId) {
+        if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             if (tecnicoId != null) {
                 Optional<Usuario> tecnico = usuarioRepository.findById(tecnicoId);
@@ -98,39 +100,43 @@ public class MantenimientoService {
                 Optional<Maquina> maquina = maquinaRepository.findById(maquinaId);
                 maquina.ifPresent(ot::setMaquina);
             }
-            return ordenTrabajoRepository.save(ot);
+            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
         });
     }
 
     // ── Cambio de estado genérico (Jefe) ──────────────────────────────────────
     public Optional<OrdenTrabajo> actualizarEstado(Long id, String nuevoEstado) {
+        if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setEstado(nuevoEstado);
-            return ordenTrabajoRepository.save(ot);
+            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
         });
     }
 
     // ── Iniciar OT (Técnico) → EN_PROCESO + fechaInicio ───────────────────────
     public Optional<OrdenTrabajo> iniciarOT(Long id) {
+        if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setEstado("EN_PROCESO");
             if (ot.getFechaInicio() == null) {
                 ot.setFechaInicio(LocalDateTime.now());
             }
-            return ordenTrabajoRepository.save(ot);
+            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
         });
     }
 
     // ── Actualizar acciones/trabajos realizados (Técnico) ─────────────────────
     public Optional<OrdenTrabajo> actualizarTrabajosRealizados(Long id, String trabajos) {
+        if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setTrabajosRealizados(trabajos);
-            return ordenTrabajoRepository.save(ot);
+            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
         });
     }
 
     // ── Cerrar OT (Técnico) → CERRADA + fechaFin + firmas ─────────────────────
     public Optional<OrdenTrabajo> cerrarOT(Long id, Map<String, String> payload) {
+        if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setEstado("CERRADA");
             ot.setFechaFin(LocalDateTime.now());
@@ -148,23 +154,25 @@ public class MantenimientoService {
             if (payload.containsKey("reportePdfBase64")) {
                 ot.setReportePdfBase64(payload.get("reportePdfBase64"));
             }
-            return ordenTrabajoRepository.save(ot);
+            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
         });
     }
 
     // ── Guardar firmas ─────────────────────────────────────────────────────────
     public Optional<OrdenTrabajo> guardarFirmas(Long id, String firmaTecnico, String firmaCliente) {
+        if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             if (firmaTecnico != null)
                 ot.setFirmaTecnico(firmaTecnico);
             if (firmaCliente != null)
                 ot.setFirmaCliente(firmaCliente);
-            return ordenTrabajoRepository.save(ot);
+            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
         });
     }
 
     // ── Generación de PDF "Al Vuelo" ──────────────────────────────────────────
     public byte[] obtenerReportePdf(Long id) {
+        if (id == null) throw new RuntimeException("ID de orden nulo");
         return ordenTrabajoRepository.findById(id).map(ot -> {
             if (ot.getReportePdfBase64() == null || ot.getReportePdfBase64().isEmpty()) {
                 // En una implementación real, aquí usaríamos iText o Thymeleaf-to-PDF
@@ -183,6 +191,8 @@ public class MantenimientoService {
 
     // ── Eliminar (Jefe) ────────────────────────────────────────────────────────
     public void eliminarOrden(Long id) {
-        ordenTrabajoRepository.deleteById(id);
+        if (id != null) {
+            ordenTrabajoRepository.deleteById(id);
+        }
     }
 }

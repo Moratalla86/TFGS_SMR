@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 class Telemetria {
   final String id;
   final int maquinaId;
@@ -89,9 +90,32 @@ class Telemetria {
       usuarioNombre: json['usuarioNombre'],
       motorOn: json['motorOn'] ?? false,
       alarma: json['alarma'],
-      timestamp: DateTime.parse(json['timestamp']).toLocal(),
+      timestamp: _parseDateTime(json),
       sensores: extra,
     );
+  }
+
+  static DateTime _parseDateTime(Map<String, dynamic> json) {
+    try {
+      if (json['timestampMillis'] != null) {
+        // Puede venir como int o double según Jackson/JSON
+        final int millis = (json['timestampMillis'] is num) 
+            ? (json['timestampMillis'] as num).toInt() 
+            : int.parse(json['timestampMillis'].toString());
+        
+        // Si el valor es absurdo (ej: 0 o anterior a 2024), intentamos el fallback
+        if (millis > 1704067200000) { // 1 Jan 2024
+          return DateTime.fromMillisecondsSinceEpoch(millis).toLocal();
+        }
+      }
+      
+      if (json['timestamp'] != null) {
+        return DateTime.parse(json['timestamp'].toString()).toLocal();
+      }
+    } catch (e) {
+      debugPrint("Error parsing timestamp: $e");
+    }
+    return DateTime.now(); // Último recurso: hora actual
   }
 
   Map<String, dynamic> toJson() {

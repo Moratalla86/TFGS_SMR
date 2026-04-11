@@ -95,7 +95,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
     setState(() => _saving = true);
     try {
       // Usamos el servicio para actualizar la OT
-      final updated = await _otService.actualizarEstado(_ot.id, 'PENDIENTE');
+      await _otService.actualizarEstado(_ot.id, 'PENDIENTE');
       // Luego asignamos el técnico (podríamos haber hecho un endpoint de 'autorizar' pero reutilizamos)
       final withTech = await _otService.asignar(_ot.id, tecnicoId: _tecnicoId!);
       setState(() {
@@ -103,6 +103,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
         _changed = true;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: IndustrialTheme.criticalRed),
       );
@@ -663,9 +664,9 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withOpacity(0.5),
+        color: IndustrialTheme.claudCloud.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IndustrialTheme.electricBlue.withOpacity(0.3)),
+        border: Border.all(color: IndustrialTheme.electricBlue.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -692,7 +693,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
           ),
           const SizedBox(height: 20),
           DropdownButtonFormField<int?>(
-            value: _tecnicoId,
+            initialValue: _tecnicoId,
             dropdownColor: IndustrialTheme.claudCloud,
             decoration: const InputDecoration(
               labelText: "SELECCIONAR OPERARIO",
@@ -726,7 +727,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
       decoration: BoxDecoration(
         color: IndustrialTheme.spaceCadet,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IndustrialTheme.slateGray.withOpacity(0.2)),
+        border: Border.all(color: IndustrialTheme.slateGray.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -838,7 +839,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
           decoration: BoxDecoration(
             color: IndustrialTheme.spaceCadet,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: existing != null
               ? ClipRRect(

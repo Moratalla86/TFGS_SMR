@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../services/global_telemetry_historian.dart';
 import '../services/maquina_service.dart';
 import '../services/orden_trabajo_service.dart';
 import '../models/orden_trabajo.dart';
@@ -19,6 +21,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final MaquinaService _maquinaService = MaquinaService();
   final OrdenTrabajoService _otService = OrdenTrabajoService();
   AppSession get session => AppSession.instance;
+
+  List<Maquina> _maquinas = [];
+  List<OrdenTrabajo> _ots = [];
+  bool _loading = true;
+  String? _error;
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMaquinas();
+    // Refresco automático del Dashboard cada 5 segundos para ver estados y alarmas vivas
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted) _loadMaquinas(quiet: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _loadData({bool quiet = false}) {
+    _loadMaquinas(quiet: quiet);
+  }
+
+  Future<void> _loadMaquinas({bool quiet = false}) async {
+    if (!quiet) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+    try {
+      final maquinas = await _maquinaService.fetchMaquinas();
+      final ots = await _otService.fetchOrdenes();
+      
+      GlobalTelemetryHistorian.instance.startTracking(maquinas);
+      
+      if (mounted) {
+        setState(() {
+          _maquinas = maquinas;
+          _ots = ots;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted && !quiet) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,10 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: IndustrialTheme.neonCyan,
                     size: 20,
                   ),
-                  onPressed: () {
-                    // Refresca el estado completo y los servicios
-                    setState(() {});
-                  },
+                  onPressed: () => _loadData(),
                 ),
               ],
             ),
@@ -121,230 +176,111 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       drawer: _buildDrawer(context),
-      body: FutureBuilder(
-        future: Future.wait([
-          _maquinaService.fetchMaquinas(),
-          _otService.fetchOrdenes(),
-        ]),
-        builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: IndustrialTheme.neonCyan),
-            );
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.wifi_off_rounded,
-                      size: 64,
-                      color: IndustrialTheme.slateGray.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'SERVIDOR NO DISPONIBLE',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                        color: Colors.white54,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Comprueba la conexión de red\ny que el servidor esté activo.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.white30),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => setState(() {}),
-                      icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text('REINTENTAR'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final List<Maquina> maquinas = snapshot.data![0] as List<Maquina>;
-          final List<OrdenTrabajo> ots =
-              snapshot.data![1] as List<OrdenTrabajo>;
-
-          int maquinasOperativas = maquinas
-              .where((m) => m.estado == 'OK' || m.estado == 'Operativo')
-              .length;
-          int alertasActivas = maquinas.length - maquinasOperativas;
-          int otPendientes = ots
-              .where(
-                (ot) => ot.estado != 'FINALIZADA' && ot.estado != 'CERRADA',
-              )
-              .length;
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {});
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: IndustrialTheme.neonCyan))
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(height: 10),
-
-                        // KPI CARDS INDUSTRIAL
-                        Row(
-                          children: [
-                            _buildKpiCard(
-                              "ESTADO PLANTA",
-                              "$maquinasOperativas/${maquinas.length}",
-                              Icons.precision_manufacturing,
-                              IndustrialTheme.operativeGreen,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildKpiCard(
-                              "ALERTAS CRÍTICAS",
-                              "$alertasActivas",
-                              Icons.warning_amber_rounded,
-                              alertasActivas > 0
-                                  ? IndustrialTheme.criticalRed
-                                  : IndustrialTheme.slateGray,
-                            ),
-                          ],
+                        Icon(
+                          Icons.wifi_off_rounded,
+                          size: 64,
+                          color: IndustrialTheme.slateGray.withValues(alpha: 0.5),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            _buildKpiCard(
-                              "TOTAL TAREAS",
-                              "${ots.length}",
-                              Icons.assignment_outlined,
-                              IndustrialTheme.electricBlue,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildKpiCard(
-                              "OT PENDIENTES",
-                              "$otPendientes",
-                              Icons.assignment_late_outlined,
-                              IndustrialTheme.warningOrange,
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        // ALERTAS SECCIÓN
-                        if (alertasActivas > 0) ...[
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.sensors_off,
-                                color: IndustrialTheme.criticalRed,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                "INCIDENCIAS ACTIVAS",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.1,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ...maquinas
-                              .where(
-                                (m) =>
-                                    m.estado != 'OK' && m.estado != 'Operativo',
-                              )
-                              .map((m) {
-                                return _buildAlertaItem(m);
-                              }),
-                          const SizedBox(height: 20),
-                        ],
-
+                        const SizedBox(height: 16),
                         const Text(
-                          "MONITOREO DE ACTIVOS",
+                          'SERVIDOR NO DISPONIBLE',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1.1,
-                            color: Colors.white70,
+                            letterSpacing: 2,
+                            color: Colors.white54,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        if (maquinas.isEmpty)
-                          const Text(
-                            "Sin equipos vinculados",
-                            style: TextStyle(color: IndustrialTheme.slateGray),
-                          )
-                        else
-                          _buildHorizontalMachineList(maquinas),
-
-                        const SizedBox(height: 30),
-
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        const SizedBox(height: 8),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 12, color: Colors.white30),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => _loadData(),
+                          icon: const Icon(Icons.refresh, size: 16),
+                          label: const Text('REINTENTAR'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : _maquinas.isEmpty
+                  ? const Center(child: Text("No se encontraron máquinas"))
+                  : RefreshIndicator(
+                      onRefresh: () async { await _loadMaquinas(); },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "RECENT ACTIVITY LOG",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.1,
-                                color: Colors.white70,
-                              ),
-                            ),
-                            Text(
-                              "HISTORY",
-                              style: TextStyle(
-                                color: IndustrialTheme.neonCyan,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                            _buildHeader(),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      _buildKpiCard("ESTADO PLANTA", "${_maquinas.where((m) => m.estado == 'OK' || m.estado == 'Operativo').length}/${_maquinas.length}", Icons.precision_manufacturing, IndustrialTheme.operativeGreen),
+                                      const SizedBox(width: 12),
+                                      _buildKpiCard("ALERTAS CRÍTICAS", "${_maquinas.length - _maquinas.where((m) => m.estado == 'OK' || m.estado == 'Operativo').length}", Icons.warning_amber_rounded, (_maquinas.length - _maquinas.where((m) => m.estado == 'OK' || m.estado == 'Operativo').length) > 0 ? IndustrialTheme.criticalRed : IndustrialTheme.slateGray),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      _buildKpiCard("TOTAL TAREAS", "${_ots.length}", Icons.assignment_outlined, IndustrialTheme.electricBlue),
+                                      const SizedBox(width: 12),
+                                      _buildKpiCard("OT PENDIENTES", "${_ots.where((ot) => ot.estado != 'FINALIZADA' && ot.estado != 'CERRADA').length}", Icons.assignment_late_outlined, IndustrialTheme.warningOrange),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 30),
+                                  if (_maquinas.any((m) => m.estado != 'OK' && m.estado != 'Operativo')) ...[
+                                    Row(
+                                      children: [
+                                        Icon(Icons.sensors_off, color: IndustrialTheme.criticalRed, size: 20),
+                                        const SizedBox(width: 8),
+                                        const Text("INCIDENCIAS ACTIVAS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ..._maquinas.where((m) => m.estado != 'OK' && m.estado != 'Operativo').map((m) => _buildAlertaItem(m)),
+                                    const SizedBox(height: 20),
+                                  ],
+                                  const Text("MONITOREO DE ACTIVOS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
+                                  const SizedBox(height: 12),
+                                  _buildHorizontalMachineList(_maquinas),
+                                  const SizedBox(height: 30),
+                                  const Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text("RECENT ACTIVITY LOG", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
+                                      Text("HISTORY", style: TextStyle(color: IndustrialTheme.neonCyan, fontSize: 11, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ..._ots.take(5).map((ot) => _buildOtDetailedItem(context, ot)),
+                                  const SizedBox(height: 40),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        if (ots.isEmpty)
-                          const Text(
-                            "Registro vacío",
-                            style: TextStyle(color: IndustrialTheme.slateGray),
-                          )
-                        else
-                          ...ots
-                              .take(5)
-                              .map((ot) => _buildOtDetailedItem(context, ot)),
-
-                        const SizedBox(height: 40),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: null,
     );
   }
 
@@ -429,7 +365,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: IndustrialTheme.neonCyan.withOpacity(0.15),
+                    color: IndustrialTheme.neonCyan.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -450,6 +386,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             "CONTROL PANEL",
             () {
               Navigator.of(context).pop();
+              setState(() {}); // Forzamos el refresco al volver al panel
             },
             active: true,
           ),
@@ -520,10 +457,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: IndustrialTheme.claudCloud,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.05),
+              color: color.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -565,7 +502,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IndustrialTheme.criticalRed.withOpacity(0.3)),
+        border: Border.all(color: IndustrialTheme.criticalRed.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -575,19 +512,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  m.nombre,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      m.nombre,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: IndustrialTheme.criticalRed,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        "ALARMA",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
                   "Corte de telemetría detectado",
                   style: TextStyle(
                     fontSize: 11,
-                    color: IndustrialTheme.criticalRed.withOpacity(0.7),
+                    color: IndustrialTheme.criticalRed.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -600,7 +557,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-    ).animate().shake(duration: 1.seconds);
+    );
   }
 
   Widget _buildHorizontalMachineList(List<Maquina> maquinas) {
@@ -629,7 +586,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               decoration: BoxDecoration(
                 color: IndustrialTheme.claudCloud,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -649,13 +606,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: mColor.withOpacity(0.1),
+                          color: mColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          isOk ? "LIVE" : "DOWN",
+                          m.simulado ? "SIM" : (isOk ? "LIVE" : "DOWN"),
                           style: TextStyle(
-                            color: mColor,
+                            color: m.simulado ? IndustrialTheme.neonCyan : mColor,
                             fontSize: 8,
                             fontWeight: FontWeight.bold,
                           ),
@@ -721,7 +678,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
+            color: statusColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(

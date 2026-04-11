@@ -17,6 +17,8 @@ public class Maquina {
     private String descripcion;
     private String ubicacion;
     private String estado; // OK, WARNING, ERROR
+    private String plcUrl;
+    private boolean simulado;
 
     @OneToMany(mappedBy = "maquina", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MetricConfig> configs = new ArrayList<>();
@@ -51,6 +53,12 @@ public class Maquina {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getPlcUrl() { return plcUrl; }
+    public void setPlcUrl(String plcUrl) { this.plcUrl = plcUrl; }
+
+    public boolean isSimulado() { return simulado; }
+    public void setSimulado(boolean simulado) { this.simulado = simulado; }
 
     public List<MetricConfig> getConfigs() { return configs; }
     public void setConfigs(List<MetricConfig> configs) { this.configs = configs; }

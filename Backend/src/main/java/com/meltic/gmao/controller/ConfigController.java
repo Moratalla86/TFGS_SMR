@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.meltic.gmao.model.Maquina;
 import com.meltic.gmao.repository.sql.MaquinaRepository;
-import com.meltic.gmao.service.PLCPollingService;
+// Remove unused PLCPollingService import
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,9 +31,6 @@ public class ConfigController {
 
     @Autowired
     private MaquinaRepository maquinaRepository;
-
-    @Autowired
-    private PLCPollingService plcPollingService;
 
     @Operation(summary = "Actualizar Configuración Meltic", description = "Sincroniza los límites Muy Alto, Alto, Bajo, Muy Bajo y fuerza el relé de control para una máquina.")
     @PutMapping("/{maquinaId}")
@@ -65,16 +62,17 @@ public class ConfigController {
         }
 
         if (payload.containsKey("releForzado")) {
-            boolean rele = Boolean.parseBoolean(payload.get("releForzado").toString());
-            // Transmitir al PLC usando el servicio real
-            plcPollingService.setMotorOnSimulated(rele);
+            // Lógica de relé forzado desactivada en el modelo multi-máquina simulado.
+            logger.debug("Rele forzado recibido pero ignorado en modo multi-simulación");
         }
 
-        java.util.Optional.ofNullable(maquinaRepository.save(maquina))
-                .orElseThrow(() -> new RuntimeException("Error al guardar la configuración de la máquina"));
-        logger.info("Sincronización Meltic 4.0 aplicada en equipo: {}", maquina.getNombre());
+        if (maquina != null) {
+            maquinaRepository.save(maquina);
+            logger.info("Sincronización Meltic 4.0 aplicada en equipo: {}", maquina.getNombre());
+            return ResponseEntity.ok(maquina);
+        }
 
-        return ResponseEntity.ok(maquina);
+        return ResponseEntity.notFound().build();
     }
 
     private Double safeParseDouble(Object value) {

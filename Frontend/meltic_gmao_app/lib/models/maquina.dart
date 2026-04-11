@@ -1,47 +1,54 @@
 import 'metric_config.dart';
 
 class Maquina {
-  final int id;
+  final int? id;
   final String nombre;
   final String ubicacion;
   final String estado;
   final String? modelo;
   final String? descripcion;
   final List<MetricConfig> configs;
+  final String? plcUrl;
+  final bool simulado;
 
   Maquina({
-    required this.id,
+    this.id,
     required this.nombre,
+    required this.modelo,
     required this.ubicacion,
-    required this.estado,
-    this.modelo,
     this.descripcion,
-    required this.configs,
+    required this.estado,
+    this.configs = const [],
+    this.plcUrl,
+    this.simulado = false,
   });
 
   factory Maquina.fromJson(Map<String, dynamic> json) {
     return Maquina(
-      id: json['id'],
-      nombre: json['nombre'],
-      ubicacion: json['ubicacion'],
-      estado: json['estado'],
+      id: json['id'] is int ? json['id'] : null,
+      nombre: json['nombre'] ?? '',
+      ubicacion: json['ubicacion'] ?? '',
+      estado: json['estado'] ?? 'OK',
       modelo: json['modelo'],
       descripcion: json['descripcion'],
+      plcUrl: json['plcUrl'],
+      simulado: json['simulado'] ?? false,
       configs: (json['configs'] as List?)
               ?.map((c) => MetricConfig.fromJson(c))
-              .toList() ??
-          [],
+              .toList() ?? [],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'nombre': nombre,
       'ubicacion': ubicacion,
       'estado': estado,
       'modelo': modelo,
       'descripcion': descripcion,
+      'plcUrl': plcUrl,
+      'simulado': simulado,
       'configs': configs.map((c) => c.toJson()).toList(),
     };
   }
@@ -54,6 +61,8 @@ class Maquina {
     String? modelo,
     String? descripcion,
     List<MetricConfig>? configs,
+    String? plcUrl,
+    bool? simulado,
   }) {
     return Maquina(
       id: id ?? this.id,
@@ -63,6 +72,8 @@ class Maquina {
       modelo: modelo ?? this.modelo,
       descripcion: descripcion ?? this.descripcion,
       configs: configs ?? this.configs,
+      plcUrl: plcUrl ?? this.plcUrl,
+      simulado: simulado ?? this.simulado,
     );
   }
 }

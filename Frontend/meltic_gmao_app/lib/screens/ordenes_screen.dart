@@ -251,7 +251,7 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                     Icon(
                       Icons.wifi_off_rounded,
                       size: 64,
-                      color: IndustrialTheme.slateGray.withOpacity(0.5),
+                      color: IndustrialTheme.slateGray.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -418,7 +418,7 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       decoration: BoxDecoration(
         color: IndustrialTheme.spaceCadet.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
@@ -436,7 +436,7 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                     hintText: "ID...",
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.2),
+                    fillColor: Colors.black.withValues(alpha: 0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
@@ -449,7 +449,7 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -525,7 +525,7 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                   decoration: BoxDecoration(
                     color: _selectedDate != null
                         ? IndustrialTheme.neonCyan.withValues(alpha: 0.1)
-                        : Colors.black.withOpacity(0.2),
+                        : Colors.black.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: _selectedDate != null
@@ -603,7 +603,7 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
+                color: Colors.white.withValues(alpha: 0.03),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -626,9 +626,9 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: estadoColor.withOpacity(0.1),
+                      color: estadoColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: estadoColor.withOpacity(0.2)),
+                      border: Border.all(color: estadoColor.withValues(alpha: 0.2)),
                     ),
                     child: Text(
                       _estadoLabel(ot.estado),
@@ -863,7 +863,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _prioridad,
+                  initialValue: _prioridad,
                   decoration: const InputDecoration(
                     labelText: "GRAVIDAD / PRIORIDAD",
                     prefixIcon: Icon(Icons.priority_high),
@@ -875,7 +875,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _tipo,
+                  initialValue: _tipo,
                   decoration: const InputDecoration(
                     labelText: "TIPO DE MANTENIMIENTO",
                     prefixIcon: Icon(Icons.build_circle_outlined),
@@ -888,7 +888,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                 const SizedBox(height: 12),
                 if (AppSession.instance.isJefe)
                   DropdownButtonFormField<int?>(
-                    value: _tecnicoId,
+                    initialValue: _tecnicoId,
                     decoration: const InputDecoration(
                       labelText: "ASIGNAR OPERARIO",
                       prefixIcon: Icon(Icons.person_search),
@@ -909,7 +909,7 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                   ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
-                  value: _maquinaId,
+                  initialValue: _maquinaId,
                   decoration: const InputDecoration(
                     labelText: "ACTIVO AFECTADO",
                     prefixIcon: Icon(Icons.precision_manufacturing),

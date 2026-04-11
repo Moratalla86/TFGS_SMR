@@ -64,6 +64,7 @@ public class UsuarioController {
     // ── Actualizar usuario ──────────────────────────────────────────────────────
     @PutMapping("/{id}")
     public ResponseEntity<Usuario> actualizar(@PathVariable Long id, @RequestBody Usuario datos) {
+        if (id == null) return ResponseEntity.badRequest().build();
         return usuarioRepository.findById(id)
                 .map(u -> {
                     u.setNombre(datos.getNombre());
@@ -94,6 +95,7 @@ public class UsuarioController {
     // ── Eliminar usuario ────────────────────────────────────────────────────────
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        if (id == null) return ResponseEntity.badRequest().build();
         if (!usuarioRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -110,6 +112,7 @@ public class UsuarioController {
     // ── Cambiar estado activo/inactivo ──────────────────────────────────────────
     @PatchMapping("/{id}/estado")
     public ResponseEntity<Usuario> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
+        if (id == null) return ResponseEntity.badRequest().build();
         return usuarioRepository.findById(id)
                 .map(u -> {
                     u.setActivo(activo);

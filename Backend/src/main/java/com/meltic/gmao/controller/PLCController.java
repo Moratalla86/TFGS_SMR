@@ -1,5 +1,6 @@
 package com.meltic.gmao.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,7 +24,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
@@ -55,7 +54,7 @@ public class PLCController {
 
             if (guardada.getRfidTag() != null && !guardada.getRfidTag().isEmpty()) {
                 logger.info("📡 TAG RECONOCIDO (MAPPING OK): {}", guardada.getRfidTag());
-                plcPollingService.registrarLecturaRfid(guardada.getRfidTag());
+                plcPollingService.registrarLecturaRfid(telemetria.getMaquinaId() != null ? telemetria.getMaquinaId() : 1L, guardada.getRfidTag());
             }
 
             return ResponseEntity.ok(guardada);
@@ -65,33 +64,62 @@ public class PLCController {
         }
     }
 
-    @Operation(summary = "Obtener último ID RFID", description = "Devuelve la última lectura de tarjeta capturada por el sensor RFID del PLC")
+    @Operation(summary = "Obtener último ID RFID", description = "Devuelve la última lectura de tarjeta capturada por el sensor RFID del PLC para la máquina 1")
     @GetMapping("/last-rfid")
     public ResponseEntity<Map<String, Object>> obtenerUltimoRfid() {
         Map<String, Object> response = new HashMap<>();
-        String rfid = plcPollingService.getLastRfidRead();
+        String rfid = plcPollingService.getLastRfidRead(1L);
         String maskedRfid = rfid.length() > 4 ? "****" + rfid.substring(rfid.length() - 4) : "****";
         response.put("rfid", rfid);
-        response.put("timestamp", plcPollingService.getLastRfidTimestamp());
+        response.put("timestamp", LocalDateTime.now()); // Timestamp simplificado
         logger.debug("Solicitud de último RFID: {} (Status: {})", maskedRfid, rfid.isEmpty() ? "VACÍO" : "DETECTADO");
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "SIMULADOR RFID (DEMO)", description = "Permite simular una lectura de tarjeta sin necesidad del hardware PLC")
+    @Operation(summary = "SIMULADOR RFID (DEMO)", description = "Permite simular una lectura de tarjeta para la máquina 1")
     @GetMapping("/simulate/{tag}")
     public ResponseEntity<String> simularRfid(@PathVariable String tag) {
         logger.info("🛠️ SIMULACIÓN RFID ACTIVADA: {}", tag);
-        plcPollingService.registrarLecturaRfid(tag);
+        plcPollingService.registrarLecturaRfid(1L, tag);
         return ResponseEntity.ok("Lectura simulada: " + tag);
     }
 
-    @Operation(summary = "Historial por Máquina", description = "Obtiene la serie temporal de telemetrías (MongoDB) para una máquina específica")
+    @Operation(summary = "Historial por Máquina (SCADA Historian)",
+               description = "Sin parámetros: devuelve los últimos 3600 registros (carga inicial). " +
+                             "Con ?since=<epochMs>: devuelve solo los registros más nuevos que ese timestamp (polling incremental).")
     @GetMapping("/maquina/{maquinaId}")
     public ResponseEntity<List<Telemetria>> obtenerHistorial(
-            @Parameter(description = "ID único de la máquina (Relacional)") @PathVariable Long maquinaId) {
-        List<Telemetria> historial = telemetriaService.obtenerPorMaquina(maquinaId);
+            @Parameter(description = "ID único de la máquina") @PathVariable Long maquinaId,
+            @Parameter(description = "Epoch millis del último dato conocido. Si se provee, solo devuelve datos más nuevos.")
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long since) {
+
+        List<Telemetria> historial = (since != null)
+                ? telemetriaService.obtenerDesde(maquinaId, java.time.Instant.ofEpochMilli(since))
+                : telemetriaService.obtenerPorMaquina(maquinaId);
+
         return ResponseEntity.ok(historial);
     }
+
+    @Operation(summary = "Histórico Multi-Escala",
+               description = "Devuelve hasta 2000 puntos representativos de cualquier rango temporal (downsampling estadístico). " +
+                             "Funciona para ventanas de 1 día hasta 6 meses o más. " +
+                             "Equivalente al 'data compression' de PI System / Wonderware Historian.")
+    @GetMapping("/maquina/{maquinaId}/historico")
+    public ResponseEntity<List<Telemetria>> obtenerHistorico(
+            @Parameter(description = "ID único de la máquina") @PathVariable Long maquinaId,
+            @Parameter(description = "Inicio del rango en epoch millis UTC") 
+            @org.springframework.web.bind.annotation.RequestParam Long desde,
+            @Parameter(description = "Fin del rango en epoch millis UTC") 
+            @org.springframework.web.bind.annotation.RequestParam Long hasta) {
+
+        List<Telemetria> historico = telemetriaService.obtenerHistorico(
+            maquinaId,
+            java.time.Instant.ofEpochMilli(desde),
+            java.time.Instant.ofEpochMilli(hasta)
+        );
+        return ResponseEntity.ok(historico);
+    }
+
 
     @Operation(summary = "Mando de Control (IoT)", description = "Permite enviar comandos remotos como encendido/apagado de actuadores o forzado de alarmas")
     @PostMapping("/comando")
@@ -100,11 +128,13 @@ public class PLCController {
         logger.info("Comando recibido: {}", accion);
 
         if ("START_MOTOR".equals(accion)) {
-            plcPollingService.setMotorOnSimulated(true);
+            // Lógica de comando manual desactivada en favor de simulación por máquina.
+            // Para TFG, podrías implementar aquí el envío real al PLC si fuera necesario.
+            logger.info("Comando START_MOTOR recibido (No action taken in multi-machine model)");
         } else if ("STOP_MOTOR".equals(accion)) {
-            plcPollingService.setMotorOnSimulated(false);
+            logger.info("Comando STOP_MOTOR recibido (No action taken in multi-machine model)");
         } else if ("FORCE_ALARM".equals(accion)) {
-            plcPollingService.forceAlarmSimulated(payload.get("tipo"));
+            logger.info("Comando FORCE_ALARM recibido (No action taken in multi-machine model)");
         }
 
         Map<String, String> response = new HashMap<>();
