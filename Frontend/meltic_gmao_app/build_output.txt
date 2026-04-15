@@ -1,0 +1,12 @@
+﻿Compiling lib\main.dart for the Web...                          
+flutter : Wasm dry run succeeded. Consider building and testing your application with the `--wasm` flag. See docs for 
+more info: https://docs.flutter.dev/platform-integration/web/wasm
+En línea: 1 Carácter: 1
++ flutter build web --release --no-tree-shake-icons 2>&1 | Out-File -Fi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Wasm dry run su...ration/web/wasm:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Use --no-wasm-dry-run to disable these warnings.
+Compiling lib\main.dart for the Web...                             42,4s
+√ Built build\web

@@ -1,0 +1,2 @@
+-- Archivo vacío para evitar conflictos con DataInitializer.java
+-- La inicialización se hace ahora en DataInitializer.java con BCrypt.

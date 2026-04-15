@@ -1,0 +1,74 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'api_config.dart';
+import 'app_session.dart';
+import '../models/usuario.dart';
+
+class UsuarioService {
+  final String _base = '${ApiConfig.baseUrl}/api/usuarios';
+
+  Future<List<Usuario>> fetchUsuarios() async {
+    final res = await http.get(
+      Uri.parse(_base),
+      headers: AppSession.instance.authHeaders,
+    );
+    if (res.statusCode == 200) {
+      final List<dynamic> body = json.decode(res.body);
+      return body.map((e) => Usuario.fromJson(e)).toList();
+    }
+    throw Exception('Error al cargar usuarios: ${res.statusCode}');
+  }
+
+  Future<Usuario> crearUsuario(Usuario u) async {
+    final res = await http.post(
+      Uri.parse(_base),
+      headers: AppSession.instance.authHeaders,
+      body: json.encode(u.toJson()),
+    );
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return Usuario.fromJson(json.decode(res.body));
+    }
+    throw Exception('Error al crear usuario: ${res.statusCode}');
+  }
+
+  Future<Usuario> actualizarUsuario(int id, Usuario u) async {
+    final res = await http.put(
+      Uri.parse('$_base/$id'),
+      headers: AppSession.instance.authHeaders,
+      body: json.encode(u.toJson()),
+    );
+    if (res.statusCode == 200) {
+      return Usuario.fromJson(json.decode(res.body));
+    }
+    throw Exception('Error al actualizar usuario: ${res.statusCode}');
+  }
+
+  Future<void> eliminarUsuario(int id) async {
+    final res = await http.delete(
+      Uri.parse('$_base/$id'),
+      headers: AppSession.instance.authHeaders,
+    );
+    if (res.statusCode != 204) {
+      throw Exception('Error al eliminar usuario: ${res.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchLastRfid() async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/plc/last-rfid'),
+    );
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    }
+    throw Exception('Error al obtener RFID: ${res.statusCode}');
+  }
+
+  Future<void> simulateRfid(String tag) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/plc/simulate/$tag'),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Error al simular RFID: ${res.statusCode}');
+    }
+  }
+}

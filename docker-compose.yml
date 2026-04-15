@@ -1,0 +1,67 @@
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: meltic-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: meltic_gmao
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    ports:
+      - "3307:3306"
+    volumes:
+      - meltic_mysql_data:/var/lib/mysql
+
+  mongodb:
+    image: mongo:6.0
+    container_name: meltic-mongo
+    restart: always
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      timeout: 10s
+      retries: 5
+    ports:
+      - "27017:27017"
+    volumes:
+      - meltic_mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: meltic-backend
+    restart: always
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - MYSQL_HOST=mysql-db
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MONGODB_HOST=mongodb
+    # Connect to host's network or use default bridge
+    # For AP access, 0.0.0.0 mapping in ports is enough
+
+  frontend:
+    build:
+      context: ./Frontend/meltic_gmao_app
+      dockerfile: Dockerfile
+    container_name: meltic-frontend
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+
+volumes:
+  meltic_mysql_data:
+  meltic_mongo_data:

@@ -1,0 +1,27 @@
+# Compilación y binarios
+target/
+*.class
+*.war
+*.ear
+*.jar
+
+# Logs
+*.log
+
+# Archivos del IDE (IntelliJ IDEA)
+.idea/
+*.iml
+out/
+gen/
+
+# Archivos de VS Code
+.vscode/
+.factorypath
+
+# Configuración local (Seguridad)
+# Evita subir tus contraseñas de DB a GitHub
+src/main/resources/application-local.properties
+
+# Archivos del Sistema Operativo
+.DS_Store
+Thumbs.db.env
