@@ -1,5 +1,5 @@
-# Build stage — imagen oficial de Flutter con versión fija (reproducible)
-FROM ghcr.io/cirruslabs/flutter:3.24.0 AS build
+# Build stage — imagen oficial de Flutter (versión estable para compatibilidad con Dart 3.10+)
+FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
 # Instalar dependencias primero (cache de capas Docker)

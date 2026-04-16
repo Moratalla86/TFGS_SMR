@@ -155,12 +155,16 @@ public class PLCPollingService {
                     t.setPresion(5.0 + ThreadLocalRandom.current().nextDouble() * 2.0);
                     t.setVoltaje(230.0 + (ThreadLocalRandom.current().nextDouble() - 0.5) * 5.0);
                     t.setIntensidad(10.0 + ThreadLocalRandom.current().nextDouble() * 5.0);
-                    t.setRfidTag(""); 
+                    
+                    // Si es la máquina principal, simulamos una tarjeta para el TFG
+                    if (m.getId() == 1L) {
+                        t.setRfidTag("40:91:F3:61"); // Tag simulado para asignación
+                        registrarLecturaRfid(m.getId(), t.getRfidTag());
+                    } else {
+                        t.setRfidTag(""); 
+                    }
                 } else {
                     finalUrl = m.getPlcUrl();
-                    if ((finalUrl == null || finalUrl.isEmpty()) && m.getId() == 1L) {
-                        finalUrl = defaultPlcUrl;
-                    }
 
                     if (finalUrl != null && !finalUrl.isEmpty()) {
                         if (!finalUrl.toLowerCase().startsWith("http")) {

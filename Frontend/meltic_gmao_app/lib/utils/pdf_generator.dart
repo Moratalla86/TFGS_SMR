@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/orden_trabajo.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 
 class PdfGenerator {
   static Future<String?> generarReporteCierreBase64(

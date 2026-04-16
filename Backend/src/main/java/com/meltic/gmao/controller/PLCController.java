@@ -128,8 +128,6 @@ public class PLCController {
         logger.info("Comando recibido: {}", accion);
 
         if ("START_MOTOR".equals(accion)) {
-            // Lógica de comando manual desactivada en favor de simulación por máquina.
-            // Para TFG, podrías implementar aquí el envío real al PLC si fuera necesario.
             logger.info("Comando START_MOTOR recibido (No action taken in multi-machine model)");
         } else if ("STOP_MOTOR".equals(accion)) {
             logger.info("Comando STOP_MOTOR recibido (No action taken in multi-machine model)");
@@ -141,5 +139,18 @@ public class PLCController {
         response.put("status", "ok");
         response.put("mensaje", "Comando " + accion + " procesado");
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "MOCK PLC (INTERNAL)", description = "Endpoint para simular un PLC físico para el TFG")
+    @GetMapping("/mock")
+    public ResponseEntity<Map<String, Object>> mockPlc() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("maquinaId", 1);
+        data.put("temperatura", 25.5 + Math.random() * 5);
+        data.put("humedad", 45.0 + Math.random() * 10);
+        data.put("vibracion", 0.5 + Math.random() * 1);
+        data.put("rfidTag", "40:91:F3:61"); // Tag de ejemplo para el TFG
+        data.put("motorOn", true);
+        return ResponseEntity.ok(data);
     }
 }

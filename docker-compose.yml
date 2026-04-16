@@ -4,10 +4,12 @@ services:
     container_name: meltic-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: meltic_root_123
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: meltic_gmao
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: meltic_user
+      MYSQL_PASSWORD: meltic_pass_123
+    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s
@@ -45,9 +47,12 @@ services:
       - "8080:8080"
     environment:
       - MYSQL_HOST=mysql-db
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=meltic_user
+      - MYSQL_PASSWORD=meltic_pass_123
+      - MYSQL_ROOT_PASSWORD=meltic_root_123
       - MONGODB_HOST=mongodb
+      - PLC_URL=${PLC_URL}
+      - PLC_POLLING_RATE=${PLC_POLLING_RATE}
     # Connect to host's network or use default bridge
     # For AP access, 0.0.0.0 mapping in ports is enough
 
