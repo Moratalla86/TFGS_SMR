@@ -516,8 +516,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-      ),
-    ).animate().scale(duration: 400.ms, curve: Curves.easeOut);
+      ).animate().scale(duration: 400.ms, curve: Curves.easeOut),
+    );
   }
 
   // Methods moved or obsoleted for cleaner organization
