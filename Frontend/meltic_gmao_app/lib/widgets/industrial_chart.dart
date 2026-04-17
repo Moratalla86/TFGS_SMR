@@ -109,7 +109,7 @@ class IndustrialChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -161,7 +161,7 @@ class _Header extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: pts > 0 ? IndustrialTheme.operativeGreen.withValues(alpha: 0.15) : Colors.orange.withValues(alpha: 0.15),
+            color: pts > 0 ? IndustrialTheme.operativeGreen.withOpacity(0.15) : Colors.orange.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -247,8 +247,8 @@ class _PenChart extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: pen.color.withValues(alpha: 0.6), width: 3),
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.04), width: 1),
+          left: BorderSide(color: pen.color.withOpacity(0.6), width: 3),
+          bottom: BorderSide(color: Colors.white.withOpacity(0.04), width: 1),
         ),
       ),
       child: Row(
@@ -297,7 +297,7 @@ class _PenChart extends StatelessWidget {
                 activationMode: ActivationMode.singleTap,
                 tooltipDisplayMode: TrackballDisplayMode.nearestPoint,
                 lineType: TrackballLineType.vertical,
-                lineColor: pen.color.withValues(alpha: 0.7),
+                lineColor: pen.color.withOpacity(0.7),
                 lineWidth: 1,
                 lineDashArray: const [4, 4],
                 builder: (context, details) {
@@ -310,7 +310,7 @@ class _PenChart extends StatelessWidget {
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0A1628),
-                      border: Border.all(color: pen.color.withValues(alpha: 0.6)),
+                      border: Border.all(color: pen.color.withOpacity(0.6)),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Column(
@@ -334,13 +334,13 @@ class _PenChart extends StatelessWidget {
                 minimum: xMin,
                 maximum: xMax,
                 isVisible: false,
-                majorGridLines: MajorGridLines(color: Colors.white.withValues(alpha: 0.03)),
+                majorGridLines: MajorGridLines(color: Colors.white.withOpacity(0.03)),
               ),
               primaryYAxis: NumericAxis(
                 minimum: vMin,
                 maximum: vMax,
                 isVisible: false,
-                majorGridLines: MajorGridLines(color: Colors.white.withValues(alpha: 0.05), dashArray: const [4, 4]),
+                majorGridLines: MajorGridLines(color: Colors.white.withOpacity(0.05), dashArray: const [4, 4]),
               ),
               series: [
                 SplineSeries<Telemetria, DateTime>(
@@ -386,9 +386,9 @@ class _PenTable extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.2),
+        color: Colors.black.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         children: [

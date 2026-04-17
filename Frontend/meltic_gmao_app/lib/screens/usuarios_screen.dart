@@ -165,7 +165,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                     Icon(
                       Icons.wifi_off_rounded,
                       size: 64,
-                      color: IndustrialTheme.slateGray.withValues(alpha: 0.5),
+                      color: IndustrialTheme.slateGray.withOpacity(0.5),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -302,7 +302,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: rolColor.withValues(alpha: 0.1),
+                  backgroundColor: rolColor.withOpacity(0.1),
                   child: Text(
                     u.nombre.isNotEmpty ? u.nombre[0].toUpperCase() : '?',
                     style: TextStyle(
@@ -340,9 +340,9 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: rolColor.withValues(alpha: 0.1),
+                      color: rolColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: rolColor.withValues(alpha: 0.2)),
+                      border: Border.all(color: rolColor.withOpacity(0.2)),
                     ),
                     child: Text(
                       _rolLabel(u.rol),

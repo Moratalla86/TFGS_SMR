@@ -74,7 +74,7 @@ class IndustrialTheme {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: slateGray.withValues(alpha: 0.3)),
+        borderSide: BorderSide(color: slateGray.withOpacity(0.3)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

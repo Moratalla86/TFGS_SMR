@@ -131,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircleAvatar(
-                  backgroundColor: IndustrialTheme.neonCyan.withValues(alpha: 0.15),
+                  backgroundColor: IndustrialTheme.neonCyan.withOpacity(0.15),
                   radius: 14,
                   child: const Icon(
                     Icons.person,
@@ -194,7 +194,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Icon(
                           Icons.wifi_off_rounded,
                           size: 64,
-                          color: IndustrialTheme.slateGray.withValues(alpha: 0.5),
+                          color: IndustrialTheme.slateGray.withOpacity(0.5),
                         ),
                         const SizedBox(height: 16),
                         const Text(
@@ -382,7 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: IndustrialTheme.neonCyan.withValues(alpha: 0.15),
+                    color: IndustrialTheme.neonCyan.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -482,10 +482,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: IndustrialTheme.claudCloud,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          border: Border.all(color: color.withOpacity(0.2)),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.05),
+              color: color.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -552,7 +552,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: 0.1),
+            color: statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -578,12 +578,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildEvolutivoSection() {
     if (_stats == null || _stats!['evolutivo'] == null) {
-      return Container(height: 220, decoration: BoxDecoration(color: IndustrialTheme.claudCloud.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)));
+      return Container(height: 220, decoration: BoxDecoration(color: IndustrialTheme.claudCloud.withOpacity(0.1), borderRadius: BorderRadius.circular(20)));
     }
     
     final List<dynamic> evolutivo = _stats!['evolutivo'];
     if (evolutivo.isEmpty) {
-      return Container(height: 220, decoration: BoxDecoration(color: IndustrialTheme.claudCloud.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)));
+      return Container(height: 220, decoration: BoxDecoration(color: IndustrialTheme.claudCloud.withOpacity(0.1), borderRadius: BorderRadius.circular(20)));
     }
 
     final labels = evolutivo.map((e) {
@@ -636,14 +636,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            color: IndustrialTheme.claudCloud.withValues(alpha: 0.3),
+            color: IndustrialTheme.claudCloud.withOpacity(0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.1)),
+            border: Border.all(color: color.withOpacity(0.1)),
           ),
           child: Column(
             children: [
               Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text(title, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 8, fontWeight: FontWeight.bold)),
+              Text(title, style: TextStyle(color: color.withOpacity(0.7), fontSize: 8, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -675,9 +675,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: IndustrialTheme.criticalRed.withValues(alpha: 0.1),
+          color: IndustrialTheme.criticalRed.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: IndustrialTheme.criticalRed.withValues(alpha: 0.3)),
+          border: Border.all(color: IndustrialTheme.criticalRed.withOpacity(0.3)),
         ),
         child: Row(
           children: [
@@ -688,7 +688,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(m.nombre, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
-                  Text("ALERTA DE TELEMETRÍA - REVISAR PLC", style: TextStyle(color: IndustrialTheme.criticalRed.withValues(alpha: 0.7), fontSize: 9)),
+                  Text("ALERTA DE TELEMETRÍA - REVISAR PLC", style: TextStyle(color: IndustrialTheme.criticalRed.withOpacity(0.7), fontSize: 9)),
                 ],
               ),
             ),
@@ -720,7 +720,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: IndustrialTheme.claudCloud,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: m.estado == 'OK' ? IndustrialTheme.operativeGreen.withValues(alpha: 0.2) : IndustrialTheme.criticalRed.withValues(alpha: 0.2)),
+          border: Border.all(color: m.estado == 'OK' ? IndustrialTheme.operativeGreen.withOpacity(0.2) : IndustrialTheme.criticalRed.withOpacity(0.2)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

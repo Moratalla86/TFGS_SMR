@@ -87,7 +87,7 @@ class _DialPainter extends CustomPainter {
     final strokeWidth = size.width * 0.08;
 
     final trackPaint = Paint()
-      ..color = color.withValues(alpha: 0.15)
+      ..color = color.withOpacity(0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -141,7 +141,7 @@ class IndustrialAreaChart extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.fromLTRB(12, 20, 12, 8),
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withValues(alpha: 0.4),
+        color: IndustrialTheme.claudCloud.withOpacity(0.4),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white10),
       ),
@@ -200,7 +200,7 @@ class _AreaChartPainter extends CustomPainter {
   }
 
   void _drawGrid(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.05)..strokeWidth = 1;
+    final paint = Paint()..color = Colors.white.withOpacity(0.05)..strokeWidth = 1;
     for (int i = 0; i <= 3; i++) {
         double y = size.height - (size.height / 3) * i;
         canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
@@ -232,7 +232,7 @@ class _AreaChartPainter extends CustomPainter {
     fillPath.lineTo(0, size.height);
     fillPath.close();
 
-    final fillPaint = Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [color.withValues(alpha: 0.25), color.withValues(alpha: 0.0)]).createShader(Rect.fromLTRB(0, 0, size.width, size.height));
+    final fillPaint = Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [color.withOpacity(0.25), color.withOpacity(0.0)]).createShader(Rect.fromLTRB(0, 0, size.width, size.height));
     canvas.drawPath(fillPath, fillPaint);
 
     final dotPaint = Paint()..color = color;
@@ -331,7 +331,7 @@ class _DonutPainter extends CustomPainter {
 
     // Fondo / Correctivo (Rojo)
     final correctivePaint = Paint()
-      ..color = IndustrialTheme.criticalRed.withValues(alpha: 0.8)
+      ..color = IndustrialTheme.criticalRed.withOpacity(0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -362,7 +362,7 @@ class _DonutPainter extends CustomPainter {
     
     // Sombra interior sutil
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.3)
+      ..color = Colors.black.withOpacity(0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
@@ -395,7 +395,7 @@ class IndustrialBarChart extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withValues(alpha: 0.4),
+        color: IndustrialTheme.claudCloud.withOpacity(0.4),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white10),
       ),
@@ -472,7 +472,7 @@ class _BarChartPainter extends CustomPainter {
   }
 
   void _drawGrid(Canvas canvas, Size size, double chartMax) {
-    final linePaint = Paint()..color = Colors.white.withValues(alpha: 0.05)..strokeWidth = 1;
+    final linePaint = Paint()..color = Colors.white.withOpacity(0.05)..strokeWidth = 1;
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     for (int i = 0; i <= 4; i++) {
@@ -525,7 +525,7 @@ class IndustrialComparisonCard extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withValues(alpha: 0.4),
+        color: IndustrialTheme.claudCloud.withOpacity(0.4),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white10),
       ),
@@ -540,10 +540,10 @@ class IndustrialComparisonCard extends StatelessWidget {
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: IndustrialTheme.operativeGreen.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+            decoration: BoxDecoration(color: IndustrialTheme.operativeGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
             child: Text(
               "OBJETIVO: > 80%",
-              style: TextStyle(color: IndustrialTheme.operativeGreen.withValues(alpha: 0.7), fontSize: 8, fontWeight: FontWeight.bold),
+              style: TextStyle(color: IndustrialTheme.operativeGreen.withOpacity(0.7), fontSize: 8, fontWeight: FontWeight.bold),
             ),
           ),
         ],

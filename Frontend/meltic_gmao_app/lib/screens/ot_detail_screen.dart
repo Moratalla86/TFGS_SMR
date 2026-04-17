@@ -679,9 +679,9 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withValues(alpha: 0.5),
+        color: IndustrialTheme.claudCloud.withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IndustrialTheme.electricBlue.withValues(alpha: 0.3)),
+        border: Border.all(color: IndustrialTheme.electricBlue.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,7 +742,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
       decoration: BoxDecoration(
         color: IndustrialTheme.spaceCadet,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IndustrialTheme.slateGray.withValues(alpha: 0.2)),
+        border: Border.all(color: IndustrialTheme.slateGray.withOpacity(0.2)),
       ),
       child: Column(
         children: [
@@ -854,7 +854,7 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
           decoration: BoxDecoration(
             color: IndustrialTheme.spaceCadet,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
           ),
           child: existing != null
               ? ClipRRect(

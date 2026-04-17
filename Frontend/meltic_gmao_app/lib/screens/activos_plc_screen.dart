@@ -233,7 +233,7 @@ class _ActivosPLCScreenState extends State<ActivosPLCScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: m.estado == 'OK' ? IndustrialTheme.operativeGreen.withValues(alpha: 0.2) : IndustrialTheme.criticalRed.withValues(alpha: 0.2),
+                    color: m.estado == 'OK' ? IndustrialTheme.operativeGreen.withOpacity(0.2) : IndustrialTheme.criticalRed.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: m.estado == 'OK' ? IndustrialTheme.operativeGreen : IndustrialTheme.criticalRed),
                   ),
@@ -433,7 +433,7 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
                         decoration: BoxDecoration(
                           color: Colors.black12,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: IndustrialTheme.neonCyan.withValues(alpha: 0.1)),
+                          border: Border.all(color: IndustrialTheme.neonCyan.withOpacity(0.1)),
                         ),
                         child: Column(
                           children: [
@@ -517,7 +517,7 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
             foregroundColor: IndustrialTheme.spaceCadet,
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             elevation: 8,
-            shadowColor: IndustrialTheme.neonCyan.withValues(alpha: 0.3),
+            shadowColor: IndustrialTheme.neonCyan.withOpacity(0.3),
           ),
           onPressed: _loading ? null : _save,
           child: _loading
@@ -537,7 +537,7 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isSelected ? def.color.withValues(alpha: 0.3) : Colors.transparent),
+        border: Border.all(color: isSelected ? def.color.withOpacity(0.3) : Colors.transparent),
       ),
       child: Column(
         children: [

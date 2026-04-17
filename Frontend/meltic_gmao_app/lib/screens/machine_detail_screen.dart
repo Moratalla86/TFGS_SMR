@@ -155,7 +155,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(maquina.nombre.toUpperCase(), style: const TextStyle(letterSpacing: 2, fontSize: 13, fontWeight: FontWeight.bold)),
-            Text("ESTACIÓN DE ANÁLISIS", style: TextStyle(color: IndustrialTheme.neonCyan.withValues(alpha: 0.7), fontSize: 8, letterSpacing: 1)),
+            Text("ESTACIÓN DE ANÁLISIS", style: TextStyle(color: IndustrialTheme.neonCyan.withOpacity(0.7), fontSize: 8, letterSpacing: 1)),
           ],
         ),
         actions: [
@@ -200,7 +200,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       height: 200,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withValues(alpha: 0.3),
+        color: IndustrialTheme.claudCloud.withOpacity(0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),
@@ -250,7 +250,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: IndustrialTheme.claudCloud.withValues(alpha: 0.3),
+          color: IndustrialTheme.claudCloud.withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white10),
         ),
@@ -320,9 +320,9 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withValues(alpha: 0.5),
+        color: IndustrialTheme.claudCloud.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _isHistoricalMode ? IndustrialTheme.warningOrange.withValues(alpha: 0.4) : Colors.white10),
+        border: Border.all(color: _isHistoricalMode ? IndustrialTheme.warningOrange.withOpacity(0.4) : Colors.white10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,7 +622,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud.withValues(alpha: 0.5),
+        color: IndustrialTheme.claudCloud.withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),

@@ -178,7 +178,7 @@ class _CrearMaquinaScreenState extends State<CrearMaquinaScreen> {
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isSelected ? def.color.withValues(alpha: 0.5) : Colors.transparent),
+        border: Border.all(color: isSelected ? def.color.withOpacity(0.5) : Colors.transparent),
       ),
       child: Column(
         children: [

@@ -66,7 +66,7 @@ class MachineHistoryChart extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -200,8 +200,8 @@ class MachineHistoryChart extends StatelessWidget {
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue[700]!.withValues(alpha: 0.3),
-                        Colors.blue[300]!.withValues(alpha: 0.0),
+                        Colors.blue[700]!.withOpacity(0.3),
+                        Colors.blue[300]!.withOpacity(0.0),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -211,7 +211,7 @@ class MachineHistoryChart extends StatelessWidget {
               ],
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => Colors.blueAccent.withValues(alpha: 0.8),
+                  getTooltipColor: (_) => Colors.blueAccent.withOpacity(0.8),
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final data = displayData[spot.x.toInt()];
