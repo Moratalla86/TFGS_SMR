@@ -395,6 +395,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Navigator.of(context).pop();
               Navigator.of(context).pushNamed('/usuarios');
             }),
+          _drawerItem(Icons.bar_chart_rounded, "INDICADORES KPI", () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushNamed('/kpis');
+          }),
           _drawerItem(Icons.assignment_outlined, "ORDENES DE TRABAJO", () {
             Navigator.of(context).pop();
             Navigator.of(context).pushNamed('/ordenes');

@@ -8,6 +8,7 @@ import 'screens/machine_detail_screen.dart';
 import 'screens/usuarios_screen.dart';
 import 'screens/ordenes_screen.dart';
 import 'screens/activos_plc_screen.dart';
+import 'screens/kpis_screen.dart';
 
 import 'theme/industrial_theme.dart';
 
@@ -43,6 +44,7 @@ class SmrGmaoApp extends StatelessWidget {
         '/usuarios': (context) => const UsuariosScreen(),
         '/ordenes': (context) => const OrdenesScreen(),
         '/activos-plc': (context) => const ActivosPLCScreen(),
+        '/kpis': (context) => const KpisScreen(),
       },
     );
   }
