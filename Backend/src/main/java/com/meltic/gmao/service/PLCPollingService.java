@@ -30,7 +30,7 @@ public class PLCPollingService {
 
     private static final Logger logger = LoggerFactory.getLogger(PLCPollingService.class);
 
-    @Value("${meltic.plc.url:http://192.168.1.11}")
+    @Value("${meltic.plc.url:http://backend:8080/api/plc/mock}")
     private String defaultPlcUrl;
 
     private final java.util.Map<Long, String> machineRfidBuffer = new ConcurrentHashMap<>();
@@ -46,6 +46,9 @@ public class PLCPollingService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private com.meltic.gmao.repository.sql.OrdenTrabajoRepository ordenTrabajoRepository;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -165,6 +168,10 @@ public class PLCPollingService {
                     }
                 } else {
                     finalUrl = m.getPlcUrl();
+                    // Fallback para TFG: Si la URL es nula, vacía o la IP legada de la escuela, usamos el mock.
+                    if (finalUrl == null || finalUrl.trim().isEmpty() || finalUrl.contains("192.168.1.11")) {
+                        finalUrl = defaultPlcUrl;
+                    }
 
                     if (finalUrl != null && !finalUrl.isEmpty()) {
                         if (!finalUrl.toLowerCase().startsWith("http")) {
@@ -209,9 +216,10 @@ public class PLCPollingService {
             } catch (RestClientException e) {
                 logger.error("❌ Error de conexión con máquina {} ({}) en {}: {}", 
                     m.getId(), m.getNombre(), finalUrl, e.getMessage());
-                if (!"DESCONECTADO".equals(m.getEstado())) {
+                if (!"DESCONECTADO".equals(machineStateCache.get(m.getId()))) {
                     m.setEstado("DESCONECTADO");
                     maquinaRepository.save(m);
+                    machineStateCache.put(m.getId(), "DESCONECTADO");
                 }
             } catch (Exception e) {
                 logger.error("❌ Error procesando máquina {}: {}", m.getId(), e.getMessage());
@@ -258,6 +266,25 @@ public class PLCPollingService {
                 m.setEstado(newState);
                 maquinaRepository.save(m);
                 machineStateCache.put(machineId, newState);
+
+                // --- AUTOMATIZACIÓN (Propuesta Tutor) ---
+                // Si la máquina entra en ERROR y no tiene una OT abierta, creamos una automática
+                if ("ERROR".equals(newState)) {
+                    boolean hasPendingOT = ordenTrabajoRepository.findByMaquinaId(machineId).stream()
+                            .anyMatch(ot -> !"CERRADA".equals(ot.getEstado()));
+                    
+                    if (!hasPendingOT) {
+                        com.meltic.gmao.model.OrdenTrabajo autoOT = new com.meltic.gmao.model.OrdenTrabajo();
+                        autoOT.setMaquina(m);
+                        autoOT.setDescripcion("⚠️ ALERTA AUTOMÁTICA: Detectado nivel " + alarmaDetectada + " por telemetría IoT.");
+                        autoOT.setPrioridad("URGENTE");
+                        autoOT.setEstado("PENDIENTE");
+                        autoOT.setTipo("CORRECTIVA");
+                        autoOT.setFechaCreacion(LocalDateTime.now());
+                        ordenTrabajoRepository.save(autoOT);
+                        logger.warn("⚡ AUTO-OT CREADA para máquina {}: {}", m.getNombre(), autoOT.getDescripcion());
+                    }
+                }
             }
         }
     }

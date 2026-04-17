@@ -41,6 +41,7 @@ public class SecurityConfig {
                 // --- PLC: solo el endpoint de datos del hardware está abierto ---
                 // El simulador RFID requiere rol ADMIN (no usar en producción sin auth)
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/plc/data").permitAll()
+                .requestMatchers("/api/plc/mock", "/api/plc/last-rfid").permitAll()
                 .requestMatchers("/api/plc/simulate/**").hasRole("ADMIN")
                 .requestMatchers("/api/plc/**").authenticated()
 

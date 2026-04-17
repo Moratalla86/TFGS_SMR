@@ -497,6 +497,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                     labelText: "NOMBRE",
                     prefixIcon: Icon(Icons.person),
                   ),
+                  validator: (v) => v == null || v.trim().isEmpty ? "Obligatorio" : null,
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -507,6 +508,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                         decoration: const InputDecoration(
                           labelText: "1er APELLIDO",
                         ),
+                        validator: (v) => v == null || v.trim().isEmpty ? "Obligatorio" : null,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -561,6 +563,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                     labelText: "PASSWORD ACCESO",
                     prefixIcon: Icon(Icons.lock),
                   ),
+                  validator: (v) => (widget.usuario == null) && (v == null || v.length < 4) ? "Mínimo 4 caracteres" : null,
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -649,8 +652,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
           ),
         );
       }
-    } catch (e) {
-      debugPrint('UsuariosScreen: error en escaneo RFID: $e');
+    } catch (_) {
       if (mounted) setState(() => _isScanning = false);
     }
   }
@@ -668,8 +670,8 @@ class _UserFormDialogState extends State<_UserFormDialog> {
         }
         if (i < 3) await Future.delayed(const Duration(milliseconds: 800));
       }
-    } catch (e) {
-      debugPrint('UsuariosScreen._scanRfid error: $e');
+    } catch (_) {
+      // Errores silenciosos en escaneo
     } finally {
       if (mounted) setState(() => _isScanning = false);
     }
@@ -701,14 +703,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       setState(() => _saving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al guardar el usuario: $e'),
-            backgroundColor: IndustrialTheme.criticalRed,
-          ),
-        );
-      }
     }
   }
 }

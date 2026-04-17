@@ -7,15 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.meltic.gmao.model.Maquina;
-import com.meltic.gmao.model.MetricConfig;
 import com.meltic.gmao.repository.sql.MaquinaRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +40,8 @@ public class ConfigController {
 
         Maquina maquina = optMaquina.get();
 
+        String metricaTarget = (String) payload.getOrDefault("metrica", "temperatura");
+
         if (payload.containsKey("muyAlto") || payload.containsKey("alto") ||
             payload.containsKey("bajo") || payload.containsKey("muyBajo")) {
 
@@ -55,11 +51,11 @@ public class ConfigController {
             Double muyBajo = safeParseDouble(payload.get("muyBajo"));
 
             if (!esConfigValida(muyBajo, bajo, alto, muyAlto)) {
-                return ResponseEntity.badRequest().build();
+                return ResponseEntity.badRequest().body(null);
             }
 
             maquina.getConfigs().stream()
-                .filter(c -> "temperatura".equals(c.getNombreMetrica()))
+                .filter(c -> metricaTarget.equals(c.getNombreMetrica()))
                 .findFirst()
                 .ifPresent(config -> {
                     if (muyAlto != null) config.setLimiteMA(muyAlto);

@@ -189,7 +189,17 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
   }
 
   Future<void> _cerrar() async {
+    if (_accionesCtrl.text.trim().length < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El resumen de trabajos debe tener al menos 5 caracteres'),
+          backgroundColor: IndustrialTheme.warningOrange,
+        ),
+      );
+      return;
+    }
     if (!_firmaTecDirty) {
+      // ... (existing code for signature)
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Firma del técnico obligatoria para cierre'),

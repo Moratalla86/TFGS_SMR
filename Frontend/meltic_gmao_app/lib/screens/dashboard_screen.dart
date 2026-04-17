@@ -9,6 +9,8 @@ import '../services/app_session.dart';
 
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/industrial_theme.dart';
+import '../services/stats_service.dart';
+import '../widgets/industrial_charts.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,10 +22,12 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final MaquinaService _maquinaService = MaquinaService();
   final OrdenTrabajoService _otService = OrdenTrabajoService();
+  final StatsService _statsService = StatsService();
   AppSession get session => AppSession.instance;
 
   List<Maquina> _maquinas = [];
   List<OrdenTrabajo> _ots = [];
+  Map<String, dynamic>? _stats;
   bool _loading = true;
   String? _error;
   Timer? _refreshTimer;
@@ -58,6 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final maquinas = await _maquinaService.fetchMaquinas();
       final ots = await _otService.fetchOrdenes();
+      final stats = await _statsService.fetchDashboardStats();
       
       GlobalTelemetryHistorian.instance.startTracking(maquinas);
       
@@ -65,6 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           _maquinas = maquinas;
           _ots = ots;
+          _stats = stats;
           _loading = false;
         });
       }
@@ -248,22 +254,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 30),
-                                  if (_maquinas.any((m) => m.estado != 'OK' && m.estado != 'Operativo')) ...[
-                                    Row(
-                                      children: [
-                                        Icon(Icons.sensors_off, color: IndustrialTheme.criticalRed, size: 20),
-                                        const SizedBox(width: 8),
-                                        const Text("INCIDENCIAS ACTIVAS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    ..._maquinas.where((m) => m.estado != 'OK' && m.estado != 'Operativo').map((m) => _buildAlertaItem(m)),
-                                    const SizedBox(height: 20),
-                                  ],
-                                  const Text("MONITOREO DE ACTIVOS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
-                                  const SizedBox(height: 12),
-                                  _buildHorizontalMachineList(_maquinas),
-                                  const SizedBox(height: 30),
+                                   Row(
+                                     crossAxisAlignment: CrossAxisAlignment.start,
+                                     children: [
+                                       Expanded(
+                                         flex: 4,
+                                         child: _buildRatioCard(),
+                                       ),
+                                       const SizedBox(width: 12),
+                                       Expanded(
+                                         flex: 6,
+                                         child: _buildEvolutivoSection(),
+                                       ),
+                                     ],
+                                   ),
+                                   const SizedBox(height: 20),
+                                   if (_maquinas.any((m) => m.estado != 'OK' && m.estado != 'Operativo')) ...[
+                                     _buildCollapsibleIncidents(),
+                                     const SizedBox(height: 20),
+                                   ],
+                                   const Text("EFICIENCIA Y FIABILIDAD", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2, color: IndustrialTheme.slateGray)),
+                                   const SizedBox(height: 12),
+                                   _buildEfficiencyRow(),
+                                   const SizedBox(height: 30),
+                                   const Text("MONITOREO DE ACTIVOS PLC", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2, color: IndustrialTheme.slateGray)),
+                                   const SizedBox(height: 12),
+                                   _buildHorizontalMachineList(_maquinas),
+                                   const SizedBox(height: 30),
                                   const Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -407,6 +424,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Navigator.of(context).pushNamed('/activos-plc');
             },
           ),
+          _drawerItem(
+            Icons.bar_chart_outlined,
+            "ESTADÍSTICAS Y KPI",
+            () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed('/stats');
+            },
+          ),
           const Spacer(),
           const Divider(color: Colors.white10),
           _drawerItem(
@@ -495,160 +520,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ).animate().scale(duration: 400.ms, curve: Curves.easeOut);
   }
 
-  Widget _buildAlertaItem(Maquina m) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: IndustrialTheme.claudCloud,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IndustrialTheme.criticalRed.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: IndustrialTheme.criticalRed),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      m.nombre,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: IndustrialTheme.criticalRed,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        "ALARMA",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  "Corte de telemetría detectado",
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: IndustrialTheme.criticalRed.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.arrow_forward_ios,
-            color: IndustrialTheme.slateGray,
-            size: 14,
-          ),
-        ],
-      ),
-    );
-  }
+  // Methods moved or obsoleted for cleaner organization
 
-  Widget _buildHorizontalMachineList(List<Maquina> maquinas) {
-    return SizedBox(
-      height: 160,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: maquinas.length,
-        itemBuilder: (context, index) {
-          final m = maquinas[index];
-          bool isOk = m.estado == 'OK' || m.estado == 'Operativo';
-          Color mColor = isOk
-              ? IndustrialTheme.operativeGreen
-              : IndustrialTheme.criticalRed;
-
-          return GestureDetector(
-            onTap: () => Navigator.pushNamed(
-              context,
-              '/machine-detail',
-              arguments: m.toJson(),
-            ),
-            child: Container(
-              width: 160,
-              margin: const EdgeInsets.only(right: 16, bottom: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: IndustrialTheme.claudCloud,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Icon(
-                        Icons.memory,
-                        color: IndustrialTheme.neonCyan,
-                        size: 24,
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: mColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          m.simulado ? "SIM" : (isOk ? "LIVE" : "DOWN"),
-                          style: TextStyle(
-                            color: m.simulado ? IndustrialTheme.neonCyan : mColor,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        m.nombre,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Colors.white,
-                        ),
-                        maxLines: 1,
-                      ),
-                      Text(
-                        m.ubicacion,
-                        style: const TextStyle(
-                          color: IndustrialTheme.slateGray,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+  // Method moved to bottom section
 
   Widget _buildOtDetailedItem(BuildContext context, OrdenTrabajo ot) {
     Color statusColor = IndustrialTheme.warningOrange;
@@ -689,6 +563,172 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
+        ),
+      ),
+    );
+  }
+  Widget _buildRatioCard() {
+    if (_stats == null) return const SizedBox.shrink();
+    return IndustrialComparisonCard(
+      preventive: _stats!['preventivas'] ?? 0,
+      corrective: _stats!['correctivas'] ?? 0,
+      title: "Distribución de Carga",
+    );
+  }
+
+  Widget _buildEvolutivoSection() {
+    if (_stats == null || _stats!['evolutivo'] == null) {
+      return Container(height: 220, decoration: BoxDecoration(color: IndustrialTheme.claudCloud.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)));
+    }
+    
+    final List<dynamic> evolutivo = _stats!['evolutivo'];
+    if (evolutivo.isEmpty) {
+      return Container(height: 220, decoration: BoxDecoration(color: IndustrialTheme.claudCloud.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)));
+    }
+
+    final labels = evolutivo.map((e) {
+      final String fecha = (e['fecha'] as String? ?? "00-00");
+      final parts = fecha.split('-');
+      return parts.length >= 2 ? parts[1] : parts[0]; // Extrae el mes con seguridad
+    }).toList();
+
+    final corrective = evolutivo.map((e) => (e['correctivo'] as num? ?? 0)).toList();
+    final preventive = evolutivo.map((e) => (e['preventivo'] as num? ?? 0)).toList();
+
+    return IndustrialBarChart(
+      labels: labels,
+      correctiveData: corrective,
+      preventiveData: preventive,
+      height: 220,
+    );
+  }
+  Widget _buildTopAnalyticsRow() {
+    return const SizedBox.shrink(); // Obsoleted by side-by-side design
+  }
+
+  Widget _buildStatBox(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.w900)),
+        Text(label, style: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 8, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildEfficiencyRow() {
+    if (_stats == null) return const SizedBox.shrink();
+    return Row(
+      children: [
+        _buildMiniKpiCard("MTTR", "${_stats!['mttr']}m", IndustrialTheme.electricBlue, () => Navigator.pushNamed(context, '/stats')),
+        const SizedBox(width: 8),
+        _buildMiniKpiCard("MTBF", "${_stats!['mtbf']}m", IndustrialTheme.neonCyan, () => Navigator.pushNamed(context, '/stats')),
+        const SizedBox(width: 8),
+        _buildMiniKpiCard("LEAD TIME", "${_stats!['leadTime']}m", Colors.amber, () => Navigator.pushNamed(context, '/stats')),
+      ],
+    );
+  }
+
+  Widget _buildMiniKpiCard(String title, String value, Color color, VoidCallback onTap) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: IndustrialTheme.claudCloud.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(title, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 8, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleIncidents() {
+    final incidencias = _maquinas.where((m) => m.estado != 'OK' && m.estado != 'Operativo').toList();
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        initiallyExpanded: true,
+        tilePadding: EdgeInsets.zero,
+        leading: Icon(Icons.sensors_off, color: IndustrialTheme.criticalRed, size: 20),
+        title: Text(
+          "INCIDENCIAS ACTIVAS (${incidencias.length})",
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: IndustrialTheme.criticalRed),
+        ),
+        children: incidencias.map<Widget>((m) => _buildAlertaItem(m)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildAlertaItem(Maquina m) {
+    return InkWell(
+      onTap: () => Navigator.pushNamed(context, '/machine-detail', arguments: m.toJson()),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: IndustrialTheme.criticalRed.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: IndustrialTheme.criticalRed.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: IndustrialTheme.criticalRed, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(m.nombre, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
+                  Text("ALERTA DE TELEMETRÍA - REVISAR PLC", style: TextStyle(color: IndustrialTheme.criticalRed.withValues(alpha: 0.7), fontSize: 9)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray, size: 16),
+          ],
+        ),
+      ),
+    ).animate().shake(delay: 500.ms);
+  }
+
+  Widget _buildHorizontalMachineList(List<Maquina> maquinas) {
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: maquinas.length,
+        separatorBuilder: (context, _) => const SizedBox(width: 12),
+        itemBuilder: (context, i) => _buildMachineCard(maquinas[i]),
+      ),
+    );
+  }
+
+  Widget _buildMachineCard(Maquina m) {
+    return InkWell(
+      onTap: () => Navigator.pushNamed(context, '/machine-detail', arguments: m.toJson()),
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: IndustrialTheme.claudCloud,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: m.estado == 'OK' ? IndustrialTheme.operativeGreen.withValues(alpha: 0.2) : IndustrialTheme.criticalRed.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.precision_manufacturing, color: m.estado == 'OK' ? IndustrialTheme.operativeGreen : IndustrialTheme.criticalRed, size: 20),
+            const SizedBox(height: 8),
+            Text(m.nombre, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)),
+          ],
         ),
       ),
     );

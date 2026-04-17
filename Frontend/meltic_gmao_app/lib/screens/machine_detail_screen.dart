@@ -7,6 +7,7 @@ import '../models/telemetria.dart';
 import '../models/maquina.dart';
 import '../models/metric_config.dart';
 import '../widgets/industrial_chart.dart';
+import '../widgets/industrial_charts.dart';
 import '../services/maquina_service.dart';
 import '../theme/industrial_theme.dart';
 import '../utils/metric_definitions.dart';
@@ -158,7 +159,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.tune, color: IndustrialTheme.neonCyan), onPressed: () => _showIndustrialConfigDialog(maquina)),
+          IconButton(icon: const Icon(Icons.tune, color: IndustrialTheme.neonCyan), onPressed: () => _showNetworkConfigDialog(maquina)),
           IconButton(
             icon: Icon(_analysisStart != null ? Icons.history_toggle_off : Icons.more_time, color: _analysisStart != null ? IndustrialTheme.warningOrange : IndustrialTheme.slateGray),
             onPressed: _analysisStart != null ? _clearAnalysis : _selectTimeRange,
@@ -167,26 +168,53 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async => _refreshData(),
-        child: _playbackHistory.isEmpty
-            ? const Center(child: CircularProgressIndicator(color: IndustrialTheme.neonCyan))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildAnalysisHeader(),
-                    const SizedBox(height: 10),
-                    _buildAnomalyTracker(maquina, _playbackHistory.last),
-                    const SizedBox(height: 10),
-                    _buildTimeRangeSelector(),
-                    const SizedBox(height: 10),
-                    _buildMainChart(maquina),
-                    const SizedBox(height: 20),
-                    _buildPlaybackBar(),
-                    const SizedBox(height: 32),
-                    _buildBottomMetadata(maquina),
-                  ],
-                ),
-              ),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _buildAnalysisHeader(),
+              const SizedBox(height: 12),
+              _buildTelemetryDials(maquina, _playbackHistory.isEmpty ? null : _playbackHistory.last),
+              const SizedBox(height: 12),
+              _buildAnomalyTracker(maquina, _playbackHistory.isEmpty ? null : _playbackHistory.last),
+              const SizedBox(height: 20),
+              _buildTimeRangeSelector(),
+              const SizedBox(height: 12),
+              _playbackHistory.isEmpty && !_isHistoricalMode
+                  ? _buildNoDataMessage()
+                  : _buildMainChart(maquina),
+              const SizedBox(height: 20),
+              _buildPlaybackBar(),
+              const SizedBox(height: 32),
+              _buildBottomMetadata(maquina),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoDataMessage() {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: IndustrialTheme.claudCloud.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off, color: IndustrialTheme.slateGray, size: 32),
+            SizedBox(height: 12),
+            Text("ESPERANDO SEÑAL PLC...", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 10, letterSpacing: 2, fontWeight: FontWeight.bold)),
+            SizedBox(height: 4),
+            Text("HASTA QUE LLEGUE TELEMETRÍA, LOS DATOS SON ESTIMADOS", style: TextStyle(color: Colors.white24, fontSize: 7)),
+          ],
+        ),
       ),
     );
   }
@@ -217,7 +245,25 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     );
   }
 
-  Widget _buildAnomalyTracker(Maquina m, Telemetria lastData) {
+  Widget _buildAnomalyTracker(Maquina m, Telemetria? lastData) {
+    if (lastData == null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: IndustrialTheme.claudCloud.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.hourglass_empty, color: IndustrialTheme.slateGray),
+            SizedBox(width: 12),
+            Expanded(child: Text("ESPERANDO DATOS DE SENSORES...", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 11, fontWeight: FontWeight.bold))),
+          ],
+        ),
+      );
+    }
+
     String? level;
     for (var config in m.configs) {
       if (!config.habilitado) continue;
@@ -528,13 +574,71 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
   Widget _buildBottomMetadata(Maquina maquina) {
     return Column(
       children: [
-        ListTile(leading: const Icon(Icons.sensors, color: IndustrialTheme.neonCyan), title: const Text("CONFIGURAR MÉTRICAS", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)), trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray), onTap: () => _showIndustrialConfigDialog(maquina)),
-        ListTile(leading: const Icon(Icons.settings, color: IndustrialTheme.neonCyan), title: const Text("IP PLC / CONFIGURACIÓN", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)), subtitle: Text(maquina.plcUrl ?? "Por defecto (ID1)", style: const TextStyle(fontSize: 9, color: IndustrialTheme.slateGray)), trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray), onTap: () => _showIndustrialConfigDialog(maquina)),
+        ListTile(leading: const Icon(Icons.sensors, color: IndustrialTheme.neonCyan), title: const Text("CONFIGURAR MÉTRICAS", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)), trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray), onTap: () => _showMetricsConfigDialog(maquina)),
+        ListTile(leading: const Icon(Icons.settings, color: IndustrialTheme.neonCyan), title: const Text("IP PLC / CONFIGURACIÓN", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)), subtitle: Text(maquina.plcUrl ?? "Por defecto (ID1)", style: const TextStyle(fontSize: 9, color: IndustrialTheme.slateGray)), trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray), onTap: () => _showNetworkConfigDialog(maquina)),
       ],
     );
   }
 
-  void _showIndustrialConfigDialog(Maquina maquina) {
+  Widget _buildTelemetryDials(Maquina m, Telemetria? last) {
+    // Calculamos un OEE ficticio basado en el ratio de errores (si hubiera) o estable
+    // Para la demo, lo basamos en el ID de la máquina y el segundo actual para que oscile sutilmente
+    final double oeeSeed = (m.id ?? 0) * 7.5 + DateTime.now().second * 0.1;
+    final double oee = (85.0 + (oeeSeed % 10.0)) / 100.0;
+    
+    return Row(
+      children: [
+        Expanded(
+          child: _buildDialBox(
+            label: "OEE GLOBAL",
+            value: oee,
+            color: oee > 0.8 ? IndustrialTheme.operativeGreen : IndustrialTheme.warningOrange,
+            sub: "EFICIENCIA",
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildDialBox(
+            label: "TEMPERATURA",
+            value: (last?.temperatura ?? 40.0) / 100.0,
+            color: (last?.temperatura ?? 0) > 60 ? IndustrialTheme.criticalRed : IndustrialTheme.neonCyan,
+            sub: last == null ? "N/A" : "${(last.temperatura ?? 0).toInt()} °C",
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildDialBox(
+            label: "VIBRACIÓN",
+            value: (last?.vibracion ?? 2.0) / 10.0,
+            color: (last?.vibracion ?? 0) > 7.0 ? IndustrialTheme.criticalRed : Colors.purpleAccent,
+            sub: last == null ? "N/A" : "${(last.vibracion ?? 0).toStringAsFixed(1)} mm/s",
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDialBox({required String label, required double value, required Color color, required String sub}) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: IndustrialTheme.claudCloud.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: IndustrialGauge(
+        value: value,
+        label: label,
+        subLabel: sub,
+        color: color,
+        height: 70,
+        width: 100,
+        fontSize: 14,
+      ),
+    );
+  }
+
+  void _showMetricsConfigDialog(Maquina maquina) {
     final allMetrics = MetricDefinition.all;
     List<MetricConfig> tempConfigs = List.from(maquina.configs);
 
@@ -543,7 +647,13 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: IndustrialTheme.claudCloud,
-          title: const Text("GESTIÓN DE MÉTRICAS", style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14)),
+          title: const Row(
+            children: [
+              Icon(Icons.sensors, color: IndustrialTheme.neonCyan, size: 20),
+              SizedBox(width: 12),
+              Text("CONFIGURAR SENSORES", style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -555,8 +665,10 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                 final bool isEnabled = configIndex != -1 && tempConfigs[configIndex].habilitado;
 
                 return CheckboxListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
                   title: Text(def.label, style: const TextStyle(fontSize: 12, color: Colors.white)),
-                  secondary: Icon(def.icon, color: isEnabled ? def.color : IndustrialTheme.slateGray),
+                  secondary: Icon(def.icon, color: isEnabled ? def.color : IndustrialTheme.slateGray, size: 20),
                   value: isEnabled,
                   activeColor: IndustrialTheme.neonCyan,
                   onChanged: (val) {
@@ -584,21 +696,115 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("CANCELAR", style: TextStyle(color: IndustrialTheme.slateGray))
+            ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: IndustrialTheme.neonCyan,
+                foregroundColor: IndustrialTheme.spaceCadet,
+              ),
               onPressed: () async {
                 final n = maquina.copyWith(configs: tempConfigs);
-                await _maquinaService.update(n);
-                if (!mounted) {
-                  return;
+                final bool success = await _maquinaService.update(n);
+                if (!mounted) return;
+                if (success) {
+                  setState(() => _machineMap = n.toJson());
+                  if (context.mounted) Navigator.pop(context);
+                  _refreshData();
                 }
-                setState(() => _machineMap = n.toJson());
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-                _refreshData();
               },
-              child: const Text("GUARDAR"),
+              child: const Text("GUARDAR", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNetworkConfigDialog(Maquina maquina) {
+    final TextEditingController urlController = TextEditingController(text: maquina.plcUrl);
+    bool simulado = maquina.simulado;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: IndustrialTheme.claudCloud,
+          title: const Row(
+            children: [
+              Icon(Icons.lan, color: IndustrialTheme.neonCyan, size: 20),
+              SizedBox(width: 12),
+              Text("CONFIGURACIÓN DE RED / PLC", style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("NODO DE COMUNICACIÓN (IOT)", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: IndustrialTheme.neonCyan, letterSpacing: 1.2)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: urlController,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.lan, color: IndustrialTheme.neonCyan, size: 18),
+                  labelText: "DIRECCIÓN IP DEL PLC",
+                  labelStyle: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 11),
+                  fillColor: IndustrialTheme.spaceCadet,
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text("MODO SIMULACIÓN (TFG)", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Simula datos de PLC sin hardware físico", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 11)),
+                value: simulado,
+                activeThumbColor: IndustrialTheme.neonCyan,
+                onChanged: (v) => setDialogState(() => simulado = v),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                urlController.dispose();
+                Navigator.pop(context);
+              },
+              child: const Text("CANCELAR", style: TextStyle(color: IndustrialTheme.slateGray))
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: IndustrialTheme.neonCyan,
+                foregroundColor: IndustrialTheme.spaceCadet,
+              ),
+              onPressed: () async {
+                final n = maquina.copyWith(
+                  plcUrl: urlController.text.trim(),
+                  simulado: simulado,
+                );
+                final bool success = await _maquinaService.update(n);
+                urlController.dispose();
+
+                if (!mounted) return;
+                if (success) {
+                  setState(() => _machineMap = n.toJson());
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("CONFIGURACIÓN DE RED ACTUALIZADA"),
+                        backgroundColor: IndustrialTheme.operativeGreen,
+                      )
+                    );
+                  }
+                  _refreshData();
+                }
+              },
+              child: const Text("GUARDAR", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

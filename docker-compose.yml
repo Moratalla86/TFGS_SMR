@@ -4,11 +4,11 @@ services:
     container_name: meltic-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: meltic_root_123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-meltic_root_123}
       MYSQL_ROOT_HOST: "%"
-      MYSQL_DATABASE: meltic_gmao
-      MYSQL_USER: meltic_user
-      MYSQL_PASSWORD: meltic_pass_123
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-meltic_gmao}
+      MYSQL_USER: ${MYSQL_USER:-meltic_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-meltic_pass_123}
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
@@ -46,10 +46,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - MYSQL_HOST=mysql-db
-      - MYSQL_USER=meltic_user
-      - MYSQL_PASSWORD=meltic_pass_123
-      - MYSQL_ROOT_PASSWORD=meltic_root_123
+      - MYSQL_HOST=${MYSQL_HOST:-mysql-db}
+      - MYSQL_USER=${MYSQL_USER:-meltic_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-meltic_pass_123}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-meltic_root_123}
       - MONGODB_HOST=mongodb
       - PLC_URL=${PLC_URL}
       - PLC_POLLING_RATE=${PLC_POLLING_RATE}

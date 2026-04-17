@@ -80,9 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _lastRfidTimestamp = timestamp;
           _handleRfidLogin(rfid);
         }
-      } catch (e) {
-        debugPrint('RFID polling error: $e');
-      }
+      } catch (_) {}
     });
   }
 

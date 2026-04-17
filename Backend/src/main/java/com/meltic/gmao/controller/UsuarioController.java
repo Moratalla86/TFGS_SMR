@@ -32,8 +32,7 @@ public class UsuarioController {
     @Autowired
     private OrdenTrabajoRepository ordenTrabajoRepository;
 
-    @Autowired
-    private BCryptPasswordEncoder encoder;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     // ── Listar todos ────────────────────────────────────────────────────────────
     @GetMapping
@@ -56,6 +55,11 @@ public class UsuarioController {
         // Cifrar contraseña
         if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
             usuario.setPassword(encoder.encode(usuario.getPassword()));
+        }
+
+        // Validar duplicidad
+        if (usuarioRepository.findByEmail(emailCorp).isPresent()) {
+            return ResponseEntity.status(409).build(); // Conflict
         }
 
         usuario.setActivo(true);

@@ -77,7 +77,9 @@ public class MantenimientoService {
 
     // ── Creación (Jefe) ────────────────────────────────────────────────────────
     public OrdenTrabajo crearOrden(OrdenTrabajo ordenTrabajo) {
-        ordenTrabajo.setFechaCreacion(LocalDateTime.now());
+        if (ordenTrabajo.getFechaCreacion() == null) {
+            ordenTrabajo.setFechaCreacion(LocalDateTime.now());
+        }
         if (ordenTrabajo.getEstado() == null || ordenTrabajo.getEstado().isEmpty()) {
             if (ordenTrabajo.getTecnico() == null) {
                 ordenTrabajo.setEstado("SOLICITADA");
@@ -100,7 +102,7 @@ public class MantenimientoService {
                 Optional<Maquina> maquina = maquinaRepository.findById(maquinaId);
                 maquina.ifPresent(ot::setMaquina);
             }
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return ordenTrabajoRepository.save(ot);
         });
     }
 
@@ -109,7 +111,7 @@ public class MantenimientoService {
         if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setEstado(nuevoEstado);
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return ordenTrabajoRepository.save(ot);
         });
     }
 
@@ -121,7 +123,7 @@ public class MantenimientoService {
             if (ot.getFechaInicio() == null) {
                 ot.setFechaInicio(LocalDateTime.now());
             }
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return ordenTrabajoRepository.save(ot);
         });
     }
 
@@ -130,7 +132,7 @@ public class MantenimientoService {
         if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setTrabajosRealizados(trabajos);
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return ordenTrabajoRepository.save(ot);
         });
     }
 
@@ -138,8 +140,25 @@ public class MantenimientoService {
     public Optional<OrdenTrabajo> cerrarOT(Long id, Map<String, String> payload) {
         if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
+            // --- VALIDACIÓN DE CIERRE (Propuesta Tutor) ---
+            String trabajos = payload.get("trabajosRealizados");
+            String firma = payload.get("firmaTecnico");
+            
+            if (trabajos == null || trabajos.trim().length() < 5 || firma == null || firma.trim().isEmpty()) {
+                throw new RuntimeException("Error: La firma y el resumen de trabajos son obligatorios para cerrar la OT.");
+            }
+
             ot.setEstado("CERRADA");
-            ot.setFechaFin(LocalDateTime.now());
+            if (payload.containsKey("fechaFin")) {
+                ot.setFechaFin(LocalDateTime.parse(payload.get("fechaFin")));
+            } else {
+                ot.setFechaFin(LocalDateTime.now());
+            }
+            
+            // También permitir sobreescribir fechaInicio si se envía al cerrar
+            if (payload.containsKey("fechaInicio")) {
+                ot.setFechaInicio(LocalDateTime.parse(payload.get("fechaInicio")));
+            }
 
             Optional.ofNullable(payload.get("trabajosRealizados")).ifPresent(ot::setTrabajosRealizados);
             Optional.ofNullable(payload.get("firmaTecnico")).ifPresent(ot::setFirmaTecnico);
@@ -154,7 +173,7 @@ public class MantenimientoService {
             if (payload.containsKey("reportePdfBase64")) {
                 ot.setReportePdfBase64(payload.get("reportePdfBase64"));
             }
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return ordenTrabajoRepository.save(ot);
         });
     }
 
@@ -166,7 +185,7 @@ public class MantenimientoService {
                 ot.setFirmaTecnico(firmaTecnico);
             if (firmaCliente != null)
                 ot.setFirmaCliente(firmaCliente);
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return ordenTrabajoRepository.save(ot);
         });
     }
 
