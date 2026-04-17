@@ -149,7 +149,7 @@ class IndustrialAreaChart extends StatelessWidget {
         children: [
           Expanded(
             child: CustomPaint(
-              size: Size.infinite,
+              size: Size.zero,
               painter: _AreaChartPainter(
                 labels: labels,
                 corrective: correctiveData.map((e) => e.toDouble()).toList(),
@@ -185,9 +185,10 @@ class _AreaChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (labels.isEmpty) return;
+    if (labels.isEmpty || labels.length < 2) return;
 
-    final double maxVal = [...corrective, ...preventive].reduce(math.max);
+    final combined = [...corrective, ...preventive];
+    final double maxVal = combined.isEmpty ? 0 : combined.reduce(math.max);
     final double stepX = size.width / (labels.length - 1);
     final double scaleY = size.height / (maxVal == 0 ? 1 : maxVal * 1.3);
 
@@ -403,7 +404,7 @@ class IndustrialBarChart extends StatelessWidget {
         children: [
           Expanded(
             child: CustomPaint(
-              size: Size.infinite,
+              size: Size.zero,
               painter: _BarChartPainter(
                 labels: labels,
                 corrective: correctiveData.map((e) => e.toDouble()).toList(),
@@ -531,13 +532,11 @@ class IndustrialComparisonCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title.toUpperCase(), style: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-          const SizedBox(height: 16),
           _ComparisonRow(label: "PREVENTIVO", value: preventive, percent: pPct, color: IndustrialTheme.operativeGreen),
-          const SizedBox(height: 12),
           _ComparisonRow(label: "CORRECTIVO", value: corrective, percent: cPct, color: IndustrialTheme.criticalRed),
-          const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(color: IndustrialTheme.operativeGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
