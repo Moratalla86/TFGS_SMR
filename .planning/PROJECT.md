@@ -28,16 +28,15 @@ El técnico puede gestionar el mantenimiento industrial completo desde el móvil
 - ✓ Gestión de usuarios y máquinas (CRUD) — v0.x
 - ✓ Pantalla KpisScreen (estructura base) + endpoint /api/stats/dashboard — v0.x
 - ✓ Correcciones de seguridad REVIEW.md (12 CRITICAL/HIGH/MEDIUM) — v0.x
+- ✓ KPIs operacionales (OEE, MTBF, MTTR, disponibilidad) con datos reales + fl_chart BarChart — Phase 1
+- ✓ Widget Sala de Servidores con polling en tiempo real + navegación TelemetriaChartScreen — Phase 1
+- ✓ Exportación KPI a PDF (6 secciones) + Exportación listado OTs a PDF (tabla 7 columnas) — Phase 1
 
 ### Active
 
-- [ ] KPIs con datos reales del backend (MTTR, MTBF, tasa resolución, OTs por estado/tipo)
-- [ ] Gráficas de barras y tendencia en KpisScreen
-- [ ] Entrada KPIs en drawer lateral y widget resumen en DashboardScreen
 - [ ] Panel de alertas in-app (Web/Windows) con alarmas activas de máquinas
 - [ ] Notificaciones push nativas Android via Firebase
 - [ ] Calendario visual de OTs preventivas con planificador
-- [ ] Exportación de KPIs y listado de OTs a PDF
 
 ### Out of Scope
 
@@ -93,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 — Milestone v1.0 started*
+*Last updated: 2026-04-19 — Phase 1 complete (KPI Dashboard + PDF Export)*
