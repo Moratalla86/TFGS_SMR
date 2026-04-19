@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../services/global_telemetry_historian.dart';
 import '../services/maquina_service.dart';
 import '../services/orden_trabajo_service.dart';
+import '../services/stats_service.dart';
 import '../models/orden_trabajo.dart';
 import '../models/maquina.dart';
 import '../services/app_session.dart';
+import '../widgets/sala_servidores_widget.dart';
 
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/industrial_theme.dart';
@@ -24,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<Maquina> _maquinas = [];
   List<OrdenTrabajo> _ots = [];
+  Map<String, dynamic>? _kpiStats;
   bool _loading = true;
   String? _error;
   Timer? _refreshTimer;
@@ -60,7 +63,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final ots = await _otService.fetchOrdenes();
       
       GlobalTelemetryHistorian.instance.startTracking(maquinas);
-      
+
+      if (!quiet && _kpiStats == null) {
+        try {
+          final stats = await StatsService().fetchDashboardStats();
+          if (mounted) setState(() { _kpiStats = stats; });
+        } catch (_) {
+          // KPI stats failure is non-fatal — dashboard still shows operational data
+        }
+      }
+
       if (mounted) {
         setState(() {
           _maquinas = maquinas;
@@ -495,6 +507,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
+      ),
+    ).animate().scale(duration: 400.ms, curve: Curves.easeOut);
+  }
+
+  Color _oeeColor(double v)  => v >= 85 ? IndustrialTheme.operativeGreen
+      : v >= 65 ? IndustrialTheme.warningOrange : IndustrialTheme.criticalRed;
+
+  Color _mtbfColor(double v) => v >= 48 ? IndustrialTheme.operativeGreen
+      : v >= 24 ? IndustrialTheme.warningOrange : IndustrialTheme.criticalRed;
+
+  Color _mttrColor(double v) => v <= 2 ? IndustrialTheme.operativeGreen
+      : v <= 4 ? IndustrialTheme.warningOrange : IndustrialTheme.criticalRed;
+
+  Color _dispColor(double v) => v >= 90 ? IndustrialTheme.operativeGreen
+      : v >= 75 ? IndustrialTheme.warningOrange : IndustrialTheme.criticalRed;
+
+  Widget _buildOperationalKpiCard(
+      String title, String value, String subtitle, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: IndustrialTheme.claudCloud,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 12),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: -0.5)),
+          const SizedBox(height: 4),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1)),
+          const SizedBox(height: 2),
+          Text(subtitle,
+              style: const TextStyle(
+                  fontSize: 9,
+                  color: IndustrialTheme.slateGray)),
+        ]),
       ),
     ).animate().scale(duration: 400.ms, curve: Curves.easeOut);
   }
