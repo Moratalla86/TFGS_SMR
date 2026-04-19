@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'dart:math' show max;
 import '../services/stats_service.dart';
 import '../theme/industrial_theme.dart';
+import '../utils/pdf_generator.dart';
 
 class KpisScreen extends StatefulWidget {
   const KpisScreen({super.key});
@@ -39,6 +42,24 @@ class _KpisScreenState extends State<KpisScreen> {
         title: const Text('INDICADORES KPI',
             style: TextStyle(fontSize: 14, letterSpacing: 2, fontWeight: FontWeight.bold)),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: ElevatedButton.icon(
+              onPressed: _stats == null ? null : () => _exportarPdf(),
+              icon: const Icon(Icons.picture_as_pdf, size: 16),
+              label: const Text('EXPORTAR PDF'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: IndustrialTheme.electricBlue,
+                foregroundColor: IndustrialTheme.spaceCadet,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                textStyle: const TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.refresh, color: IndustrialTheme.neonCyan),
             onPressed: _load,
@@ -311,16 +332,6 @@ class _KpisScreenState extends State<KpisScreen> {
       );
     }
 
-    double maxVal = 1.0;
-    for (final m in evolucion) {
-      final p = (m['preventivo'] as num?)?.toDouble() ?? 0;
-      final c = (m['correctivo'] as num?)?.toDouble() ?? 0;
-      if (p > maxVal) maxVal = p;
-      if (c > maxVal) maxVal = c;
-    }
-    maxVal *= 1.2;
-    const double barMaxH = 100.0;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: BoxDecoration(
@@ -330,32 +341,64 @@ class _KpisScreenState extends State<KpisScreen> {
       ),
       child: Column(children: [
         SizedBox(
-          height: barMaxH + 32,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: evolucion.map<Widget>((m) {
-              final double p = (m['preventivo'] as num?)?.toDouble() ?? 0;
-              final double c = (m['correctivo'] as num?)?.toDouble() ?? 0;
-              final double hP = ((p / maxVal) * barMaxH).clamp(2.0, barMaxH);
-              final double hC = ((c / maxVal) * barMaxH).clamp(2.0, barMaxH);
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    _bar(hP, IndustrialTheme.operativeGreen),
-                    const SizedBox(width: 3),
-                    _bar(hC, IndustrialTheme.criticalRed),
-                  ]),
-                  const SizedBox(height: 6),
-                  Text(m['mes']?.toString() ?? '',
-                      style: const TextStyle(
-                          color: IndustrialTheme.slateGray,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold)),
-                ],
-              );
-            }).toList(),
+          height: 160,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: evolucion.fold<double>(1.0, (prev, m) {
+                final p = (m['preventivo'] as num?)?.toDouble() ?? 0;
+                final c = (m['correctivo'] as num?)?.toDouble() ?? 0;
+                return max(prev, max(p, c));
+              }) * 1.25,
+              barGroups: evolucion.asMap().entries.map((entry) {
+                final i = entry.key;
+                final m = entry.value;
+                return BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: (m['preventivo'] as num?)?.toDouble() ?? 0,
+                      color: IndustrialTheme.operativeGreen,
+                      width: 8,
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(3)),
+                    ),
+                    BarChartRodData(
+                      toY: (m['correctivo'] as num?)?.toDouble() ?? 0,
+                      color: IndustrialTheme.criticalRed,
+                      width: 8,
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(3)),
+                    ),
+                  ],
+                );
+              }).toList(),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 20,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= evolucion.length) return const SizedBox();
+                      return Text(
+                        evolucion[idx]['mes']?.toString() ?? '',
+                        style: const TextStyle(
+                            fontSize: 9,
+                            color: IndustrialTheme.slateGray,
+                            fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles:  AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:   AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData:   FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+              barTouchData: BarTouchData(enabled: false),
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -368,15 +411,25 @@ class _KpisScreenState extends State<KpisScreen> {
     ).animate().fadeIn(duration: 500.ms, delay: 400.ms);
   }
 
-  Widget _bar(double height, Color color) {
-    return Container(
-      width: 12,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+  Future<void> _exportarPdf() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generando PDF...'),
+        duration: Duration(seconds: 2),
       ),
     );
+    try {
+      await PdfGenerator.generarKpiPdf(_stats!);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Error al generar PDF. Comprueba los datos.'),
+            backgroundColor: IndustrialTheme.criticalRed,
+          ),
+        );
+      }
+    }
   }
 
   Widget _legend(Color color, String label) {
