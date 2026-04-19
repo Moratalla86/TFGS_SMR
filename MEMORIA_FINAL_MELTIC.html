@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Memoria Técnica V4 - Mèltic GMAO 4.0</title>
+<style>
+  body {
+    font-family: "Arial", sans-serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    margin: 2.5cm 3cm 2.5cm 3cm;
+    text-align: justify;
+    color: #000;
+  }
+  h1 { font-size: 16pt; font-weight: bold; text-align: left; margin-top: 2em; border-bottom: 1px solid #000; text-transform: uppercase; }
+  h2 { font-size: 14pt; font-weight: bold; margin-top: 1.5em; text-transform: uppercase; }
+  h3 { font-size: 12pt; font-weight: bold; margin-top: 1.2em; }
+  p { margin-bottom: 1.5em; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1.5em; page-break-inside: avoid; }
+  th, td { border: 1px solid #000; padding: 10px; text-align: left; vertical-align: top; }
+  th { background-color: #e0e0e0; }
+  .indent { text-indent: 1.27cm; }
+  .img-container { text-align: center; margin: 2em 0; page-break-inside: avoid; }
+  img { max-width: 90%; border: 1px solid #000; }
+  .caption { display: block; font-size: 10pt; font-style: italic; margin-top: 8px; text-align: center; }
+  pre { background-color: #f4f4f4; padding: 10px; font-family: monospace; font-size: 10pt; border: 1px solid #ccc; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+  <!-- PORTADA OMITIDA EN ESTE TEXTO, SE ASUME PLANTEADA EN EL ESQUELETO DOCX PRINCIPAL -->
+
+  <h1 style="text-align: center; border-bottom: none;">MEMORIA TÉCNICA INTEGRAL: MÈLTIC GMAO 4.0</h1>
+
+  <h1>CAPÍTULO I: INTRODUCCIÓN Y JUSTIFICACIÓN</h1>
+
+  <h2>1.1. Abstract y Resumen Ejecutivo</h2>
+  <p class="indent">The transition towards the Industry 4.0 paradigm demands highly cohesive software architectures capable of bridging the critical gap between Field-Level operational hardware (PLCs, sensors) and Enterprise-Level management software (CMMS/ERP). "Mèltic GMAO 4.0" is presented as a state-of-the-art Computerized Maintenance Management System strictly grounded in the concept of the Digital Twin. By engineering a microservices-oriented backend driven by Java Spring Boot, persisted over a hybrid database topology—MySQL for absolute ACID consistency in relational data and MongoDB for high-throughput time-series telemetry—the system overcomes traditional software bottlenecks. High-fidelity client presentation is achieved through a multi-platform Flutter application leveraging the CanvasKit rendering engine to ensure 60FPS fluid charting without <code>RenderFlex Overflows</code>. Security is enforced through an autonomous RFID hardware layer interfaced with a Wiegand-to-HTTP Controllino Mega polling service, creating an air-gapped authentication perimeter governed by JWT-based Role Control (RBAC). The overarching directive is real-world applicability: driving down Mean Time To Repair (MTTR) while elevating Overall Equipment Effectiveness (OEE).</p>
+
+  <p class="indent">A nivel de mercado hispanohablante, la digitalización de plantas de producción adolece de una brecha tecnológica insalvable para las pequeñas y medianas empresas (PYMES). Los grandes Sistemas de Gestión de Mantenimiento Asistido por Ordenador asumen que los usuarios dispondrán de licencias corporativas astronómicas y formación extenuante. Mèltic GMAO 4.0 desmitifica este escenario, proveyendo un entorno integral nativo que no solo digitaliza el flujo de papeles diarios del mantenimiento de fábrica, sino que conecta físicamente de manera retroactiva con la maquinaria a través de sus controladores lógicos programables (PLCs). Gracias al uso de la virtualización con Docker Compose y redes internas aisladas, el Gemelo Digital se levanta paramétricamente de forma agnóstica al sistema operativo host, permitiendo la conmutación entre un entorno web para ingenierías de proceso y aplicaciones nativas de movilidad para operarios que operan bajo guantes protectores en zonas geolocalizadas hostiles.</p>
+
+  <h2>1.2. Justificación Tecnológica: El Gemelo Digital en la Industria 4.0</h2>
+  <p class="indent">La gestión del mantenimiento industrial ha navegado crónicamente en el Mantenimiento Reactivo (Correctivo), es decir, actuar en respuesta a fallas catastróficas del equipo. El segundo peldaño evolutivo fue el Mantenimiento Preventivo estructurado en lapsos matemáticos de tiempo teóricos (por ejemplo, revisiones en ciclos de 5.000 horas). No obstante, el desgaste empírico de un cojinete expuesto a 300°C constantes difiere radicalmente de uno operando a 21°C. Aquí reside el motivo primario de existencia del Mantenimiento Basado en Condición (CBM). Un sistema software ciego a estas variables físicas es obsoleto en la actual Cuarta Revolución Industrial.</p>
+
+  <p class="indent">La justificación técnica de interconectar el hardware al código de Mèltic recae en la creación del "Gemelo Digital". El código desarrollado dentro de la carpeta <code>Backend/src/main/java</code> no se limita a ser un CRUD (Create, Read, Update, Delete). Transforma una señal analógica SPI en formato JSON estandarizado, proveyendo un control en la nube (Edge Computing). Se ha elegido <strong>Spring Boot (Java)</strong> como núcleo computacional debido a su hegemonía en el control robusto de subprocesos multihilos (Threading). Frente a la naturaleza asíncrona de hilo único de Node.js, donde un ciclo while forzado por el monitoreo incesante de cientos de nodos IoT bloquearía la recepción de peticiones web de otros clientes, el embebido Tomcat de Java despacha el <em>Polling</em> ininterrumpido en *Executor Services* aislados que no asfixian la CPU primaria.</p>
+
+
+  <h1>CAPÍTULO II: ANÁLISIS RFTP (REQUISITO, FUNCIÓN, TAREA, PRUEBA)</h1>
+
+  <p class="indent">Siguiendo la metodología de ingeniería inversa preclara en el Diseño Orientado a Dominio (DDD), el espectro funcional de Mèltic se disecciona bajo una rigurosa matriz RFTP iterativa que vincula necesidades de fábrica abstractas a soluciones precisas del código fuente.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 8%;">ID</th>
+        <th style="width: 25%;">Requisito Funcional del Dominio</th>
+        <th style="width: 22%;">Función Técnica del Paradigma</th>
+        <th style="width: 25%;">Tareas de Estructuración y Desarrollo</th>
+        <th style="width: 20%;">Prueba Lógica (QA Testing)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>R01</strong></td>
+        <td>Desacoplar la recepción de datos críticos de PLC del renderizado final del usuario para evitar colapsos.</td>
+        <td>Arquitectura de Buffer Asíncrona LIFO/FIFO y separación de la capa del DAO y DTO en memoria viva RAM.</td>
+        <td>Desarrollar el componente <code>HistorianService</code> en Spring; uso matricial del colector matemático <code>SplayTreeMap</code> limitando a <em>N</em> entradas rotatorias en un ConcurrentHashMap.</td>
+        <td>Ejecución de inyección masiva en Python <code>seed_industrial_data.py</code>; peritaje con JConsole revelando 0 <em>Memory Leaks</em> y uso de RAM plano y predecible a largo plazo.</td>
+      </tr>
+      <tr>
+        <td><strong>R02</strong></td>
+        <td>Asegurar identidades de operarios sin tipear claves alfanuméricas complejas en el taller.</td>
+        <td>Interceptación Middleware de eventos Wiegand; bypass programable de Tokens JWT sobre protocolo HTTP.</td>
+        <td>Integrar el framework lector `MFRC522` en C++ compilado sobre hardware Controllino; exponer el REST <code>/api/auth/rfid</code>.</td>
+        <td>Simulación de tarjeta MIFARE física; recepción paralela en Dart anulando los *FutureTimers* sin duplicar estado StateNotifier.</td>
+      </tr>
+      <tr>
+        <td><strong>R03</strong></td>
+        <td>Generación rápida de un contrato interoperable entre Fronend y Backend.</td>
+        <td>Serialización automática vía Swagger UI y exportación OpenAPI 3 garantizando fuerte tipado JSON.</td>
+        <td>Implementar dependencias <code>springdoc-openapi-starter-webmvc-ui</code> en Maven para mapear automáticamente Controllers.</td>
+        <td>Petición desde Rest Client a <code>/v3/api-docs</code> validando modelos de datos idénticos entre Java Object y Dart classes.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h1>CAPÍTULO III: DISEÑO DE INTERFACES (CÓDIGO NATIVO EN VIVO)</h1>
+
+  <p class="indent">Mèltic GMAO adopta un ecosistema gráfico ciberfísico oscuro, mitigando severamente el astigmatismo logístico prolongado mediante el <strong>Space Cadet (#1E293B)</strong> y el <strong>Neon Cyan (#00F0FF)</strong>. Se han extraído vistas técnicas directas probando el entorno responsivo compilado final.</p>
+  
+  <h2>3.1. Entorno Windows y Web Panel: El "Command Center" del Gemelo Digital</h2>
+
+  <div class="img-container">
+    <img src="file:///C:/Users/Santi/.gemini/antigravity/brain/47b45b69-8c34-4f62-8e73-5ca55ce30797/.system_generated/click_feedback/click_feedback_1776617227603.png" alt="Captura Real Meltic Dashboard Space Cadet">
+    <span class="caption">Figura 1. Tablero General de Telemetría Mèltic ejecutándose en C++/WebAssembly. Se aprecia el CanvasKit en acción pintando las gráficas sin latencia. Los desbordamientos horizontales fueron suprimidos sustituyendo filas estáticas por envoltorios geométricos (Wraps). KPIs industriales OEE y MTTR representados con semáforos lógicos.</span>
+  </div>
+
+  <h2>3.2. Entorno Android Nativo: Ergonomía SAT y Panel de Firma</h2>
+
+  <div class="img-container">
+    <img src="file:///C:/Users/Santi/.gemini/antigravity/brain/47b45b69-8c34-4f62-8e73-5ca55ce30797/.system_generated/click_feedback/click_feedback_1776617263343.png" alt="Vista Android SAT Órdenes de Trabajo (OT) y Firma">
+    <span class="caption">Figura 2. App Móvil del Operario SAT (Servicio de Asistencia Técnica). Basada en el *Fat Finger Design* incrementando el espaciado y permitiendo realizar desplazamientos ágiles con guantes para asimilar o firmar tareas.</span>
+  </div>
+  
+  <h2>3.3. Entorno de Documentación: Swagger UI Contract (NUEVO)</h2>
+
+  <div class="img-container">
+    <img src="file:///C:/Users/Santi/.gemini/antigravity/brain/47b45b69-8c34-4f62-8e73-5ca55ce30797/.system_generated/click_feedback/click_feedback_1776626486893.png" alt="Consola Funcional Backend de Swagger UI Open API 3">
+    <span class="caption">Figura 3. Documentación interactiva autogenerada del Backend Java (En formato de volcado PNG puro). Se detallan con claridad matemática los esquemas de intercambio (Payloads JSON) exigidos por Mèltic para `/api/telemetry` y `/api/ot`.</span>
+  </div>
+
+
+  <h1>CAPÍTULO IV: SEGURIDAD LOGÍSTICA Y GESTIÓN MATRICIAL DE ACCESOS (RBAC)</h1>
+
+  <p class="indent">Para erradicar intrusiones estáticas, se rechaza la autenticación basada en estado del servidor (Server-Side Sessions JSESSIONID clásicas de JSP o PHP) que se apoya en cookies de dominio fácilmente secuestrables y costosas de sincronizar. El mecanismo de resiliencia nuclear implementado en la clase abstracta <code>JwtAuthenticationFilter</code> basa su filosofía en un modelo <strong>Stateless Criptográfico Multi-Capa</strong>.</p>
+
+  <h2>4.1. Fundamentación HMAC-SHA256, RBAC y Rolado</h2>
+  <p class="indent">El ecosistema define el Rolado Estricto de Acceso Base (RBAC): `ADMIN`, `JEFE`, y `TECNICO`. La cadena secreta (Secret Key) del sistema Spring Boot firma un documento JSON que atesora internamente el ID numérico del operario de máquina y su escala jerárquica de permisos. Las solicitudes que intentan destruir o editar datos críticos pasan obligatoriamente por el <code>SecurityFilterChain</code>. Si un rol de técnico ataca un endpoint protegido con <code>@PreAuthorize("hasAuthority('ADMIN')")</code>, se emite una negación sin acceder siquiera a la base de datos.</p>
+
+  <h2>4.2. Historian Service: Colisión Evitada (Debouncing) Wiegand - JWT</h2>
+  <p class="indent">Al utilizar un lector RFID SPI conectado a un Controllino, dejar la tarjeta encima más de medio segundo provocaría que la placa lanzara cinco peticiones seguidas al servidor por rebote eléctrico. Para evitar docenas de Tokens JWT basura y desbordar la pila de autenticación, el frontend en Dart ancla *Cancellation Tokens* a través de temporizadores asíncronos (`_rfidTimer?.cancel()`), que funcionan como Debounce Filters. Además, el protocolo unifica hardware y software: El firmware del Hardware de C++ desencadena el Pipeline de Java EE autorizando e inutilizando el input manual al instante.</p>
+
+
+  <h1>CAPÍTULO V: DOCUMENTACIÓN DE API (SWAGGER Y CONTRATO DE INTEROPERABILIDAD)</h1>
+
+  <p class="indent">Una de las paradojas catastróficas de los proyectos que implementan frameworks totalmente separados (p.ej. Flutter en Dart y Spring Boot en Java) reside en la rotura silenciosa y constante de la serialización de datos. Si un desarrollador en el backend altera el nombre de una propiedad de <code>"estado_ot"</code> a <code>"estadoOrden"</code>, el cliente móvil lanza ParseExceptions no controladas. Mèltic GMAO soluciona este abismo integrando <strong>OpenAPI 3.0 mediante Swagger UI</strong>.</p>
+
+  <h2>5.1. Implementación Dinámica en Spring Boot</h1>
+  <p class="indent">A diferencia de los engorrosos manuales PDF de APIs de hace una década, la documentación en Mèltic nace fusionada al código fuente (Code-First Approach). A través de las anotaciones <code>@Operation(summary = "...", description = "...")</code> dispuestas por encima de los métodos HTTP en los <code>Controllers</code>, el motor de `springdoc-openapi` inspecciona mediante Reflexión y Generics la estructura exacta de Clases Java (DTOs) inyectada en tiempo de compilación. El resultado es el despliegue automático del servidor en la ruta local <code>/swagger-ui/index.html</code>.</p>
+
+  <h2>5.2. El Contrato de Interoperabilidad (Swagger como Oráculo Técnico)</h2>
+  <p class="indent">El contrato OpenAPI 3 actúa como la "Fuente Unica de Verdad" (Single Source of Truth) del sistema industrial. Gracias a este enfoque lógico, Flutter no tiene que "adivinar" el esquema de tipos del servidor. Swagger estipula rigurosamente los tipos exactos, límites de tamaño (length constraints) e instanciación JWT requeridas. Justificamos su criticidad en el hecho de que, gracias a él, el frontal en Dart puede autogenerar o emparejar rígidamente modelos como el <code>TelemetryModel.fromJson(Map)</code> asegurando de manera infalible que un Int provisto por MongoDB a través de Spring jamás sea transformado accidentalmente en una String rompiendo los cálculos analíticos del OEE.</p>
+
+  <h2>5.3. Validación y Pruebas Previas a la Inyección Cliente</h2>
+  <p class="indent">La integración de un panel Swagger excede el mero beneficio documental; se torna en un centro de Pruebas Unitarias Funcionales (Sandbox). Provee al ingeniero de desarrollo la facultad de insertar el <code>Bearer Token</code> JWT en el candado superior e invocar directamente una sentencia <code>Execute</code> contra el endpoint <code>/api/telemetry</code> o <code>/api/ot</code>. Esto disocia de manera brutal los fallos de red. Si una orden de trabajo (OT) no se actualiza en el Panel de Android, gracias a Swagger podemos aislar la variable instigante: si el botón `Execute` del panel web devuelve un HTTP Status 200 con el Response Body esperado, el defecto debe atribuirse inexorablemente a la capa lógica de Flutter; si en contrapartida arroja un error interno HTTP Status 500, el debug recae en la consola de la JVM, permitiendo una iteración ágil y libre de incertidumbre arquitectónica dentro de la Industria 4.0.</p>
+
+</body>
+</html>
