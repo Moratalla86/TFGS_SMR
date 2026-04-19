@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: Phase 1 — KPI Dashboard + PDF Export
-Plan: B complete — C next (wave 1 remaining)
+Plan: D complete — E next (wave 2 remaining)
 Status: In progress
-Last activity: 2026-04-19 — Plan B complete (PDF generator methods)
+Last activity: 2026-04-19 — Plan D complete (fl_chart BarChart + EXPORTAR PDF button)
 
-Progress: [##--------] 20% — Plan B complete (2 tasks, flutter analyze clean)
+Progress: [####------] 40% — Plan D complete (2 tasks, flutter analyze clean)
 
 ## Performance Metrics
 
@@ -48,13 +48,16 @@ Progress: [##--------] 20% — Plan B complete (2 tasks, flutter analyze clean)
 - Plan B: Both PDF methods committed atomically in single commit (single file edit, no intermediate broken state)
 - OrdenTrabajo field names confirmed matching plan spec — no adjustments needed
 - Monthly evolution rendered as pw.TableHelper data table (pdf package has no Flutter widget tree access)
+- Plan D: Tasks 1+2 committed as single commit (both modify only kpis_screen.dart; no intermediate broken state)
+- _bar() helper removed (dead code after fl_chart replacement — Rule 1 auto-fix)
+- KPI-02 and KPI-04 confirmed done without code change (drawer entry and OT sections already present)
 
 ## Session Continuity
 
-Stopped at: Completed 01-B-PLAN.md (PDF generator methods — generarKpiPdf + generarListaOtsPdf)
-Resume file: .planning/phases/01-kpi-dashboard-pdf-export/01-PLAN-C.md
+Stopped at: Completed 01-D-PLAN.md (fl_chart BarChart + EXPORTAR PDF button in KpisScreen)
+Resume file: .planning/phases/01-kpi-dashboard-pdf-export/01-PLAN-E.md
 Roadmap file: .planning/ROADMAP.md
 Requirements file: .planning/REQUIREMENTS.md
 
 ---
-*Last updated: 2026-04-19 — Plan B complete*
+*Last updated: 2026-04-19 — Plan D complete*
