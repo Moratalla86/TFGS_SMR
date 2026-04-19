@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: Phase 1 — KPI Dashboard + PDF Export
-Plan: TBD (pending /gsd-plan-phase 1)
-Status: Roadmap defined, ready for Phase 1
-Last activity: 2026-04-17 — Roadmap v1.0 TFG Final Sprint created (15 requirements, 4 phases)
+Plan: B complete — C next (wave 1 remaining)
+Status: In progress
+Last activity: 2026-04-19 — Plan B complete (PDF generator methods)
 
-Progress: [----------] 0% — Phase 1 not started
+Progress: [##--------] 20% — Plan B complete (2 tasks, flutter analyze clean)
 
 ## Performance Metrics
 
@@ -43,11 +43,18 @@ Progress: [----------] 0% — Phase 1 not started
 - Background FCM handler necesita @pragma('vm:entry-point') — falla silenciosamente en release
 - table_calendar LocaleDataException — añadir initializeDateFormatting('es_ES') en main()
 
+## Decisions
+
+- Plan B: Both PDF methods committed atomically in single commit (single file edit, no intermediate broken state)
+- OrdenTrabajo field names confirmed matching plan spec — no adjustments needed
+- Monthly evolution rendered as pw.TableHelper data table (pdf package has no Flutter widget tree access)
+
 ## Session Continuity
 
-Next action: Run /gsd-plan-phase 1 to decompose Phase 1 into executable plans.
+Stopped at: Completed 01-B-PLAN.md (PDF generator methods — generarKpiPdf + generarListaOtsPdf)
+Resume file: .planning/phases/01-kpi-dashboard-pdf-export/01-PLAN-C.md
 Roadmap file: .planning/ROADMAP.md
 Requirements file: .planning/REQUIREMENTS.md
 
 ---
-*Last updated: 2026-04-17 — Roadmap defined*
+*Last updated: 2026-04-19 — Plan B complete*
