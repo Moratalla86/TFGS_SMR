@@ -260,10 +260,26 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: IndustrialTheme.neonCyan),
-            tooltip: 'Exportar lista de OTs a PDF',
-            onPressed: _ordenes.isEmpty ? null : () => _exportarListaOts(),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: ElevatedButton.icon(
+              onPressed: _ordenes.isEmpty ? null : () => _exportarListaOts(),
+              icon: const Icon(Icons.picture_as_pdf, size: 16),
+              label: const Text('EXPORTAR PDF'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: IndustrialTheme.electricBlue,
+                foregroundColor: IndustrialTheme.spaceCadet,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                textStyle: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.sync),
