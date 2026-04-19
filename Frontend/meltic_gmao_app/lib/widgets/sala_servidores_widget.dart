@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../services/plc_service.dart';
 import '../models/telemetria.dart';
 import '../theme/industrial_theme.dart';
+import '../screens/telemetria_chart_screen.dart';
 
 class SalaServidoresWidget extends StatefulWidget {
   const SalaServidoresWidget({super.key});
@@ -75,7 +76,13 @@ class _SalaServidoresWidgetState extends State<SalaServidoresWidget> {
     }
 
     // Main widget — mirrors _buildKpiCard container structure:
-    return Container(
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const TelemetriaChartScreen()),
+      ),
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
@@ -85,7 +92,7 @@ class _SalaServidoresWidgetState extends State<SalaServidoresWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row: EN VIVO badge + live dot
+          // Header row: EN VIVO badge + live dot + chevron hint
           Row(
             children: [
               const Icon(Icons.sensors, color: IndustrialTheme.neonCyan, size: 18),
@@ -101,6 +108,8 @@ class _SalaServidoresWidgetState extends State<SalaServidoresWidget> {
               ),
               const Spacer(),
               _LiveDot(live: _live),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray, size: 16),
             ],
           ),
           const SizedBox(height: 16),
@@ -124,6 +133,7 @@ class _SalaServidoresWidgetState extends State<SalaServidoresWidget> {
           ),
         ],
       ),
+    ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0);
   }
 }

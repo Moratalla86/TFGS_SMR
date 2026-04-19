@@ -13,13 +13,32 @@ class PLCService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'accion': accion,
-          if (tipo != null) 'tipo': tipo,
+          'tipo': tipo,
         }),
       );
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('PLCService.enviarComando error: $e');
       return false;
+    }
+  }
+
+  /// Devuelve todos los registros de telemetría para una máquina.
+  /// GET /api/plc/maquina/{maquinaId} — devuelve la lista completa.
+  static Future<List<Telemetria>> fetchTelemetriaList(int maquinaId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/plc/maquina/$maquinaId'),
+        headers: AppSession.instance.authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> body = json.decode(response.body);
+        return body.map((e) => Telemetria.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('PLCService.fetchTelemetriaList error: $e');
+      return [];
     }
   }
 
