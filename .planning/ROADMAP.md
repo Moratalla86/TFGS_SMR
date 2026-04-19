@@ -9,7 +9,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: KPI Dashboard + PDF Export** - El técnico ve KPIs reales, gráficas y widget de Sala de Servidores, y puede exportar informes a PDF
+- [x] **Phase 1: KPI Dashboard + PDF Export** ✓ 2026-04-19 - El técnico ve KPIs reales, gráficas y widget de Sala de Servidores, y puede exportar informes a PDF
 - [ ] **Phase 2: Alertas In-App** - El técnico ve alarmas activas en tiempo real con banners in-app en Web y Windows
 - [ ] **Phase 3: Firebase Push Android** - El técnico Android recibe notificaciones push nativas cuando una máquina entra en alarma
 - [ ] **Phase 4: Calendario Preventivo** - El técnico planifica y consulta OTs preventivas en un calendario mensual visual
@@ -31,11 +31,11 @@
   5. El técnico pulsa "Exportar PDF" en OrdenesScreen y recibe un PDF con el listado completo de OTs
 **Plans**: 5 plans (Wave 1: A, B — Wave 2: C, D, E)
 Plans:
-- [ ] 01-PLAN-A.md — PLCService.fetchLastTelemetry + SalaServidoresWidget (KPI-05 foundation)
-- [ ] 01-PLAN-B.md — PdfGenerator.generarKpiPdf + generarListaOtsPdf (KPI-06, EXP-01 foundation)
-- [ ] 01-PLAN-C.md — DashboardScreen: KPI mini-cards + Sala de Servidores integration (KPI-01, KPI-05)
-- [ ] 01-PLAN-D.md — KpisScreen: fl_chart BarChart + PDF export button (KPI-02, KPI-03, KPI-04, KPI-06)
-- [ ] 01-PLAN-E.md — OrdenesScreen: bulk PDF export button (EXP-01)
+- [x] 01-PLAN-A.md — PLCService.fetchLastTelemetry + SalaServidoresWidget (KPI-05 foundation)
+- [x] 01-PLAN-B.md — PdfGenerator.generarKpiPdf + generarListaOtsPdf (KPI-06, EXP-01 foundation)
+- [x] 01-PLAN-C.md — DashboardScreen: KPI mini-cards + Sala de Servidores integration (KPI-01, KPI-05)
+- [x] 01-PLAN-D.md — KpisScreen: fl_chart BarChart + PDF export button (KPI-02, KPI-03, KPI-04, KPI-06)
+- [x] 01-PLAN-E.md — OrdenesScreen: bulk PDF export button (EXP-01)
 **UI hint**: yes
 
 ### Phase 2: Alertas In-App
@@ -81,7 +81,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. KPI Dashboard + PDF Export | 0/5 | Planned | - |
+| 1. KPI Dashboard + PDF Export | 5/5 | Complete | 2026-04-19 |
 | 2. Alertas In-App | 0/? | Not started | - |
 | 3. Firebase Push Android | 0/? | Not started | - |
 | 4. Calendario Preventivo | 0/? | Not started | - |
