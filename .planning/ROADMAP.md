@@ -10,9 +10,9 @@
 ## Phases
 
 - [x] **Phase 1: KPI Dashboard + PDF Export** ✓ 2026-04-19 - El técnico ve KPIs reales, gráficas y widget de Sala de Servidores, y puede exportar informes a PDF
-- [ ] **Phase 2: Alertas In-App** - El técnico ve alarmas activas en tiempo real con banners in-app en Web y Windows
-- [ ] **Phase 3: Firebase Push Android** - El técnico Android recibe notificaciones push nativas cuando una máquina entra en alarma
-- [ ] **Phase 4: Calendario Preventivo** - El técnico planifica y consulta OTs preventivas en un calendario mensual visual
+- [x] **Phase 2: Alertas In-App** ✓ 2026-04-19 - El técnico ve alarmas activas en tiempo real con banners in-app en Web y Windows
+- [x] **Phase 3: Firebase Push Android** ✓ 2026-04-19 - Infraestructura lista; activar con google-services.json real siguiendo PLACEHOLDER
+- [x] **Phase 4: Calendario Preventivo** ✓ 2026-04-19 - El técnico planifica y consulta OTs preventivas en un calendario mensual visual
 
 ---
 
@@ -82,9 +82,9 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. KPI Dashboard + PDF Export | 5/5 | Complete | 2026-04-19 |
-| 2. Alertas In-App | 0/? | Not started | - |
-| 3. Firebase Push Android | 0/? | Not started | - |
-| 4. Calendario Preventivo | 0/? | Not started | - |
+| 2. Alertas In-App | 1/1 | Complete | 2026-04-19 |
+| 3. Firebase Push Android | 1/1 | Complete | 2026-04-19 |
+| 4. Calendario Preventivo | 1/1 | Complete | 2026-04-19 |
 
 ---
 
