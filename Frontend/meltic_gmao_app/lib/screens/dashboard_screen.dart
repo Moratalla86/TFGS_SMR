@@ -8,6 +8,7 @@ import '../models/orden_trabajo.dart';
 import '../models/maquina.dart';
 import '../services/app_session.dart';
 import '../widgets/sala_servidores_widget.dart';
+import '../services/alerta_service.dart';
 
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/industrial_theme.dart';
@@ -26,24 +27,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<Maquina> _maquinas = [];
   List<OrdenTrabajo> _ots = [];
+  List<Alerta> _alertasActivas = [];
   Map<String, dynamic>? _kpiStats;
   bool _loading = true;
   String? _error;
   Timer? _refreshTimer;
+  Timer? _alertaTimer;
+  int _lastAlertaCount = 0;
+  final AlertaService _alertaService = AlertaService();
 
   @override
   void initState() {
     super.initState();
     _loadMaquinas();
-    // Refresco automático del Dashboard cada 5 segundos para ver estados y alarmas vivas
+    _loadAlertas();
+    
+    // Refresco automático del Dashboard cada 5 segundos para ver estados
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted) _loadMaquinas(quiet: true);
+    });
+
+    // Polling de alertas cada 10 segundos para notificaciones in-app
+    _alertaTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (mounted) _checkNewAlertas();
     });
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _alertaTimer?.cancel();
     super.dispose();
   }
 
@@ -88,6 +101,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     }
+  }
+
+  Future<void> _loadAlertas() async {
+    try {
+      final alertas = await _alertaService.fetchActivas();
+      if (mounted) {
+        setState(() {
+          _alertasActivas = alertas;
+          _lastAlertaCount = alertas.length;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _checkNewAlertas() async {
+    try {
+      final count = await _alertaService.fetchCount();
+      if (count > _lastAlertaCount) {
+        // Nueva alerta detectada -> Mostrar Banner
+        _showNewAlertaBanner();
+        _loadAlertas();
+      } else if (count < _lastAlertaCount) {
+        // Alertas resueltas -> Actualizar lista sin banner
+        _loadAlertas();
+      }
+    } catch (_) {}
+  }
+
+  void _showNewAlertaBanner() {
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        backgroundColor: IndustrialTheme.criticalRed,
+        leading: const Icon(Icons.warning_sharp, color: Colors.white, size: 28),
+        content: const Text(
+          "NUEVA ALARMA INDUSTRIAL DETECTADA",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+            },
+            child: const Text("ENTENDIDO", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -320,16 +380,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   const SizedBox(height: 12),
                                   const SalaServidoresWidget(),
                                   const SizedBox(height: 30),
-                                  if (_maquinas.any((m) => m.estado != 'OK' && m.estado != 'Operativo')) ...[
+                                  if (_alertasActivas.isNotEmpty) ...[
                                     Row(
                                       children: [
-                                        Icon(Icons.sensors_off, color: IndustrialTheme.criticalRed, size: 20),
+                                        const Icon(Icons.sensors_off, color: IndustrialTheme.criticalRed, size: 20),
                                         const SizedBox(width: 8),
-                                        const Text("INCIDENCIAS ACTIVAS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
+                                        const Text("ALARMAS ACTIVAS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
-                                    ..._maquinas.where((m) => m.estado != 'OK' && m.estado != 'Operativo').map((m) => _buildAlertaItem(m)),
+                                    ..._alertasActivas.map((alerta) => _buildAlertaUiItem(alerta)),
                                     const SizedBox(height: 20),
                                   ],
                                   const Text("MONITOREO DE ACTIVOS", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: Colors.white70)),
@@ -470,6 +530,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _drawerItem(Icons.bar_chart_rounded, "INDICADORES KPI", () {
             Navigator.of(context).pop();
             Navigator.of(context).pushNamed('/kpis');
+          }),
+          _drawerItem(Icons.event_note_outlined, "CALENDARIO PREVENTIVO", () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushNamed('/calendario');
           }),
           _drawerItem(Icons.assignment_outlined, "ORDENES DE TRABAJO", () {
             Navigator.of(context).pop();
@@ -626,18 +690,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ).animate().scale(duration: 400.ms, curve: Curves.easeOut);
   }
 
-  Widget _buildAlertaItem(Maquina m) {
+  Widget _buildAlertaUiItem(Alerta alerta) {
+    Color sColor = alerta.severidad == 'CRITICAL' ? IndustrialTheme.criticalRed : IndustrialTheme.warningOrange;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IndustrialTheme.criticalRed.withValues(alpha: 0.3)),
+        border: Border.all(color: sColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: IndustrialTheme.criticalRed),
+          Icon(alerta.severidad == 'CRITICAL' ? Icons.error_outline : Icons.warning_amber_rounded, color: sColor),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -646,7 +711,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   children: [
                     Text(
-                      m.nombre,
+                      alerta.maquinaNombre,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -657,12 +722,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: IndustrialTheme.criticalRed,
+                        color: sColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text(
-                        "ALARMA",
-                        style: TextStyle(
+                      child: Text(
+                        alerta.severidad,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8,
                           fontWeight: FontWeight.bold,
@@ -672,19 +737,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
                 Text(
-                  "Corte de telemetría detectado",
+                  alerta.descripcion,
                   style: TextStyle(
                     fontSize: 11,
-                    color: IndustrialTheme.criticalRed.withValues(alpha: 0.7),
+                    color: sColor.withValues(alpha: 0.7),
                   ),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.arrow_forward_ios,
-            color: IndustrialTheme.slateGray,
-            size: 14,
+          const SizedBox(width: 8),
+          Text(
+            "${alerta.timestamp.hour}:${alerta.timestamp.minute.toString().padLeft(2, '0')}",
+            style: const TextStyle(fontSize: 10, color: IndustrialTheme.slateGray),
           ),
         ],
       ),

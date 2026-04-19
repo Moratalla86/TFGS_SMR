@@ -47,6 +47,9 @@ public class PLCPollingService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private AlertaService alertaService;
+
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -59,6 +62,10 @@ public class PLCPollingService {
 
     public String getLastRfidRead(Long machineId) {
         return machineRfidBuffer.getOrDefault(machineId, "");
+    }
+
+    public LocalDateTime getLastRfidTimestamp(Long machineId) {
+        return machineRfidPresence.getOrDefault(machineId, null);
     }
 
     public void registrarLecturaRfid(Long machineId, String rfid) {
@@ -258,6 +265,15 @@ public class PLCPollingService {
                 m.setEstado(newState);
                 maquinaRepository.save(m);
                 machineStateCache.put(machineId, newState);
+
+                // --- Gestión de Alertas (Phase 2) ---
+                if ("ERROR".equals(newState) || "WARNING".equals(newState)) {
+                    String desc = (alarmaDetectada != null) ? alarmaDetectada : "Fallo genérico detectado";
+                    alertaService.registrarAlerta(m.getId(), m.getNombre(), 
+                        "ERROR".equals(newState) ? "CRITICAL" : "WARNING", desc);
+                } else if ("OK".equals(newState)) {
+                    alertaService.desactivarAlertasMaquina(m.getId());
+                }
             }
         }
     }
