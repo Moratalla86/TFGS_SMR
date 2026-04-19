@@ -54,7 +54,7 @@ blocked: 0
   reason: "User reported: las semanas tienen que empezar en lunes, no en domingo"
   severity: minor
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "TableCalendar constructed without startingDayOfWeek param; defaults to Sunday. locale only affects label text, not layout."
+  artifacts: ["Frontend/meltic_gmao_app/lib/screens/calendario_screen.dart:108"]
+  missing: ["startingDayOfWeek: StartingDayOfWeek.monday"]
+  fix_applied: "Added startingDayOfWeek: StartingDayOfWeek.monday to TableCalendar constructor"
