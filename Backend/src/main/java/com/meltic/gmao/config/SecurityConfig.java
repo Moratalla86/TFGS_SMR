@@ -39,10 +39,15 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**").permitAll()
 
                 // --- PLC: solo el endpoint de datos del hardware está abierto ---
+                // last-rfid también público: se consulta desde la pantalla de login (sin token)
                 // El simulador RFID requiere rol ADMIN (no usar en producción sin auth)
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/plc/data").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/plc/last-rfid").permitAll()
                 .requestMatchers("/api/plc/simulate/**").hasRole("ADMIN")
                 .requestMatchers("/api/plc/**").authenticated()
+
+                // --- FCM TOKEN REGISTRATION ---
+                .requestMatchers("/api/fcm/**").authenticated()
 
                 // --- RESTRICCIONES DE ROL (RBAC) ---
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/maquinas/**").authenticated()
