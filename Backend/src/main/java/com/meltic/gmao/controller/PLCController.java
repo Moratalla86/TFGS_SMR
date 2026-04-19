@@ -71,7 +71,8 @@ public class PLCController {
         String rfid = plcPollingService.getLastRfidRead(1L);
         String maskedRfid = rfid.length() > 4 ? "****" + rfid.substring(rfid.length() - 4) : "****";
         response.put("rfid", rfid);
-        response.put("timestamp", LocalDateTime.now()); // Timestamp simplificado
+        LocalDateTime scanTs = plcPollingService.getLastRfidTimestamp(1L);
+        response.put("timestamp", scanTs != null ? scanTs.toString() : null);
         logger.debug("Solicitud de último RFID: {} (Status: {})", maskedRfid, rfid.isEmpty() ? "VACÍO" : "DETECTADO");
         return ResponseEntity.ok(response);
     }
