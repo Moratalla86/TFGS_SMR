@@ -134,6 +134,28 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
     }
   }
 
+  Future<void> _exportarListaOts() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            'Generando PDF con ${_ordenes.length} órdenes de trabajo...'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    try {
+      await PdfGenerator.generarListaOtsPdf(_ordenes);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Error al generar PDF. Comprueba los datos.'),
+            backgroundColor: IndustrialTheme.criticalRed,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _eliminar(OrdenTrabajo ot) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -237,7 +259,17 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
           style: TextStyle(letterSpacing: 2, fontSize: 16),
         ),
         centerTitle: false,
-        actions: [IconButton(icon: const Icon(Icons.sync), onPressed: _load)],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf, color: IndustrialTheme.neonCyan),
+            tooltip: 'Exportar lista de OTs a PDF',
+            onPressed: _ordenes.isEmpty ? null : () => _exportarListaOts(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: _load,
+          ),
+        ],
       ),
       body: _loading
           ? const Center(
