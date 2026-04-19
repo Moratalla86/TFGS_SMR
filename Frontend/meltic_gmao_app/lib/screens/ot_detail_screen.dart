@@ -470,12 +470,15 @@ class _OTDetailScreenState extends State<OTDetailScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          val,
-          style: TextStyle(
-            color: color ?? Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
+        Flexible(
+          child: Text(
+            val,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color ?? Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],

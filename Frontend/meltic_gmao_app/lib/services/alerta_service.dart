@@ -59,4 +59,23 @@ class AlertaService {
     }
     return 0;
   }
+
+  Future<bool> forzarAlarma({
+    required int maquinaId,
+    required String maquinaNombre,
+    String severidad = 'CRITICAL',
+    String descripcion = 'Alarma forzada manualmente [DEMO]',
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/api/alertas/forzar'),
+      headers: {...AppSession.instance.authHeaders, 'Content-Type': 'application/json'},
+      body: json.encode({
+        'maquinaId': maquinaId,
+        'maquinaNombre': maquinaNombre,
+        'severidad': severidad,
+        'descripcion': descripcion,
+      }),
+    );
+    return response.statusCode == 200;
+  }
 }

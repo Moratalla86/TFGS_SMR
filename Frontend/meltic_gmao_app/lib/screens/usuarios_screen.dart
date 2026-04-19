@@ -383,22 +383,26 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton.icon(
-                  onPressed: () => _abrirFormulario(usuario: u),
-                  icon: const Icon(Icons.edit, size: 14),
-                  label: const Text('EDITAR'),
+                Flexible(
+                  child: TextButton.icon(
+                    onPressed: () => _abrirFormulario(usuario: u),
+                    icon: const Icon(Icons.edit, size: 14),
+                    label: const Text('EDITAR', style: TextStyle(fontSize: 10)),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () => _eliminar(u),
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    size: 14,
-                    color: IndustrialTheme.criticalRed,
-                  ),
-                  label: const Text(
-                    'BORRAR',
-                    style: TextStyle(color: IndustrialTheme.criticalRed),
+                Flexible(
+                  child: TextButton.icon(
+                    onPressed: () => _eliminar(u),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      size: 14,
+                      color: IndustrialTheme.criticalRed,
+                    ),
+                    label: const Text(
+                      'BORRAR',
+                      style: TextStyle(color: IndustrialTheme.criticalRed, fontSize: 10),
+                    ),
                   ),
                 ),
               ],
@@ -470,7 +474,10 @@ class _UserFormDialogState extends State<_UserFormDialog> {
         side: const BorderSide(color: Colors.white10),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500),
+        constraints: BoxConstraints(
+          maxWidth: 500,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Form(
@@ -530,6 +537,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _rol,
                   decoration: const InputDecoration(
                     labelText: "RANGO OPERATIVO",
@@ -608,6 +616,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                   ],
                 ),
                 const SizedBox(height: 32),
+                const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -616,11 +625,24 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                       child: const Text("CANCELAR"),
                     ),
                     const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: _saving ? null : _guardar,
-                      child: _saving
-                          ? const CircularProgressIndicator()
-                          : const Text("GUARDAR REGISTRO"),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _saving ? null : _guardar,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: _saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text(
+                                "GUARDAR REGISTRO",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12),
+                              ),
+                      ),
                     ),
                   ],
                 ),

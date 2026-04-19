@@ -40,7 +40,7 @@ class _KpisScreenState extends State<KpisScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('INDICADORES KPI',
-            style: TextStyle(fontSize: 14, letterSpacing: 2, fontWeight: FontWeight.bold)),
+            style: TextStyle(fontSize: 15, letterSpacing: 1.5, fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -111,7 +111,6 @@ class _KpisScreenState extends State<KpisScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── KPIs GLOBALES ─────────────────────────────────────────────────
             _sectionTitle('KPIs GLOBALES'),
             const SizedBox(height: 12),
             Row(children: [
@@ -132,28 +131,24 @@ class _KpisScreenState extends State<KpisScreen> {
 
             const SizedBox(height: 28),
 
-            // ── DISTRIBUCIÓN ──────────────────────────────────────────────────
             _sectionTitle('DISTRIBUCIÓN DE MANTENIMIENTO'),
             const SizedBox(height: 12),
             _buildRatioCard(ratio),
 
             const SizedBox(height: 20),
 
-            // ── OTS POR ESTADO ────────────────────────────────────────────────
             _sectionTitle('ÓRDENES POR ESTADO'),
             const SizedBox(height: 12),
             _buildEstadoCard(porEstado),
 
             const SizedBox(height: 28),
 
-            // ── EVOLUCIÓN MENSUAL ─────────────────────────────────────────────
             _sectionTitle('EVOLUCIÓN MENSUAL (ÚLTIMOS 6 MESES)'),
             const SizedBox(height: 12),
             _buildEvolucionChart(evolucion),
 
             const SizedBox(height: 28),
 
-            // ── RANKING INCIDENCIAS ───────────────────────────────────────────
             _sectionTitle('RANKING DE INCIDENCIAS'),
             const SizedBox(height: 12),
             _buildRanking(ranking),
@@ -165,7 +160,6 @@ class _KpisScreenState extends State<KpisScreen> {
     );
   }
 
-  // ── KPI Card ──────────────────────────────────────────────────────────────
   Widget _kpiCard(String label, String value, IconData icon, Color color, String subtitle) {
     return Expanded(
       child: Container(
@@ -200,7 +194,6 @@ class _KpisScreenState extends State<KpisScreen> {
     );
   }
 
-  // ── Ratio preventivo / correctivo ─────────────────────────────────────────
   Widget _buildRatioCard(Map<String, dynamic> ratio) {
     final int prev = (ratio['preventivas'] as num?)?.toInt() ?? 0;
     final int corr = (ratio['correctivas'] as num?)?.toInt() ?? 0;
@@ -235,7 +228,7 @@ class _KpisScreenState extends State<KpisScreen> {
               color: prevPct >= 0.8 ? IndustrialTheme.operativeGreen : IndustrialTheme.warningOrange,
             ),
             const SizedBox(width: 6),
-            Text(
+            Flexible(child: Text(
               prevPct >= 0.8
                   ? 'OBJETIVO CUMPLIDO: > 80% preventivo'
                   : 'OBJETIVO: aumentar preventivo a > 80% (actual ${(prevPct * 100).toStringAsFixed(0)}%)',
@@ -244,7 +237,7 @@ class _KpisScreenState extends State<KpisScreen> {
                 fontWeight: FontWeight.bold,
                 color: prevPct >= 0.8 ? IndustrialTheme.operativeGreen : IndustrialTheme.warningOrange,
               ),
-            ),
+            )),
           ]),
         ),
       ]),
@@ -272,7 +265,6 @@ class _KpisScreenState extends State<KpisScreen> {
     ]);
   }
 
-  // ── OTs por estado ────────────────────────────────────────────────────────
   Widget _buildEstadoCard(Map<String, dynamic> porEstado) {
     final int cerradas    = (porEstado['CERRADA']    as num?)?.toInt() ?? 0;
     final int enProceso   = (porEstado['EN_PROCESO'] as num?)?.toInt() ?? 0;
@@ -318,7 +310,6 @@ class _KpisScreenState extends State<KpisScreen> {
     ]);
   }
 
-  // ── Evolución mensual (gráfica de barras custom) ─────────────────────────
   Widget _buildEvolucionChart(List<dynamic> evolucion) {
     if (evolucion.isEmpty) {
       return Container(
@@ -443,7 +434,6 @@ class _KpisScreenState extends State<KpisScreen> {
     ]);
   }
 
-  // ── Ranking incidencias ───────────────────────────────────────────────────
   Widget _buildRanking(List<dynamic> ranking) {
     if (ranking.isEmpty) {
       return Container(
@@ -515,7 +505,6 @@ class _KpisScreenState extends State<KpisScreen> {
     ).animate().fadeIn(duration: 500.ms, delay: 500.ms);
   }
 
-  // ── Helpers de color ──────────────────────────────────────────────────────
   Color _oeeColor(double v)  => v >= 75 ? IndustrialTheme.operativeGreen
       : v >= 50 ? IndustrialTheme.warningOrange : IndustrialTheme.criticalRed;
   Color _mtbfColor(double v) => v >= 100 ? IndustrialTheme.operativeGreen
@@ -537,11 +526,17 @@ class _KpisScreenState extends State<KpisScreen> {
   }
 
   Widget _sectionTitle(String title) {
-    return Text(title,
+    return Row(children: [
+      Container(width: 3, height: 13,
+        decoration: BoxDecoration(color: IndustrialTheme.neonCyan, borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 8),
+      Text(title,
         style: const TextStyle(
-            color: IndustrialTheme.slateGray,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5));
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.5,
+        )),
+    ]);
   }
 }

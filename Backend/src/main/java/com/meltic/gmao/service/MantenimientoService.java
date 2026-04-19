@@ -1,8 +1,8 @@
 package com.meltic.gmao.service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,7 +115,7 @@ public class MantenimientoService {
                 Optional<Maquina> maquina = maquinaRepository.findById(maquinaId);
                 maquina.ifPresent(ot::setMaquina);
             }
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return Optional.ofNullable(ordenTrabajoRepository.save(Objects.requireNonNull(ot))).orElseThrow();
         });
     }
 
@@ -124,7 +124,7 @@ public class MantenimientoService {
         if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setEstado(nuevoEstado);
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return Optional.ofNullable(ordenTrabajoRepository.save(Objects.requireNonNull(ot))).orElseThrow();
         });
     }
 
@@ -136,7 +136,7 @@ public class MantenimientoService {
             if (ot.getFechaInicio() == null) {
                 ot.setFechaInicio(LocalDateTime.now());
             }
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return Optional.ofNullable(ordenTrabajoRepository.save(Objects.requireNonNull(ot))).orElseThrow();
         });
     }
 
@@ -145,7 +145,7 @@ public class MantenimientoService {
         if (id == null) return Optional.empty();
         return ordenTrabajoRepository.findById(id).map(ot -> {
             ot.setTrabajosRealizados(trabajos);
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return Optional.ofNullable(ordenTrabajoRepository.save(Objects.requireNonNull(ot))).orElseThrow();
         });
     }
 
@@ -169,7 +169,7 @@ public class MantenimientoService {
             if (payload.containsKey("reportePdfBase64")) {
                 ot.setReportePdfBase64(payload.get("reportePdfBase64"));
             }
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return Optional.ofNullable(ordenTrabajoRepository.save(Objects.requireNonNull(ot))).orElseThrow();
         });
     }
 
@@ -181,7 +181,7 @@ public class MantenimientoService {
                 ot.setFirmaTecnico(firmaTecnico);
             if (firmaCliente != null)
                 ot.setFirmaCliente(firmaCliente);
-            return Optional.ofNullable(ordenTrabajoRepository.save(ot)).orElseThrow();
+            return Optional.ofNullable(ordenTrabajoRepository.save(Objects.requireNonNull(ot))).orElseThrow();
         });
     }
 
@@ -198,7 +198,7 @@ public class MantenimientoService {
                         "\nEstado: " + ot.getEstado() + "\nFecha: " + LocalDateTime.now();
                 String base64 = java.util.Base64.getEncoder().encodeToString(dummyContent.getBytes());
                 ot.setReportePdfBase64(base64);
-                ordenTrabajoRepository.save(ot);
+                ordenTrabajoRepository.save(Objects.requireNonNull(ot));
             }
             return java.util.Base64.getDecoder().decode(ot.getReportePdfBase64());
         }).orElseThrow(() -> new RuntimeException("Orden no encontrada"));

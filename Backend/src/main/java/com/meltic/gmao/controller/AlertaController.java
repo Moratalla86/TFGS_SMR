@@ -24,4 +24,14 @@ public class AlertaController {
     public ResponseEntity<?> obtenerCount() {
         return ResponseEntity.ok(Map.of("count", alertaService.getCountActivas()));
     }
+
+    @PostMapping("/forzar")
+    public ResponseEntity<?> forzarAlerta(@RequestBody Map<String, Object> body) {
+        Long maquinaId = ((Number) body.get("maquinaId")).longValue();
+        String maquinaNombre = (String) body.getOrDefault("maquinaNombre", "Máquina desconocida");
+        String severidad     = (String) body.getOrDefault("severidad",    "CRITICAL");
+        String descripcion   = (String) body.getOrDefault("descripcion",  "Alarma forzada manualmente [DEMO]");
+        alertaService.registrarAlerta(maquinaId, maquinaNombre, severidad, descripcion);
+        return ResponseEntity.ok(Map.of("message", "Alarma forzada correctamente"));
+    }
 }

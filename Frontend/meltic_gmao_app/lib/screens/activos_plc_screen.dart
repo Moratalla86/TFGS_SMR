@@ -228,7 +228,9 @@ class _ActivosPLCScreenState extends State<ActivosPLCScreen> {
             Text('MODELO: ${m.modelo}', style: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 11)),
             Text('UBICACIÓN: ${m.ubicacion}', style: const TextStyle(color: IndustrialTheme.slateGray, fontSize: 11)),
             const SizedBox(height: 8),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -246,8 +248,10 @@ class _ActivosPLCScreenState extends State<ActivosPLCScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text('${m.configs.length} SENSORES', style: const TextStyle(fontSize: 10, color: IndustrialTheme.slateGray)),
+                Text(
+                  '${m.configs.length} SENSORES',
+                  style: const TextStyle(fontSize: 10, color: IndustrialTheme.slateGray),
+                ),
               ],
             ),
           ],
@@ -392,13 +396,16 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
       backgroundColor: IndustrialTheme.spaceCadet,
       insetPadding: const EdgeInsets.all(20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 600,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: Container(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -468,6 +475,7 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
             ],
           ).animate().fadeIn(duration: 300.ms),
         ),
+        ),
       ),
     );
   }
@@ -511,18 +519,29 @@ class _MaquinaFormDialogState extends State<_MaquinaFormDialog> {
           child: const Text('CANCELAR', style: TextStyle(color: IndustrialTheme.slateGray)),
         ),
         const SizedBox(width: 16),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: IndustrialTheme.neonCyan,
-            foregroundColor: IndustrialTheme.spaceCadet,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            elevation: 8,
-            shadowColor: IndustrialTheme.neonCyan.withValues(alpha: 0.3),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: IndustrialTheme.neonCyan,
+              foregroundColor: IndustrialTheme.spaceCadet,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              elevation: 4,
+            ),
+            onPressed: _loading ? null : _save,
+            child: _loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: IndustrialTheme.spaceCadet),
+                  )
+                : Text(
+                    widget.maquina == null ? 'REGISTRAR ACTIVO' : 'GUARDAR CAMBIOS',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
           ),
-          onPressed: _loading ? null : _save,
-          child: _loading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: IndustrialTheme.spaceCadet))
-              : Text(widget.maquina == null ? 'REGISTRAR ACTIVO' : 'GUARDAR CAMBIOS', style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );

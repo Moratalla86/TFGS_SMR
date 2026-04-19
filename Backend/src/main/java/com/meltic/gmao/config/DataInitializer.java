@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Configuration
 public class DataInitializer {
@@ -56,10 +57,10 @@ public class DataInitializer {
             Usuario tec1  = crearUsuario("Juan",    "Pérez",   "tecnico@meltic.com", "Tecnico@Meltic2024!",  "TECNICO",            "RFID_TECNICO");
             Usuario tec2  = crearUsuario("Marta",   "Ruiz",    "marta@meltic.com",   "Tecnico@Meltic2024!",  "TECNICO",            "RFID_MARTA");
 
-            usuarioRepo.save(admin);
-            usuarioRepo.save(jefe);
-            usuarioRepo.save(tec1);
-            usuarioRepo.save(tec2);
+            usuarioRepo.save(Objects.requireNonNull(admin));
+            usuarioRepo.save(Objects.requireNonNull(jefe));
+            usuarioRepo.save(Objects.requireNonNull(tec1));
+            usuarioRepo.save(Objects.requireNonNull(tec2));
             System.out.println("👤 Usuarios creados: 4");
 
             // ── MÁQUINAS ──────────────────────────────────────────────────────────
@@ -132,7 +133,7 @@ public class DataInitializer {
                             PREV_DESCS[(mi + p + monthsAgo) % PREV_DESCS.length],
                             "PREVENTIVA", estado, fecha, "BAJA",
                             prevH, 1, estado.equals("CERRADA"));
-                        ordenTrabajoRepo.save(ot);
+                        ordenTrabajoRepo.save(Objects.requireNonNull(ot));
                         totalOts++;
                     }
 
@@ -146,7 +147,7 @@ public class DataInitializer {
                             CORR_DESCS[(mi + c + monthsAgo) % CORR_DESCS.length],
                             "CORRECTIVA", estado, fecha, prior,
                             corrH, 2, estado.equals("CERRADA"));
-                        ordenTrabajoRepo.save(ot);
+                        ordenTrabajoRepo.save(Objects.requireNonNull(ot));
                         totalOts++;
                     }
                 }

@@ -50,9 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
         final rfid = (data['rfid'] ?? '') as String;
         final timestamp = data['timestamp']?.toString();
 
-        // --- Filtros de seguridad ---
-        // 1. Ignorar valores vacíos, el placeholder del firmware y el valor N/A por defecto
-        // 2. Exigir formato hex RFID (debe contener ':')
         final bool esRfidValido =
             rfid.isNotEmpty &&
             rfid != 'Ninguna tarjeta detectada' &&
@@ -60,8 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
             rfid.contains(':');
 
         if (!esRfidValido || timestamp == null) {
-          // Sin tarjeta válida: inicializar el baseline de timestamp igualmente
-          // para no quedar bloqueado en estado no-inicializado
           if (!initialized) {
             _lastRfidTimestamp = timestamp;
             initialized = true;
@@ -70,13 +65,11 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (!initialized) {
-          // Primera lectura con tarjeta real: guardar baseline y NO logear
           _lastRfidTimestamp = timestamp;
           initialized = true;
           return;
         }
 
-        // Solo proceder si el timestamp cambió (nueva pasada de tarjeta)
         if (timestamp != _lastRfidTimestamp) {
           _lastRfidTimestamp = timestamp;
           _handleRfidLogin(rfid);
@@ -104,17 +97,10 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
-        
-        // --- EVITAR CONFLICTO RFID ---
-        // Cancelamos el timer inmediatamente al detectar éxito manual
         _rfidTimer?.cancel();
-        
         AppSession.instance.fromJson(userData);
         if (!mounted) return;
-        
-        // Registrar dispositivo para Push (Phase 3)
         await FcmService().registerToken();
-        
         _showSuccess("Acceso concedido mediante credenciales");
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
@@ -139,10 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final userData = json.decode(response.body);
         AppSession.instance.fromJson(userData);
         if (!mounted) return;
-
-        // Registrar dispositivo para Push (Phase 3)
         await FcmService().registerToken();
-
         _showSuccess("Acceso concedido mediante RFID");
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
@@ -180,7 +163,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Fondo Decorativo Industrial
           Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
@@ -190,7 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(32),
@@ -212,7 +193,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // LOGO CON FILTRO PARA QUITAR FONDO BLANCO + BOTÓN OCULTO DE SIMULACIÓN
                           GestureDetector(
                             onTap: () async {
                               try {
@@ -222,29 +202,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _showError("Fallo al simular sensor");
                               }
                             },
-                            child: ColorFiltered(
-                              colorFilter: const ColorFilter.matrix(<double>[
-                                1, 0, 0, 0, 0,
-                                0, 1, 0, 0, 0,
-                                0, 0, 1, 0, 0,
-                                -1, -1, -1, 1, 2.55, // Filtro para hacer transparente el blanco puro
-                              ]),
-                              child: Image.asset(
-                                'assets/images/logo_meltic_clean.png', // Probamos con la versión clean
-                                height: 100,
-                                width: 100,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) => 
-                                  Image.asset('assets/images/logo_meltic.png', height: 100, width: 100),
-                              ),
-                            ).animate(
-                              onPlay: (controller) => controller.repeat(),
-                            ).shimmer(
-                              duration: 2500.ms,
-                              color: IndustrialTheme.electricBlue.withValues(alpha: 0.4),
-                            ),
+                            child: Builder(builder: (context) {
+                              final logoSize = MediaQuery.of(context).size.width > 600 ? 120.0 : 90.0;
+                              return ColorFiltered(
+                                colorFilter: const ColorFilter.matrix(<double>[
+                                  1, 0, 0, 0, 0,
+                                  0, 1, 0, 0, 0,
+                                  0, 0, 1, 0, 0,
+                                  -1, -1, -1, 1, 2.55,
+                                ]),
+                                child: Image.asset(
+                                  'assets/images/logo_meltic_clean.png',
+                                  height: logoSize,
+                                  width: logoSize,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => 
+                                    Image.asset('assets/images/logo_meltic.png', height: logoSize, width: logoSize),
+                                ),
+                              ).animate(onPlay: (c) => c.repeat())
+                               .shimmer(duration: 2500.ms, color: IndustrialTheme.electricBlue.withValues(alpha: 0.4));
+                            }),
                           ),
-
                           const SizedBox(height: 24),
                           Text(
                             "Mèltic 4.0",
@@ -266,9 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               letterSpacing: 2,
                             ),
                           ),
-
                           const SizedBox(height: 40),
-
                           TextField(
                             controller: _emailController,
                             style: const TextStyle(color: Colors.white),
@@ -278,7 +254,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-
                           TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
@@ -299,9 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             onSubmitted: (_) => _handleLogin(),
                           ),
-
                           const SizedBox(height: 32),
-
                           SizedBox(
                             width: double.infinity,
                             height: 52,
@@ -316,10 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: const Text("CONECTAR AL SISTEMA"),
                                   ),
                           ),
-
                           const SizedBox(height: 40),
-
-                          // SECCIÓN RFID GLASS
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(

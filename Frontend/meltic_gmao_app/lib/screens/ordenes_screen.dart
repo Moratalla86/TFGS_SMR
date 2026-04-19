@@ -34,7 +34,9 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
   // Estado de filtros
   String _searchQuery = "";
   int? _selectedMaquinaId;
-  DateTime? _selectedDate;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  String? _selectedEstado;
 
   @override
   void initState() {
@@ -74,29 +76,34 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
 
   List<OrdenTrabajo> get _filteredOrdenes {
     return _ordenes.where((ot) {
-      // Filtrar por ID (Contiene búsqueda parcial)
-      final bool matchesId =
-          _searchQuery.isEmpty || ot.id.toString().contains(_searchQuery);
+      // Filtrar por Texto (ID o Descripción)
+      final bool matchesSearch = _searchQuery.isEmpty || 
+          ot.id.toString().contains(_searchQuery) ||
+          ot.descripcion.toLowerCase().contains(_searchQuery.toLowerCase());
 
       // Filtrar por Máquina
       final bool matchesMaquina =
           _selectedMaquinaId == null || ot.maquinaId == _selectedMaquinaId;
 
-      // Filtrar por Fecha (solo día/mes/año)
+      // Filtrar por Estado
+      final bool matchesEstado =
+          _selectedEstado == null || ot.estado == _selectedEstado;
+
+      // Filtrar por Rango de Fechas
       bool matchesDate = true;
-      if (_selectedDate != null && ot.fechaCreacion != null) {
+      if (ot.fechaCreacion != null) {
         final date = DateTime.tryParse(ot.fechaCreacion!);
         if (date != null) {
-          matchesDate =
-              date.year == _selectedDate!.year &&
-              date.month == _selectedDate!.month &&
-              date.day == _selectedDate!.day;
-        } else {
-          matchesDate = false;
+          if (_startDate != null && date.isBefore(_startDate!)) {
+            matchesDate = false;
+          }
+          if (_endDate != null && date.isAfter(_endDate!.add(const Duration(days: 1)))) {
+            matchesDate = false;
+          }
         }
       }
 
-      return matchesId && matchesMaquina && matchesDate;
+      return matchesSearch && matchesMaquina && matchesEstado && matchesDate;
     }).toList();
   }
 
@@ -104,7 +111,9 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
     setState(() {
       _searchQuery = "";
       _selectedMaquinaId = null;
-      _selectedDate = null;
+      _startDate = null;
+      _endDate = null;
+      _selectedEstado = null;
     });
   }
 
@@ -472,18 +481,16 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       ),
       child: Column(
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Row(
             children: [
-              SizedBox(
-                width: (MediaQuery.of(context).size.width - 60) * 0.4,
+              Expanded(
+                flex: 2,
                 child: TextField(
                   onChanged: (v) => setState(() => _searchQuery = v),
                   style: const TextStyle(color: Colors.white, fontSize: 11),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search, size: 14),
-                    hintText: "ID...",
+                    hintText: "BUSCAR ID O DESC...",
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     filled: true,
                     fillColor: Colors.black.withValues(alpha: 0.2),
@@ -494,8 +501,9 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                   ),
                 ),
               ),
-              SizedBox(
-                width: (MediaQuery.of(context).size.width - 60) * 0.55,
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 1,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
@@ -503,41 +511,20 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButtonHideUnderline(
-                    child: DropdownButton<int?>(
-                      value: _selectedMaquinaId,
+                    child: DropdownButton<String?>(
+                      value: _selectedEstado,
                       isExpanded: true,
                       dropdownColor: IndustrialTheme.claudCloud,
-                      icon: const Icon(
-                        Icons.filter_list,
-                        size: 14,
-                        color: IndustrialTheme.neonCyan,
-                      ),
-                      hint: const Text(
-                        "MÁQUINA",
-                        style: TextStyle(
-                          color: IndustrialTheme.slateGray,
-                          fontSize: 9,
-                        ),
-                      ),
+                      icon: const Icon(Icons.filter_alt_outlined, size: 14, color: IndustrialTheme.neonCyan),
+                      hint: const Text("ESTADO", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 9)),
                       items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text(
-                            "TODAS",
-                            style: TextStyle(fontSize: 9),
-                          ),
-                        ),
-                        ..._maquinas.map(
-                          (m) => DropdownMenuItem(
-                            value: m.id,
-                            child: Text(
-                              m.nombre.toUpperCase(),
-                              style: const TextStyle(fontSize: 9),
-                            ),
-                          ),
-                        ),
+                        const DropdownMenuItem(value: null, child: Text("TODOS", style: TextStyle(fontSize: 9))),
+                        const DropdownMenuItem(value: 'SOLICITADA', child: Text("SOLICITADA", style: TextStyle(fontSize: 9))),
+                        const DropdownMenuItem(value: 'PENDIENTE', child: Text("PENDIENTE", style: TextStyle(fontSize: 9))),
+                        const DropdownMenuItem(value: 'EN_PROCESO', child: Text("EN CURSO", style: TextStyle(fontSize: 9))),
+                        const DropdownMenuItem(value: 'CERRADA', child: Text("FINALIZADA", style: TextStyle(fontSize: 9))),
                       ],
-                      onChanged: (v) => setState(() => _selectedMaquinaId = v),
+                      onChanged: (v) => setState(() => _selectedEstado = v),
                     ),
                   ),
                 ),
@@ -546,86 +533,77 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
           ),
           const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate ?? DateTime.now(),
-                    firstDate: DateTime(2023),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                    builder: (context, child) => Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: const ColorScheme.dark(
-                          primary: IndustrialTheme.neonCyan,
-                          surface: IndustrialTheme.spaceCadet,
+              Expanded(
+                child: InkWell(
+                  onTap: () async {
+                    final picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2023),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                      initialDateRange: (_startDate != null && _endDate != null)
+                          ? DateTimeRange(start: _startDate!, end: _endDate!)
+                          : null,
+                      builder: (context, child) => Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.dark(
+                            primary: IndustrialTheme.neonCyan,
+                            onPrimary: IndustrialTheme.spaceCadet,
+                            surface: IndustrialTheme.spaceCadet,
+                            onSurface: Colors.white,
+                          ),
                         ),
+                        child: child!,
                       ),
-                      child: child!,
-                    ),
-                  );
-                  if (picked != null) setState(() => _selectedDate = picked);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _selectedDate != null
-                        ? IndustrialTheme.neonCyan.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _selectedDate != null
-                          ? IndustrialTheme.neonCyan
-                          : Colors.transparent,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 12,
-                        color: _selectedDate != null
-                            ? IndustrialTheme.neonCyan
-                            : IndustrialTheme.slateGray,
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _startDate = picked.start;
+                        _endDate = picked.end;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: (_startDate != null)
+                          ? IndustrialTheme.neonCyan.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: (_startDate != null) ? IndustrialTheme.neonCyan : Colors.transparent,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _selectedDate == null
-                            ? "FILTRAR FECHA"
-                            : DateFormat('dd/MM/yyyy').format(_selectedDate!),
-                        style: TextStyle(
-                          color: _selectedDate != null
-                              ? IndustrialTheme.neonCyan
-                              : IndustrialTheme.slateGray,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.date_range,
+                          size: 14,
+                          color: (_startDate != null) ? IndustrialTheme.neonCyan : IndustrialTheme.slateGray,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          (_startDate == null)
+                              ? "FILTRAR POR RANGO DE FECHAS"
+                              : "${DateFormat('dd/MM/yy').format(_startDate!)} - ${DateFormat('dd/MM/yy').format(_endDate!)}",
+                          style: TextStyle(
+                            color: (_startDate != null) ? IndustrialTheme.neonCyan : IndustrialTheme.slateGray,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              if (_searchQuery.isNotEmpty ||
-                  _selectedMaquinaId != null ||
-                  _selectedDate != null)
-                TextButton.icon(
-                  onPressed: _clearFilters,
-                  icon: const Icon(
-                    Icons.filter_alt_off,
-                    size: 14,
-                    color: IndustrialTheme.criticalRed,
-                  ),
-                  label: const Text(
-                    "LIMPIAR",
-                    style: TextStyle(
-                      color: IndustrialTheme.criticalRed,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
+              if (_searchQuery.isNotEmpty || _selectedMaquinaId != null || _selectedEstado != null || _startDate != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: IconButton(
+                    onPressed: _clearFilters,
+                    icon: const Icon(Icons.filter_alt_off, size: 20, color: IndustrialTheme.criticalRed),
+                    tooltip: "Limpiar Filtros",
                   ),
                 ),
             ],
@@ -961,23 +939,31 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                     onChanged: (v) => setState(() => _tecnicoId = v),
                   ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<int?>(
-                  initialValue: _maquinaId,
-                  decoration: const InputDecoration(
-                    labelText: "ACTIVO AFECTADO",
-                    prefixIcon: Icon(Icons.precision_manufacturing),
-                  ),
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text("GENERAL/OTRO"),
-                    ),
-                    ..._maquinas.map(
-                      (m) =>
-                          DropdownMenuItem(value: m.id, child: Text(m.nombre)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<int?>(
+                        isExpanded: true,
+                        initialValue: _maquinaId,
+                        decoration: const InputDecoration(
+                          labelText: "ACTIVO AFECTADO",
+                          prefixIcon: Icon(Icons.precision_manufacturing),
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text("GENERAL/OTRO", style: TextStyle(fontSize: 12)),
+                          ),
+                          ..._maquinas.map(
+                            (m) =>
+                                DropdownMenuItem(value: m.id, child: Text(m.nombre, style: const TextStyle(fontSize: 12))),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => _maquinaId = v),
+                      ),
                     ),
                   ],
-                  onChanged: (v) => setState(() => _maquinaId = v),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -1043,11 +1029,24 @@ class _CrearOTDialogState extends State<_CrearOTDialog> {
                       child: const Text("CANCELAR"),
                     ),
                     const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: _saving ? null : _guardar,
-                      child: _saving
-                          ? const CircularProgressIndicator()
-                          : const Text("CARGAR ORDEN"),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _saving ? null : _guardar,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: _saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text(
+                                "CARGAR ORDEN",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12),
+                              ),
+                      ),
                     ),
                   ],
                 ),

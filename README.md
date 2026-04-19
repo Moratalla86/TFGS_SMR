@@ -1,90 +1,85 @@
-<p align="center">
-  <img src="Diagramas/Arquitectura.png" alt="Mèltic GMAO" width="200" />
-</p>
+# Mèltic GMAO — Industrial 4.0 Management System
 
-# 🏭 Mèltic GMAO: Mantenimiento Industrial IoT (Industria 4.0)
+Mèltic GMAO es una solución avanzada de Gestión de Mantenimiento Asistido por Ordenador (GMAO) diseñada específicamente para entornos de **Industria 4.0**. El sistema combina la gestión tradicional de activos y mantenimiento preventivo con la integración en tiempo real de telemetría industrial mediante PLCs.
 
-> **Trabajo de Fin de Grado (DAM / SMR)**
->
-> Sistema de Gestión de Mantenimiento Asistido por Ordenador (GMAO) integrado con telemetría en tiempo real y Gemelo Digital mediante hardware industrial.
+## 🚀 Características Principales
+
+*   **Dashboard Industrial 4.0**: Panel de control con diseño premium "Space Cadet" optimizado para la monitorización de activos críticos, KPIs en tiempo real (OEE, MTBF, MTTR) y alarmas activas.
+*   **Integración PLC en Tiempo Real**: Comunicación directa con controladores industriales para monitorizar estados operativos (LIVE/SIM/DOWN) y telemetría de campo.
+*   **Gestión de Órdenes de Trabajo (OT)**: Ciclo de vida completo de mantenimiento (Correctivo y Preventivo) con firma digital y generación de reportes PDF.
+*   **Calendario Preventivo**: Planificación visual de OTs preventivas con vista mensual integrada.
+*   **Autenticación RFID**: Acceso rápido por tarjeta/lector RFID vinculado a usuarios del sistema.
+*   **Push Notifications (Firebase)**: Alertas críticas enviadas en tiempo real al dispositivo Android del técnico.
+*   **Sala de Servidores Virtual**: Visualización técnica del estado de la infraestructura de backend y bases de datos.
+*   **Arquitectura Escalable**: Despliegue mediante contenedores Docker para asegurar la portabilidad y robustez en entornos de producción.
+
+## 🏗️ Stack Tecnológico
+
+### Frontend (Flutter)
+*   **Multi-plataforma**: Web, Windows y Android.
+*   **Theme Engine**: Sistema de temas "Industrial 4.0" (IndustrialTheme) personalizado.
+*   **Animaciones**: Integración fluida con `flutter_animate`.
+
+### Backend (Java Spring Boot)
+*   **Seguridad**: RBAC (Role-Based Access Control) para Operarios, Técnicos y Jefes de Mantenimiento.
+*   **Bases de Datos**:
+    *   **MySQL**: Persistencia relacional para activos, usuarios y órdenes de trabajo.
+    *   **MongoDB**: Logs de telemetría e histórico de sensores.
+    *   **Historian Service**: Buffer circular de alta eficiencia para tendencias en tiempo real.
+
+### Infraestructura
+*   **Docker & Docker Compose**: Orquestación de servicios.
+*   **Nginx**: Servidor web de producción y proxy inverso.
+*   **Hardware compatible**: Integración optimizada para controladores Controllino (PLC) y lectores RFID.
+
+## 📦 Instalación y Despliegue
+
+### Prerrequisitos
+*   [Docker Desktop](https://www.docker.com/products/docker-desktop) instalado y en ejecución.
+
+### Pasos para iniciar el entorno completo
+Desde la raíz del proyecto, ejecuta:
+
+```bash
+docker-compose up -d --build
+```
+
+Esto levantará automáticamente:
+1.  **meltic-mysql**: Base de datos SQL (puerto interno 3307).
+2.  **meltic-mongo**: Base de datos NoSQL (puerto 27017).
+3.  **meltic-backend**: API REST y servicios PLC → `http://localhost:8080`
+4.  **meltic-frontend**: Interfaz web (Nginx) → `http://localhost:8081`
+
+### Credenciales por defecto
+
+| Usuario | Email | Contraseña | Rol |
+|---|---|---|---|
+| Admin | `admin@meltic.com` | `Meltic@2024!` | ADMIN |
+| Jefe | `jefe@meltic.com` | `Jefe@Meltic2024!` | JEFE_MANTENIMIENTO |
+| Técnico | `tecnico@meltic.com` | `Tecnico@Meltic2024!` | TECNICO |
+
+## 🔌 Documentación de la API (Swagger)
+
+El backend está totalmente documentado con **OpenAPI 3 / Swagger**. Una vez en ejecución:
+
+*   **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+*   **Definición OpenAPI**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+## 📊 Scripts de Utilidad
+
+Incluidos en la carpeta `/scripts` para pruebas y validación:
+
+```bash
+# Poblar la base de datos con datos industriales de prueba
+python scripts/seed_industrial_data.py
+
+# Verificar el estado de la API y conectividad con las bases de datos
+python scripts/verify_api.py
+```
+
+*   `seed_industrial_data.py`: Genera activos, usuarios y órdenes de trabajo realistas.
+*   `verify_api.py`: Test de salud de la API y conectividad con base de datos.
+*   `seed_data.ps1`: Versión PowerShell del seed para entornos Windows.
 
 ---
-
-## 📖 Descripción del Proyecto
-
-**Mèltic GMAO** nace para resolver el problema del mantenimiento reactivo ineficiente y la gestión documental arcaica en la logística e industria manufacturera. 
-
-La plataforma une dos mundos tradicionalmente separados: **Las Tecnologías de Operación (OT)** en planta baja, y las **Tecnologías de la Información (IT)** corporativas. A través de un PLC Industrial, el ecosistema captura hasta 15 variables críticas de telemetría (temperatura, presión, vibración axial, intensidad de fase) y sincroniza datos reales hacia una aplicación reactiva en manos del técnico u operario.
-
-### 🌟 Funcionalidades Principales
-*   **📡 Telemetría en Tiempo Real (Digital Twin):** Visualización interactiva de gráficas mediante ingesta masiva (Buffer de 200 registros a 15s) con corrección de latencia (Drift Correction).
-*   **🔐 Autenticación IoT Biométrica:** Lectores RFID en máquina operan por interrupción. Los operarios fichan su intervención simplemente acercando su tarjeta física al hardware.
-*   **📑 Paperless Industrial (Zero-Impact):** Cierre de Órdenes de Trabajo desde el móvil firmando manualmente en pantalla (Vector Rendering) y tomando capturas con la cámara. El sistema auto-genera un documento probatorio técnico en formato PDF oficial inviolable.
-*   **⚙️ Failsafe & Debouncing Integrado:** El software filtra ruidos electromagnéticos del hardware físico implementando un buffer de seguridad para preservar los datos analógicos reales.
-
----
-
-## 🛠️ Arquitectura Tecnológica & Stack
-
-El sistema posee una topología de red aislada en dos VLANs y aplica **Persistencia Políglota** (*Polyglot Persistence*) según la demanda de los datos procesados.
-
-### 🔌 1. Capa de Adquisición (Hardware / IoT)
-*   **Microcontrolador:** PLC Industrial **Controllino** (Plataforma C++ Arduino Mega 2560).
-*   **Interacciones:** Sensores de simulación multivariable (Temperatura, RPM, Caudal), Lector RFID RC522 protocolo SPI.
-*   **Comunicaciones:** Red Industrial Activa emitiendo payload HTTP Polling.
-
-### 🧠 2. Capa de Lógica y Microservicios (Backend)
-*   **Framework Core:** Java **Spring Boot 3** bajo persistencia de JPA/Hibernate.
-*   **Seguridad y Sesión:** Tokens auto-firmados Stateless **(JWT)**. Integración dual con RFID.
-*   **Documentación de Contrato:** API RESTful trazada permanentemente mediante Swagger UI / OpenAPI 2.0.
-
-### 💾 3. Capa de Persistencia Políglota
-*   **MySQL (SQL Transactional):** Responsable estricto de la coherencia ACID para la lógica de Usuarios, Entidades de Activos y control de estados (Órdenes de Trabajo).
-*   **MongoDB (NoSQL Time-Series):** Repositorio asíncrono para ingesta del Big Data de telemetría. Almacena objetos BSON brutos permitiendo escalabilidad en series de métricas sin entorpecer a la pasarela SQL de negocio.
-
-### 📱 4. Capa Cliente (Frontend Mobile)
-*   **Tecnología Central:** **Flutter Framework** asíncrono multiplataforma (Dart).
-*   **Requerimientos Operativos:** Diseño de Alto Contraste (Industrial Readability), `pdf_generator` interno.
-
----
-
-## 🚀 Despliegue con Docker (Recomendado)
-
-Para una instalación limpia y rápida que incluya todas las dependencias (MySQL, MongoDB, Backend y Frontend Web), usa Docker:
-
-1. **Levantar el ecosistema completo**:
-   ```powershell
-   docker compose up --build -d
-   ```
-2. **Acceso a las plataformas**:
-   - **Frontend Web**: `http://localhost:8081`
-   - **Backend API (Swagger)**: `http://localhost:8080/swagger-ui.html`
-3. **Gestión de contenedores**:
-   - Ver logs: `docker logs meltic-backend -f`
-   - Parar sistema: `docker compose down`
-
----
-
-## 🔌 Hardware Meltic 4.0 (Controllino)
-
-El firmware incluido en `sketch_feb14a/` ha sido optimizado para entornos industriales reales:
-- **Aislamiento SPI**: Gestión estricta de pines `Chip Select` para evitar conflictos entre el módulo Ethernet y el lector RFID RC522.
-- **Protocolo Swipe & Go**: Detección asíncrona de tarjetas con limpieza automática de buffer tras 2.5s.
-- **Filtrado de Ruido DHT11**: Implementación de lógica de muestreo cada 30s con eliminación de lecturas espurias (NaN/0.0).
-
----
-
-## 🛡️ Atajos de Escena & Seguridad (Demo-Safe)
-
-- **Login Maestro**: Tocar el logo de Meltic en la pantalla inicial activa una simulación de lectura RFID Admin.
-- **Roles Securizados**: 
-    - **Admin/Jefe**: Acceso total a "Gestión de Personal".
-    - **Técnico**: Acceso restringido al Dashboard y Órdenes de Trabajo (Navegación protegida por Guard).
-- **Simulación RFID**: Toque largo en el icono de sensor en los formularios para forzar la lectura del TAG detectado.
-
----
-
-
-> **Autor:** Santiago Moratalla  
-> **Fecha Presentación:** *Primavera 2026*  
-> **Licencia:** Material Registrado para uso exclusivamente académico y demostrativo.
+**Mèltic GMAO** — *Desarrollado como Proyecto Final de Grado (TFG) por Santiago Moratalla.*

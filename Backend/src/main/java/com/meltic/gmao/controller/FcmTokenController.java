@@ -39,7 +39,7 @@ public class FcmTokenController {
     @DeleteMapping("/token")
     public ResponseEntity<?> eliminarToken(@RequestBody Map<String, String> body) {
         String token = body.get("token");
-        tokenRepository.findByToken(token).ifPresent(t -> tokenRepository.delete(t));
+        tokenRepository.findByToken(token).ifPresent(t -> tokenRepository.delete(java.util.Objects.requireNonNull(t)));
         return ResponseEntity.ok().build();
     }
 }

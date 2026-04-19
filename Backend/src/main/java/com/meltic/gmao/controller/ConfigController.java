@@ -14,8 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Objects;
+
 import com.meltic.gmao.model.Maquina;
-import com.meltic.gmao.model.MetricConfig;
 import com.meltic.gmao.repository.sql.MaquinaRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -73,7 +74,7 @@ public class ConfigController {
             logger.debug("Rele forzado recibido pero ignorado en modo multi-simulación");
         }
 
-        maquinaRepository.save(maquina);
+        maquinaRepository.save(Objects.requireNonNull(maquina));
         logger.info("Sincronización Meltic 4.0 aplicada en equipo: {}", maquina.getNombre());
         return ResponseEntity.ok(maquina);
     }

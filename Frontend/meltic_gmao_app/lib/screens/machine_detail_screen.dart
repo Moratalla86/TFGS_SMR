@@ -8,6 +8,7 @@ import '../models/maquina.dart';
 import '../models/metric_config.dart';
 import '../widgets/industrial_chart.dart';
 import '../services/maquina_service.dart';
+import '../services/alerta_service.dart';
 import '../theme/industrial_theme.dart';
 import '../utils/metric_definitions.dart';
 import 'package:intl/intl.dart';
@@ -158,7 +159,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.tune, color: IndustrialTheme.neonCyan), onPressed: () => _showIndustrialConfigDialog(maquina)),
+          IconButton(icon: const Icon(Icons.tune, color: IndustrialTheme.neonCyan), onPressed: () => _showMetricsConfigDialog(maquina)),
           IconButton(
             icon: Icon(_analysisStart != null ? Icons.history_toggle_off : Icons.more_time, color: _analysisStart != null ? IndustrialTheme.warningOrange : IndustrialTheme.slateGray),
             onPressed: _analysisStart != null ? _clearAnalysis : _selectTimeRange,
@@ -528,13 +529,93 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
   Widget _buildBottomMetadata(Maquina maquina) {
     return Column(
       children: [
-        ListTile(leading: const Icon(Icons.sensors, color: IndustrialTheme.neonCyan), title: const Text("CONFIGURAR MÉTRICAS", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)), trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray), onTap: () => _showIndustrialConfigDialog(maquina)),
-        ListTile(leading: const Icon(Icons.settings, color: IndustrialTheme.neonCyan), title: const Text("IP PLC / CONFIGURACIÓN", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)), subtitle: Text(maquina.plcUrl ?? "Por defecto (ID1)", style: const TextStyle(fontSize: 9, color: IndustrialTheme.slateGray)), trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray), onTap: () => _showIndustrialConfigDialog(maquina)),
+        ListTile(
+          leading: const Icon(Icons.sensors, color: IndustrialTheme.neonCyan),
+          title: const Text("CONFIGURAR MÉTRICAS", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+          trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray),
+          onTap: () => _showMetricsConfigDialog(maquina),
+        ),
+        ListTile(
+          leading: const Icon(Icons.settings_ethernet, color: IndustrialTheme.neonCyan),
+          title: const Text("IP PLC / CONFIGURACIÓN", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+          subtitle: Text(maquina.simulado ? "MODO SIMULACIÓN ACTIVO" : (maquina.plcUrl ?? "192.168.1.100 (Default)"),
+            style: TextStyle(fontSize: 9, color: maquina.simulado ? IndustrialTheme.warningOrange : IndustrialTheme.slateGray)),
+          trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.slateGray),
+          onTap: () => _showPlcConfigDialog(maquina),
+        ),
+        const Divider(color: Colors.white10),
+        ListTile(
+          leading: const Icon(Icons.warning_amber_rounded, color: IndustrialTheme.criticalRed),
+          title: const Text("FORZAR ALARMA [DEMO]", style: TextStyle(color: IndustrialTheme.criticalRed, fontSize: 11, fontWeight: FontWeight.bold)),
+          subtitle: const Text("Genera una alarma crítica para esta máquina", style: TextStyle(fontSize: 9, color: Colors.white38)),
+          trailing: const Icon(Icons.chevron_right, color: IndustrialTheme.criticalRed),
+          onTap: () => _forzarAlarmaDialog(maquina),
+        ),
       ],
     );
   }
 
-  void _showIndustrialConfigDialog(Maquina maquina) {
+  void _forzarAlarmaDialog(Maquina maquina) {
+    final List<Map<String, String>> opciones = [
+      {'label': 'Temperatura crítica', 'desc': 'TEMPERATURA: Valor fuera de rango máximo absoluto'},
+      {'label': 'Fallo de comunicación PLC', 'desc': 'PLC: Pérdida de señal en bus de campo'},
+      {'label': 'Vibración excesiva', 'desc': 'VIBRACIÓN: Nivel superior al umbral de seguridad'},
+      {'label': 'Sobrecarga eléctrica', 'desc': 'CORRIENTE: Intensidad en zona de peligro'},
+    ];
+    int selectedIndex = 0;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: IndustrialTheme.claudCloud,
+          title: Row(children: [
+            const Icon(Icons.warning_amber_rounded, color: IndustrialTheme.criticalRed, size: 20),
+            const SizedBox(width: 10),
+            const Text("FORZAR ALARMA", style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14, color: IndustrialTheme.criticalRed)),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Máquina: ${maquina.nombre}", style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              const SizedBox(height: 16),
+              ...List.generate(opciones.length, (i) => RadioListTile<int>(
+                value: i,
+                groupValue: selectedIndex,
+                activeColor: IndustrialTheme.criticalRed,
+                title: Text(opciones[i]['label']!, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                onChanged: (v) => setDialogState(() => selectedIndex = v!),
+              )),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("CANCELAR")),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: IndustrialTheme.criticalRed),
+              icon: const Icon(Icons.warning_sharp, size: 16),
+              label: const Text("DISPARAR"),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final ok = await AlertaService().forzarAlarma(
+                  maquinaId: maquina.id ?? 0,
+                  maquinaNombre: maquina.nombre,
+                  severidad: 'CRITICAL',
+                  descripcion: opciones[selectedIndex]['desc']!,
+                );
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(ok ? "Alarma disparada en ${maquina.nombre}" : "Error al forzar la alarma"),
+                  backgroundColor: ok ? IndustrialTheme.criticalRed : Colors.grey,
+                ));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMetricsConfigDialog(Maquina maquina) {
     final allMetrics = MetricDefinition.all;
     List<MetricConfig> tempConfigs = List.from(maquina.configs);
 
@@ -543,7 +624,13 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: IndustrialTheme.claudCloud,
-          title: const Text("GESTIÓN DE MÉTRICAS", style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14)),
+          title: Row(
+            children: [
+              const Icon(Icons.analytics_outlined, color: IndustrialTheme.neonCyan, size: 20),
+              const SizedBox(width: 10),
+              const Text("UMBRALES Y MÉTRICAS", style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -589,16 +676,119 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
               onPressed: () async {
                 final n = maquina.copyWith(configs: tempConfigs);
                 await _maquinaService.update(n);
-                if (!mounted) {
-                  return;
-                }
+                if (!mounted) return;
                 setState(() => _machineMap = n.toJson());
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
+                Navigator.of(context).pop();
                 _refreshData();
               },
               child: const Text("GUARDAR"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPlcConfigDialog(Maquina maquina) {
+    final TextEditingController ipController = TextEditingController(text: maquina.plcUrl ?? "192.168.1.100");
+    bool isSimulated = maquina.simulado;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: IndustrialTheme.claudCloud,
+          title: Row(
+            children: [
+              const Icon(Icons.settings_input_component, color: IndustrialTheme.neonCyan, size: 20),
+              const SizedBox(width: 10),
+              const Flexible(child: Text("CONFIGURACIÓN TÉCNICA PLC", overflow: TextOverflow.ellipsis, style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold, fontSize: 14))),
+            ],
+          ),
+          content: SingleChildScrollView(child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isSimulated ? IndustrialTheme.warningOrange.withValues(alpha: 0.3) : IndustrialTheme.neonCyan.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(isSimulated ? Icons.cloud_queue : Icons.settings_ethernet, 
+                      color: isSimulated ? IndustrialTheme.warningOrange : IndustrialTheme.neonCyan),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(isSimulated ? "MODO SIMULACIÓN" : "MODO HARDWARE (PLC)", 
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white)),
+                          Text(isSimulated ? "Usando generador de ruido industrial" : "Conexión directa vía Modbus TCP", 
+                            style: const TextStyle(fontSize: 9, color: IndustrialTheme.slateGray)),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: isSimulated, 
+                      activeColor: IndustrialTheme.warningOrange,
+                      onChanged: (val) => setDialogState(() => isSimulated = val),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (!isSimulated) ...[
+                TextField(
+                  controller: ipController,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(
+                    labelText: "DIRECCIÓN IP CONTROLLINO",
+                    prefixIcon: Icon(Icons.lan_outlined),
+                    hintText: "Ej: 192.168.1.100",
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: IndustrialTheme.slateGray, size: 12),
+                    SizedBox(width: 6),
+                    Text("Puerto por defecto: 502 (Modbus)", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 9)),
+                  ],
+                ),
+              ] else ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text("En modo simulación, el sistema ignora la configuración de red y utiliza el servicio de telemetría virtual.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 11, fontStyle: FontStyle.italic)),
+                ),
+              ],
+            ],
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("CANCELAR")
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final n = maquina.copyWith(
+                  simulado: isSimulated,
+                  plcUrl: isSimulated ? null : ipController.text.trim(),
+                );
+                await _maquinaService.update(n);
+                if (!mounted) return;
+                setState(() => _machineMap = n.toJson());
+                Navigator.of(context).pop();
+                _refreshData();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Configuración PLC actualizada"), backgroundColor: IndustrialTheme.operativeGreen)
+                );
+              },
+              child: const Text("APLICAR CAMBIOS"),
             ),
           ],
         ),

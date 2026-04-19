@@ -45,7 +45,6 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
       for (var ot in preventivas) {
         if (ot.fechaPlanificada != null) {
           DateTime date = DateTime.parse(ot.fechaPlanificada!);
-          // Normalizar a medianoche para el mapa
           DateTime day = DateTime(date.year, date.month, date.day);
           if (eventMap[day] == null) eventMap[day] = [];
           eventMap[day]!.add(ot);
@@ -73,23 +72,48 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("CALENDARIO PREVENTIVO", style: TextStyle(letterSpacing: 1.5, fontSize: 14)),
+        title: const Text("CALENDARIO PREVENTIVO", 
+          style: TextStyle(letterSpacing: 2, fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
+          IconButton(icon: const Icon(Icons.refresh, color: IndustrialTheme.neonCyan), onPressed: _loadData),
         ],
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator(color: IndustrialTheme.neonCyan))
-        : Column(
-            children: [
-              _buildCalendar(),
-              const SizedBox(height: 8),
-              _buildEventsHeader(),
-              Expanded(child: _buildEventList()),
-            ],
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              bool isWide = constraints.maxWidth > 800;
+              if (isWide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 3, child: SingleChildScrollView(child: _buildCalendar())),
+                    Container(width: 1, color: Colors.white10, margin: const EdgeInsets.symmetric(vertical: 20)),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        children: [
+                          _buildEventsHeader(),
+                          Expanded(child: _buildEventList()),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    _buildCalendar(),
+                    const SizedBox(height: 8),
+                    _buildEventsHeader(),
+                    Expanded(child: _buildEventList()),
+                  ],
+                );
+              }
+            },
           ),
       floatingActionButton: AppSession.instance.isJefe ? FloatingActionButton.extended(
-        onPressed: _showCreatePreventivaDialog,
+        onPressed: () => _showCreatePreventivaDialog(context),
         backgroundColor: IndustrialTheme.neonCyan,
         icon: const Icon(Icons.add, color: IndustrialTheme.spaceCadet),
         label: const Text("PROGRAMAR OT", style: TextStyle(color: IndustrialTheme.spaceCadet, fontWeight: FontWeight.bold)),
@@ -103,7 +127,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
       decoration: BoxDecoration(
         color: IndustrialTheme.claudCloud,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: TableCalendar(
         locale: 'es_ES',
@@ -125,7 +149,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
         },
         calendarStyle: const CalendarStyle(
           outsideDaysVisible: false,
-          todayDecoration: BoxDecoration(color: IndustrialTheme.claudCloud, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: IndustrialTheme.neonCyan))),
+          todayDecoration: BoxDecoration(color: Color(0x1A00E5FF), shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: IndustrialTheme.neonCyan))),
           selectedDecoration: BoxDecoration(color: IndustrialTheme.neonCyan, shape: BoxShape.circle),
           markerDecoration: BoxDecoration(color: IndustrialTheme.warningOrange, shape: BoxShape.circle),
           defaultTextStyle: TextStyle(color: Colors.white),
@@ -134,7 +158,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
         headerStyle: const HeaderStyle(
           formatButtonVisible: false,
           titleCentered: true,
-          titleTextStyle: TextStyle(color: IndustrialTheme.neonCyan, fontWeight: FontWeight.bold),
+          titleTextStyle: TextStyle(color: IndustrialTheme.neonCyan, fontWeight: FontWeight.bold, letterSpacing: 1),
           leftChevronIcon: Icon(Icons.chevron_left, color: IndustrialTheme.neonCyan),
           rightChevronIcon: Icon(Icons.chevron_right, color: IndustrialTheme.neonCyan),
         ),
@@ -144,14 +168,14 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
 
   Widget _buildEventsHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          const Icon(Icons.event_note, color: IndustrialTheme.neonCyan, size: 18),
+          Container(width: 3, height: 14, decoration: BoxDecoration(color: IndustrialTheme.neonCyan, borderRadius: BorderRadius.circular(2))),
           const SizedBox(width: 8),
           Text(
             DateFormat('EEEE, d MMMM', 'es_ES').format(_selectedDay!).toUpperCase(),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: IndustrialTheme.slateGray),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white, letterSpacing: 0.5),
           ),
         ],
       ),
@@ -165,9 +189,9 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.calendar_today_outlined, size: 48, color: IndustrialTheme.slateGray.withAlpha(50)),
+            Icon(Icons.calendar_today_outlined, size: 48, color: IndustrialTheme.slateGray.withValues(alpha: 0.2)),
             const SizedBox(height: 12),
-            const Text("No hay tareas programadas", style: TextStyle(color: IndustrialTheme.slateGray)),
+            const Text("SIN TAREAS PROGRAMADAS", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 10, letterSpacing: 1, fontWeight: FontWeight.bold)),
           ],
         ),
       );
@@ -179,89 +203,113 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
         final ot = events[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: const Icon(Icons.settings_backup_restore, color: IndustrialTheme.warningOrange),
-            title: Text(ot.maquinaNombre ?? 'MÁQUINA NO ASIGNADA', style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(ot.descripcion),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: IndustrialTheme.warningOrange.withAlpha(50), borderRadius: BorderRadius.circular(8)),
-              child: const Text("PREVENTIVA", style: TextStyle(color: IndustrialTheme.warningOrange, fontSize: 10, fontWeight: FontWeight.bold)),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(left: BorderSide(color: IndustrialTheme.warningOrange, width: 4)),
             ),
-            onTap: () => Navigator.pushNamed(context, '/ot-detail', arguments: ot.id),
+            child: ListTile(
+              leading: const Icon(Icons.settings_backup_restore, color: IndustrialTheme.warningOrange),
+              title: Text(ot.maquinaNombre ?? 'MÁQUINA NO ASIGNADA', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: Text(ot.descripcion, style: const TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.chevron_right, size: 16, color: IndustrialTheme.slateGray),
+              onTap: () => Navigator.pushNamed(context, '/ot-detail', arguments: ot.id),
+            ),
           ),
         );
       },
     ).animate().fadeIn(delay: 200.ms);
   }
 
-  void _showCreatePreventivaDialog() {
+  void _showCreatePreventivaDialog(BuildContext context) {
     final TextEditingController descCtrl = TextEditingController();
     Maquina? selectedMaquina;
     String prioridad = 'MEDIA';
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: IndustrialTheme.spaceCadet,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 24, right: 24, top: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("PROGRAMAR MANTENIMIENTO", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<Maquina>(
-                decoration: const InputDecoration(labelText: "Máquina"),
-                items: _maquinas.map((m) => DropdownMenuItem(value: m, child: Text(m.nombre))).toList(),
-                onChanged: (val) => setModalState(() => selectedMaquina = val),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descCtrl,
-                decoration: const InputDecoration(labelText: "Descripción de la tarea"),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (selectedMaquina == null || descCtrl.text.isEmpty) return;
-                    
-                    final newOt = OrdenTrabajo(
-                      id: 0,
-                      descripcion: descCtrl.text,
-                      prioridad: prioridad,
-                      estado: 'PLANIFICADA',
-                      tipo: 'PREVENTIVA',
-                      fechaPlanificada: DateFormat('yyyy-MM-dd').format(_selectedDay!),
-                      maquinaId: selectedMaquina!.id,
-                      solicitanteId: AppSession.instance.userId,
-                    );
+    final widget = StatefulBuilder(
+      builder: (context, setModalState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 24, right: 24, top: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(width: 3, height: 18, decoration: BoxDecoration(color: IndustrialTheme.neonCyan, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(width: 10),
+                const Text("PROGRAMAR MANTENIMIENTO", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<Maquina>(
+              decoration: const InputDecoration(labelText: "Máquina Industrial"),
+              items: _maquinas.map((m) => DropdownMenuItem(value: m, child: Text(m.nombre))).toList(),
+              onChanged: (val) => setModalState(() => selectedMaquina = val),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: descCtrl,
+              decoration: const InputDecoration(labelText: "Descripción técnica de la tarea"),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () async {
+                  if (selectedMaquina == null || descCtrl.text.isEmpty) return;
+                  
+                  final newOt = OrdenTrabajo(
+                    id: 0,
+                    descripcion: descCtrl.text,
+                    prioridad: prioridad,
+                    estado: 'PLANIFICADA',
+                    tipo: 'PREVENTIVA',
+                    fechaPlanificada: DateFormat('yyyy-MM-dd').format(_selectedDay!),
+                    maquinaId: selectedMaquina!.id,
+                    solicitanteId: AppSession.instance.userId,
+                  );
 
-                    try {
-                      await _otService.crearOrden(newOt, maquinaId: selectedMaquina!.id);
-                      if (mounted) {
-                        Navigator.pop(context);
-                        _loadData();
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("OT Programada Correctamente"), backgroundColor: IndustrialTheme.operativeGreen));
-                      }
-                    } catch (e) {
-                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: IndustrialTheme.criticalRed));
+                  try {
+                    await _otService.crearOrden(newOt, maquinaId: selectedMaquina!.id);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      _loadData();
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("OT Programada Correctamente"), backgroundColor: IndustrialTheme.operativeGreen));
                     }
-                  },
-                  child: const Text("GUARDAR PROGRAMACIÓN"),
-                ),
+                  } catch (e) {
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: IndustrialTheme.criticalRed));
+                  }
+                },
+                child: const Text("CONFIRMAR PROGRAMACIÓN", style: TextStyle(letterSpacing: 1, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
+
+    if (MediaQuery.of(context).size.width > 800) {
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: IndustrialTheme.spaceCadet,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: widget,
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: IndustrialTheme.spaceCadet,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (context) => widget,
+      );
+    }
   }
 }
