@@ -387,4 +387,192 @@ class PdfGenerator {
       await viewLocalPdf(b64, 'Reporte_OT_${ot.id}.pdf');
     }
   }
+
+  static Future<void> generarKpiPdf(Map<String, dynamic> stats) async {
+    final pdf = pw.Document();
+
+    final double oee  = (stats['oeeGlobal']        as num?)?.toDouble() ?? 0;
+    final double mtbf = (stats['mtbfHoras']         as num?)?.toDouble() ?? 0;
+    final double mttr = (stats['mttrHoras']         as num?)?.toDouble() ?? 0;
+    final double disp = (stats['disponibilidadPct'] as num?)?.toDouble() ?? 0;
+    final Map<String, dynamic> ratio =
+        (stats['ratioPreventivoCorrectivo'] as Map?)?.cast() ?? {};
+    final Map<String, dynamic> porEstado =
+        (stats['otsPorEstado'] as Map?)?.cast() ?? {};
+    final List<dynamic> ranking = stats['rankingIncidencias'] as List? ?? [];
+    final List<dynamic> evolucion = stats['evolucionMensual'] as List? ?? [];
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (ctx) => [
+          // 1. Header
+          pw.Text('INFORME KPI — MÈLTIC GMAO',
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Generado: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+          ),
+          pw.Divider(height: 16, color: PdfColors.grey400),
+          pw.SizedBox(height: 8),
+
+          // 2. KPI values table
+          pw.TableHelper.fromTextArray(
+            headers: ['KPI', 'VALOR', 'DESCRIPCIÓN'],
+            data: [
+              ['OEE', '${oee.toStringAsFixed(1)}%', 'Eficiencia Global Equipos'],
+              ['MTBF', '${mtbf.toStringAsFixed(1)}h', 'Tiempo Medio Entre Fallos'],
+              ['MTTR', '${mttr.toStringAsFixed(1)}h', 'Tiempo Medio de Reparación'],
+              ['DISPONIBILIDAD', '${disp.toStringAsFixed(1)}%', 'Disponibilidad de Planta'],
+            ],
+            headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 16),
+
+          // 3. Distribución
+          pw.Text('DISTRIBUCIÓN DE MANTENIMIENTO',
+              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ['TIPO', 'CANTIDAD', 'PORCENTAJE'],
+            data: () {
+              final int prev = (ratio['preventivas'] as num?)?.toInt() ?? 0;
+              final int corr = (ratio['correctivas'] as num?)?.toInt() ?? 0;
+              final int tot = prev + corr;
+              return [
+                ['PREVENTIVAS', '$prev',
+                    tot > 0 ? '${(prev / tot * 100).toStringAsFixed(1)}%' : '-'],
+                ['CORRECTIVAS', '$corr',
+                    tot > 0 ? '${(corr / tot * 100).toStringAsFixed(1)}%' : '-'],
+              ];
+            }(),
+            headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 16),
+
+          // 4. OTs por estado
+          pw.Text('ÓRDENES POR ESTADO',
+              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ['ESTADO', 'CANTIDAD', 'PORCENTAJE'],
+            data: () {
+              final int cerr = (porEstado['CERRADA']    as num?)?.toInt() ?? 0;
+              final int enPr = (porEstado['EN_PROCESO'] as num?)?.toInt() ?? 0;
+              final int pend = (porEstado['PENDIENTE']  as num?)?.toInt() ?? 0;
+              final int tot = cerr + enPr + pend;
+              return [
+                ['CERRADA', '$cerr',
+                    tot > 0 ? '${(cerr / tot * 100).toStringAsFixed(1)}%' : '-'],
+                ['EN PROCESO', '$enPr',
+                    tot > 0 ? '${(enPr / tot * 100).toStringAsFixed(1)}%' : '-'],
+                ['PENDIENTE', '$pend',
+                    tot > 0 ? '${(pend / tot * 100).toStringAsFixed(1)}%' : '-'],
+              ];
+            }(),
+            headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 16),
+
+          // 5. Evolución mensual (data table — NOT a chart; pdf package cannot render Flutter widgets)
+          pw.Text('EVOLUCIÓN MENSUAL',
+              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ['MES', 'PREVENTIVAS', 'CORRECTIVAS', 'TOTAL'],
+            data: evolucion.map((m) {
+              final int p = (m['preventivo'] as num?)?.toInt() ?? 0;
+              final int c = (m['correctivo'] as num?)?.toInt() ?? 0;
+              return [m['mes']?.toString() ?? '-', '$p', '$c', '${p + c}'];
+            }).toList(),
+            headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 16),
+
+          // 6. Ranking de incidencias (top 5)
+          pw.Text('RANKING DE INCIDENCIAS',
+              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ['#', 'MÁQUINA', 'INCIDENCIAS'],
+            data: ranking.asMap().entries.take(5).map((e) => [
+              '${e.key + 1}',
+              e.value['maquina']?.toString() ?? '-',
+              '${(e.value['incidencias'] as num?)?.toInt() ?? 0}',
+            ]).toList(),
+            headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+          ),
+        ],
+      ),
+    );
+
+    final bytes = await pdf.save();
+    final fileName =
+        'KPI_Report_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf';
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => bytes,
+      name: fileName,
+    );
+  }
+
+  static Future<void> generarListaOtsPdf(List<OrdenTrabajo> ordenes) async {
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (ctx) => [
+          pw.Text('LISTADO DE ÓRDENES DE TRABAJO',
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Total: ${ordenes.length} OTs  ·  '
+            'Generado: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+          ),
+          pw.Divider(),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ['#', 'MÁQUINA', 'TÉCNICO', 'TIPO', 'ESTADO', 'PRIORIDAD', 'FECHA'],
+            data: ordenes.map((ot) => [
+              ot.id.toString(),
+              ot.maquinaNombre ?? '-',
+              ot.tecnicoNombre ?? '-',
+              ot.tipo ?? '-',
+              ot.estado,
+              ot.prioridad,
+              ot.fechaCreacion != null
+                  ? DateFormat('dd/MM/yy').format(DateTime.parse(ot.fechaCreacion!))
+                  : '-',
+            ]).toList(),
+            headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            columnWidths: {
+              0: const pw.FixedColumnWidth(25),
+              1: const pw.FlexColumnWidth(2),
+              2: const pw.FlexColumnWidth(2),
+              3: const pw.FixedColumnWidth(60),
+              4: const pw.FixedColumnWidth(55),
+              5: const pw.FixedColumnWidth(50),
+              6: const pw.FixedColumnWidth(50),
+            },
+          ),
+        ],
+      ),
+    );
+    final bytes = await pdf.save();
+    final fileName =
+        'OTs_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf';
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => bytes,
+      name: fileName,
+    );
+  }
 }
