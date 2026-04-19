@@ -259,6 +259,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       _buildKpiCard("OT PENDIENTES", "${_ots.where((ot) => ot.estado != 'FINALIZADA' && ot.estado != 'CERRADA').length}", Icons.assignment_late_outlined, IndustrialTheme.warningOrange),
                                     ],
                                   ),
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    'KPIs OPERACIONALES',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.1,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  if (_kpiStats != null) ...[
+                                    Row(children: [
+                                      _buildOperationalKpiCard(
+                                        'OEE',
+                                        '${((_kpiStats!['oeeGlobal'] as num?)?.toDouble() ?? 0).toStringAsFixed(1)}%',
+                                        'Eficiencia Global Equipos',
+                                        Icons.speed,
+                                        _oeeColor((_kpiStats!['oeeGlobal'] as num?)?.toDouble() ?? 0),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      _buildOperationalKpiCard(
+                                        'MTBF',
+                                        '${((_kpiStats!['mtbfHoras'] as num?)?.toDouble() ?? 0).toStringAsFixed(1)}h',
+                                        'Tiempo Medio Entre Fallos',
+                                        Icons.av_timer,
+                                        _mtbfColor((_kpiStats!['mtbfHoras'] as num?)?.toDouble() ?? 0),
+                                      ),
+                                    ]),
+                                    const SizedBox(height: 12),
+                                    Row(children: [
+                                      _buildOperationalKpiCard(
+                                        'MTTR',
+                                        '${((_kpiStats!['mttrHoras'] as num?)?.toDouble() ?? 0).toStringAsFixed(1)}h',
+                                        'Tiempo Medio de Reparación',
+                                        Icons.build_circle_outlined,
+                                        _mttrColor((_kpiStats!['mttrHoras'] as num?)?.toDouble() ?? 0),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      _buildOperationalKpiCard(
+                                        'DISPONIB.',
+                                        '${((_kpiStats!['disponibilidadPct'] as num?)?.toDouble() ?? 0).toStringAsFixed(1)}%',
+                                        'Disponibilidad de Planta',
+                                        Icons.precision_manufacturing,
+                                        _dispColor((_kpiStats!['disponibilidadPct'] as num?)?.toDouble() ?? 0),
+                                      ),
+                                    ]),
+                                  ],
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    'SALA DE SERVIDORES',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.1,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const SalaServidoresWidget(),
                                   const SizedBox(height: 30),
                                   if (_maquinas.any((m) => m.estado != 'OK' && m.estado != 'Operativo')) ...[
                                     Row(
