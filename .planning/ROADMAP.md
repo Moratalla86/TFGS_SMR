@@ -29,7 +29,13 @@
   3. El widget de Sala de Servidores en DashboardScreen muestra temperatura y humedad del Controllino actualizándose en tiempo real
   4. El técnico pulsa "Exportar PDF" en KpisScreen y recibe un PDF descargable con el informe de KPIs
   5. El técnico pulsa "Exportar PDF" en OrdenesScreen y recibe un PDF con el listado completo de OTs
-**Plans**: TBD
+**Plans**: 5 plans (Wave 1: A, B — Wave 2: C, D, E)
+Plans:
+- [ ] 01-PLAN-A.md — PLCService.fetchLastTelemetry + SalaServidoresWidget (KPI-05 foundation)
+- [ ] 01-PLAN-B.md — PdfGenerator.generarKpiPdf + generarListaOtsPdf (KPI-06, EXP-01 foundation)
+- [ ] 01-PLAN-C.md — DashboardScreen: KPI mini-cards + Sala de Servidores integration (KPI-01, KPI-05)
+- [ ] 01-PLAN-D.md — KpisScreen: fl_chart BarChart + PDF export button (KPI-02, KPI-03, KPI-04, KPI-06)
+- [ ] 01-PLAN-E.md — OrdenesScreen: bulk PDF export button (EXP-01)
 **UI hint**: yes
 
 ### Phase 2: Alertas In-App
@@ -75,7 +81,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. KPI Dashboard + PDF Export | 0/? | Not started | - |
+| 1. KPI Dashboard + PDF Export | 0/5 | Planned | - |
 | 2. Alertas In-App | 0/? | Not started | - |
 | 3. Firebase Push Android | 0/? | Not started | - |
 | 4. Calendario Preventivo | 0/? | Not started | - |
