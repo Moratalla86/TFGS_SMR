@@ -7,12 +7,12 @@
 
 ### KPI Dashboard
 
-- [ ] **KPI-01**: El técnico ve 4 KPIs clave (OEE, MTBF, MTTR, disponibilidad) en mini-cards en DashboardScreen con valores simulados realistas
-- [ ] **KPI-02**: El usuario puede acceder a KpisScreen desde el drawer lateral
-- [ ] **KPI-03**: KpisScreen muestra gráfica de barras de evolución mensual con datos simulados
-- [ ] **KPI-04**: KpisScreen muestra métricas de OTs por estado, tipo y máquina con datos simulados
-- [ ] **KPI-05**: DashboardScreen muestra widget de Sala de Servidores con temperatura y humedad reales del Controllino en tiempo real
-- [ ] **KPI-06**: El usuario puede exportar el informe KPI a PDF desde KpisScreen
+- [x] **KPI-01**: El técnico ve 4 KPIs clave (OEE, MTBF, MTTR, disponibilidad) en mini-cards en DashboardScreen con valores simulados realistas
+- [x] **KPI-02**: El usuario puede acceder a KpisScreen desde el drawer lateral
+- [x] **KPI-03**: KpisScreen muestra gráfica de barras de evolución mensual con datos simulados
+- [x] **KPI-04**: KpisScreen muestra métricas de OTs por estado, tipo y máquina con datos simulados
+- [x] **KPI-05**: DashboardScreen muestra widget de Sala de Servidores con temperatura y humedad reales del Controllino en tiempo real
+- [x] **KPI-06**: El usuario puede exportar el informe KPI a PDF desde KpisScreen
 
 ### Alertas y Notificaciones
 
@@ -30,7 +30,7 @@
 
 ### Exportación
 
-- [ ] **EXP-01**: El usuario puede exportar el listado de OTs a PDF desde OrdenesScreen
+- [x] **EXP-01**: El usuario puede exportar el listado de OTs a PDF desde OrdenesScreen
 
 ## v2 Requirements (deferred)
 
@@ -60,12 +60,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| KPI-01 | Phase 1 | Pending |
-| KPI-02 | Phase 1 | Pending |
-| KPI-03 | Phase 1 | Pending |
-| KPI-04 | Phase 1 | Pending |
-| KPI-05 | Phase 1 | Pending |
-| KPI-06 | Phase 1 | Pending |
+| KPI-01 | Phase 1 | Delivered 2026-04-19 |
+| KPI-02 | Phase 1 | Delivered 2026-04-19 |
+| KPI-03 | Phase 1 | Delivered 2026-04-19 |
+| KPI-04 | Phase 1 | Delivered 2026-04-19 |
+| KPI-05 | Phase 1 | Delivered 2026-04-19 |
+| KPI-06 | Phase 1 | Delivered 2026-04-19 |
 | ALR-01 | Phase 2 | Pending |
 | ALR-02 | Phase 2 | Pending |
 | ALR-03 | Phase 3 | Pending |
@@ -74,7 +74,7 @@
 | CAL-02 | Phase 4 | Pending |
 | CAL-03 | Phase 4 | Pending |
 | CAL-04 | Phase 4 | Pending |
-| EXP-01 | Phase 1 | Pending |
+| EXP-01 | Phase 1 | Delivered 2026-04-19 |
 
 **Coverage:**
 - v1 requirements: 15 total
