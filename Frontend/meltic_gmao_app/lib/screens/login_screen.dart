@@ -9,6 +9,7 @@ import '../services/usuario_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui';
 import '../theme/industrial_theme.dart';
+import '../services/fcm_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -111,6 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
         AppSession.instance.fromJson(userData);
         if (!mounted) return;
         
+        // Registrar dispositivo para Push (Phase 3)
+        await FcmService().registerToken();
+        
         _showSuccess("Acceso concedido mediante credenciales");
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
@@ -135,6 +139,10 @@ class _LoginScreenState extends State<LoginScreen> {
         final userData = json.decode(response.body);
         AppSession.instance.fromJson(userData);
         if (!mounted) return;
+
+        // Registrar dispositivo para Push (Phase 3)
+        await FcmService().registerToken();
+
         _showSuccess("Acceso concedido mediante RFID");
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {

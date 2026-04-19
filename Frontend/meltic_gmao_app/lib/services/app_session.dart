@@ -15,6 +15,8 @@ class AppSession {
   String? userRol; // ADMIN | JEFE_MANTENIMIENTO | TECNICO
   String? authToken;
 
+  bool get isLoggedIn => authToken != null && authToken!.isNotEmpty;
+
   bool get isJefe {
     final r = userRol?.toUpperCase().trim() ?? '';
     return r == 'ADMIN' ||

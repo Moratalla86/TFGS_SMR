@@ -1,0 +1,31 @@
+# CONFIGURACIÓN DE FIREBASE (MÈLTIC GMAO)
+
+Para activar las notificaciones push en Android para la defensa del TFG, sigue estos pasos:
+
+## 1. Crear el Proyecto en Firebase
+1. Ve a [Firebase Console](https://console.firebase.google.com/).
+2. Haz clic en "Añadir proyecto" y llámalo **Meltic GMAO**.
+3. (Opcional) Desactiva Google Analytics si quieres ir más rápido.
+
+## 2. Registrar la App Android
+1. Dentro del proyecto, haz clic en el icono de **Android**.
+2. **Nombre del paquete**: `com.example.meltic_gmao_app` (extraído de build.gradle.kts).
+3. **Apodo de la app**: Meltic App.
+4. Haz clic en "Registrar app".
+
+## 3. Descargar Archivo de Configuración
+1. Descarga el archivo `google-services.json`.
+2. **MUY IMPORTANTE**: Muévelo a la carpeta:
+   `Frontend/meltic_gmao_app/android/app/google-services.json`
+   *(Sustituye este placeholder por el fichero real)*.
+
+## 4. Activar Cloud Messaging (para el Backend)
+1. En Firebase Console, ve a **Configuración del proyecto** (rueda dentada) > **Cuentas de servicio**.
+2. Haz clic en **Generar nueva clave privada**.
+3. Se descargará un archivo `.json`.
+4. Cámbiale el nombre a `serviceAccountKey.json`.
+5. Ponlo en la raíz del Backend:
+   `Backend/serviceAccountKey.json`
+
+---
+*Si realizas estos pasos, al reiniciar el servidor Backend aparecerá el mensaje "FCM inicializado con éxito" y las notificaciones llegarán al móvil/emulador.*
