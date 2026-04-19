@@ -19,6 +19,18 @@ class OrdenTrabajoService {
     throw Exception('Error al cargar órdenes: ${res.statusCode}');
   }
 
+  Future<List<OrdenTrabajo>> fetchPreventivas() async {
+    final res = await http.get(
+      Uri.parse('$_base/preventivas'),
+      headers: AppSession.instance.authHeaders,
+    );
+    if (res.statusCode == 200) {
+      final List<dynamic> body = json.decode(res.body);
+      return body.map((e) => OrdenTrabajo.fromJson(e)).toList();
+    }
+    return [];
+  }
+
   Future<List<OrdenTrabajo>> fetchOrdenesPorTecnico(int tecnicoId) async {
     final res = await http.get(
       Uri.parse('$_base/tecnico/$tecnicoId'),
@@ -41,6 +53,7 @@ class OrdenTrabajoService {
       'prioridad': ot.prioridad,
       'estado': ot.estado,
       'tipo': ot.tipo,
+      if (ot.fechaPlanificada != null) 'fechaPlanificada': ot.fechaPlanificada,
       if (ot.fotoBase64 != null) 'fotoBase64': ot.fotoBase64,
       if (ot.solicitanteId != null) 'solicitante': {'id': ot.solicitanteId},
       if (tecnicoId != null) 'tecnico': {'id': tecnicoId},

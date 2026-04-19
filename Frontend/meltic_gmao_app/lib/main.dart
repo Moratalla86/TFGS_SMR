@@ -9,12 +9,22 @@ import 'screens/usuarios_screen.dart';
 import 'screens/ordenes_screen.dart';
 import 'screens/activos_plc_screen.dart';
 import 'screens/kpis_screen.dart';
+import 'screens/calendario_screen.dart';
 
 import 'theme/industrial_theme.dart';
+import 'services/fcm_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicialización de Firebase Push (Phase 3)
+  await FcmService().initialize();
+  
+  // Locales para Calendario (Phase 4)
+  await initializeDateFormatting('es_ES', null);
   Intl.defaultLocale = 'es_ES';
+  
   await ApiConfig.init(); // Cargar IP personalizada desde SharedPreferences
   runApp(const SmrGmaoApp());
 }
@@ -45,6 +55,7 @@ class SmrGmaoApp extends StatelessWidget {
         '/ordenes': (context) => const OrdenesScreen(),
         '/activos-plc': (context) => const ActivosPLCScreen(),
         '/kpis': (context) => const KpisScreen(),
+        '/calendario': (context) => const CalendarioScreen(),
       },
     );
   }

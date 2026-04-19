@@ -57,6 +57,12 @@ public class OrdenTrabajoController {
         return mantenimientoService.obtenerPorMaquina(maquinaId);
     }
 
+    @Operation(summary = "Listar OTs preventivas", description = "Obtiene las órdenes de tipo PREVENTIVA con fecha planificada (Phase 4)")
+    @GetMapping("/preventivas")
+    public List<OrdenTrabajo> listarPreventivas() {
+        return mantenimientoService.obtenerPreventivas();
+    }
+
     @Operation(summary = "Búsqueda avanzada de OTs", description = "Filtra órdenes por técnico, máquina, estado o prioridad.")
     @GetMapping("/buscar")
     public List<OrdenTrabajo> buscar(

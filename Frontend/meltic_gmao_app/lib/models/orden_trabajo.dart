@@ -9,6 +9,7 @@ class OrdenTrabajo {
   final String? trabajosRealizados;
   final String? firmaTecnico;
   final String? firmaCliente;
+  final String? fechaPlanificada; // Phase 4
   final String? tipo;
   final String? checklists;
   final String? fotoBase64;
@@ -32,6 +33,7 @@ class OrdenTrabajo {
     this.trabajosRealizados,
     this.firmaTecnico,
     this.firmaCliente,
+    this.fechaPlanificada,
     this.tipo,
     this.checklists,
     this.fotoBase64,
@@ -57,6 +59,7 @@ class OrdenTrabajo {
       trabajosRealizados: json['trabajosRealizados'],
       firmaTecnico: json['firmaTecnico'],
       firmaCliente: json['firmaCliente'],
+      fechaPlanificada: json['fechaPlanificada']?.toString(),
       tipo: json['tipo'],
       checklists: json['checklists'],
       fotoBase64: json['fotoBase64'],
@@ -82,6 +85,7 @@ class OrdenTrabajo {
       'descripcion': descripcion,
       'prioridad': prioridad,
       'estado': estado,
+      if (fechaPlanificada != null) 'fechaPlanificada': fechaPlanificada,
       if (tipo != null) 'tipo': tipo,
       if (checklists != null) 'checklists': checklists,
       if (fotoBase64 != null) 'fotoBase64': fotoBase64,

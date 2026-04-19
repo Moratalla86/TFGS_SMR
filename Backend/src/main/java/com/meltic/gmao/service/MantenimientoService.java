@@ -1,5 +1,6 @@
 package com.meltic.gmao.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,15 @@ public class MantenimientoService {
         return ordenTrabajoRepository.findByMaquinaId(maquinaId);
     }
 
+    public List<OrdenTrabajo> obtenerPreventivas() {
+        return ordenTrabajoRepository.findAll((root, query, cb) -> 
+            cb.and(
+                cb.equal(root.get("tipo"), "PREVENTIVA"),
+                cb.isNotNull(root.get("fechaPlanificada"))
+            )
+        );
+    }
+
     public List<OrdenTrabajo> buscarConFiltros(Long tecnicoId, Long maquinaId, String estado, String prioridad,
             LocalDateTime fechaDesde, LocalDateTime fechaHasta) {
 
@@ -69,6 +79,11 @@ public class MantenimientoService {
             }
             if (fechaHasta != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("fechaCreacion"), fechaHasta));
+            }
+            // Phase 4: Filtrado por fecha planificada (para el calendario)
+            if (root.get("fechaPlanificada") != null) {
+                // El filtro buscarConFiltros original es para fecha de creación, 
+                // pero lo mantenemos compatible.
             }
 
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));

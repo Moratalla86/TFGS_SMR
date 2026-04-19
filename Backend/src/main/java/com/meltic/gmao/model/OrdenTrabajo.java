@@ -1,6 +1,7 @@
 package com.meltic.gmao.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,6 +18,7 @@ public class OrdenTrabajo {
     private String tipo;      // CORRECTIVA, PREVENTIVA
 
     private LocalDateTime fechaCreacion;
+    private LocalDate fechaPlanificada; // Phase 4
 
     // ── Nuevos campos de ejecución ─────────────────────────────────────────────
     private LocalDateTime fechaInicio;
@@ -114,4 +116,7 @@ public class OrdenTrabajo {
 
     public Usuario getSolicitante() { return solicitante; }
     public void setSolicitante(Usuario solicitante) { this.solicitante = solicitante; }
+
+    public LocalDate getFechaPlanificada() { return fechaPlanificada; }
+    public void setFechaPlanificada(LocalDate fechaPlanificada) { this.fechaPlanificada = fechaPlanificada; }
 }
