@@ -1,5 +1,13 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+
+# Workaround: Firebase C++ SDK declares cmake_minimum_required(<3.5),
+# removed in CMake 3.27+. Setting this cache variable before any
+# add_subdirectory() makes all child CMakeLists inherit the tolerance.
+if(NOT DEFINED CMAKE_POLICY_VERSION_MINIMUM)
+  set(CMAKE_POLICY_VERSION_MINIMUM "3.5" CACHE STRING "" FORCE)
+endif()
+
 project(meltic_gmao_app LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
@@ -31,6 +39,9 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
+
+# Serialize PDB writes when multiple CL.EXE run in parallel (MSVC C1041 fix).
+add_compile_options(/FS)
 
 # Compilation settings that should be applied to most targets.
 #
