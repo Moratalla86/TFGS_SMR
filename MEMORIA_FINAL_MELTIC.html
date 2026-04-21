@@ -991,6 +991,96 @@ public void registrarAlerta(Long maquinaId, String maquinaNombre,
 }
 </pre>
 
+<h3>10.4.5. Evidencia Fotográfica, Firma Digital y Exportación PDF</h3>
+<p class="indent">El cierre de una Orden de Trabajo en Mèltic no es un simple cambio de estado: genera un documento de auditoría completo e inmutable que recoge los trabajos realizados, el protocolo de revisión completado, la evidencia fotográfica del trabajo y las firmas digitales del técnico y del cliente. Todo este proceso ocurre en el dispositivo del técnico antes de enviarse al servidor.</p>
+
+<div class="img-container">
+  <div class="img-placeholder">[PENDIENTE INSERCION MANUAL: ot_detail_screen.dart – sección de evidencia fotográfica con foto capturada + lienzo de firma táctil del técnico y del cliente]</div>
+  <span class="caption">Figura OT1. Pantalla de cierre de OT — sección de evidencia fotográfica (arriba) y lienzo de firma táctil dual para técnico y cliente (abajo).</span>
+</div>
+
+<h4>Captura Fotográfica</h4>
+<p class="indent">La evidencia fotográfica se captura directamente desde la cámara del dispositivo Android mediante el paquete <code>image_picker</code>. La imagen obtenida se convierte a Base64 y se almacena en memoria hasta el momento del cierre:</p>
+
+<pre>// ot_detail_screen.dart – Captura de foto desde cámara
+final picker = ImagePicker();
+final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+if (photo != null) {
+  final bytes = await photo.readAsBytes();
+  setState(() {
+    _fotoBase64 = base64Encode(bytes);  // Imagen en memoria hasta el cierre
+  });
+}</pre>
+
+<h4>Firma Digital Táctil</h4>
+<p class="indent">El lienzo de firma es un <code>GestureDetector</code> sobre un <code>CustomPainter</code> que registra cada trazo del dedo en una lista de puntos (<code>List&lt;List&lt;Offset?&gt;&gt;</code>). Al cerrar la OT, el canvas se renderiza a imagen PNG mediante <code>RenderRepaintBoundary</code> y se codifica en Base64:</p>
+
+<pre>// ot_detail_screen.dart – Conversión del canvas táctil a Base64
+Future&lt;String?&gt; _capturarFirma(
+    List&lt;List&lt;Offset?&gt;&gt; strokes, GlobalKey key) async {
+  final boundary = key.currentContext!.findRenderObject()
+      as RenderRepaintBoundary;
+  final image = await boundary.toImage(pixelRatio: 2.0);
+  final byteData = await image.toByteData(format: ImageByteFormat.png);
+  return base64Encode(byteData!.buffer.asUint8List());
+}</pre>
+
+<h4>Generación del PDF en Cliente</h4>
+<p class="indent">Mèltic genera el informe de cierre directamente en el dispositivo Flutter usando el paquete <code>pdf</code>, sin depender del servidor. La clase <code>PdfGenerator</code> construye un documento estructurado que incluye los datos de la OT, el checklist de revisión marcado, la foto de evidencia y ambas firmas:</p>
+
+<pre>// pdf_generator.dart – Generación del informe de cierre
+static Future&lt;String?&gt; generarReporteCierreBase64(
+    OrdenTrabajo ot,
+    String trabajos,
+    Map&lt;String, bool&gt; checklists,
+    String? fotoBase64,
+    String? firmaTecnicoBase64,
+    String? firmaClienteBase64) async {
+
+  final pdf = pw.Document();
+  pdf.addPage(pw.MultiPage(
+    build: (context) =&gt; [
+      pw.Text('INFORME DE CIERRE - OT #${ot.id}',
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+      pw.Text('Técnico: ${ot.tecnico?.nombre}'),
+      pw.Text('Máquina: ${ot.maquina?.nombre}'),
+      buildChecklist(),          // Protocolo de revisión
+      buildFotoSection(),        // Evidencia fotográfica
+      buildFirmasSection(),      // Firmas técnico + cliente
+    ],
+  ));
+  final bytes = await pdf.save();
+  return base64Encode(bytes);    // Devuelve el PDF como Base64
+}</pre>
+
+<h4>Persistencia y Descarga del PDF</h4>
+<p class="indent">Una vez generado el PDF en el cliente, el payload completo de cierre se envía al endpoint <code>PATCH /api/ordenes/{id}/cerrar</code>. El servidor lo persiste en el campo <code>reportePdfBase64</code> de la entidad (<code>MEDIUMTEXT</code> en MySQL) junto con las firmas y la foto. El técnico puede recuperar y visualizar el PDF en cualquier momento posterior a través del endpoint <code>GET /api/ordenes/{id}/reporte</code>, que devuelve el documento como <code>application/pdf</code>.</p>
+
+<div class="mermaid-box">
+  <div class="mermaid">
+    sequenceDiagram
+      actor Tec as Técnico
+      participant App as ot_detail_screen
+      participant PDF as PdfGenerator
+      participant API as MantenimientoService
+
+      Tec ->> App: Hace foto con cámara
+      App ->> App: base64Encode(bytes) -> _fotoBase64
+      Tec ->> App: Firma táctil en canvas
+      App ->> App: RenderRepaintBoundary.toImage() -> firmaTecBase64
+      Tec ->> App: Pulsa CERRAR OT
+      App ->> PDF: generarReporteCierreBase64(ot, trabajos, checklists, foto, firmas)
+      PDF -->> App: reportePdfBase64
+      App ->> API: PATCH /api/ordenes/{id}/cerrar
+      Note right of API: firmaTecnico, firmaCliente,\nfotoBase64, reportePdfBase64
+      API ->> API: estado=CERRADA, fechaFin=NOW()
+      API -->> App: OT cerrada
+      Tec ->> App: Pulsa VER PDF
+      App ->> App: Printing.layoutPdf() – visor nativo
+  </div>
+  <span class="caption">Diagrama S9. Flujo completo de cierre de OT con evidencia fotográfica, firma digital y exportación PDF.</span>
+</div>
+
 <h3>10.4.4. Inyección Analítica: Script Python de Datos Industriales</h3>
 <p class="indent">Para validar el sistema bajo carga real, el script <code>seed_industrial_data.py</code> simula cincuenta PLCs atacando simultáneamente la API con curvas sinusoidales con ruido gaussiano controlado (módulos <code>numpy</code> y <code>requests</code>). Esto reproduce fielmente la oscilación triaxial de un cojinete industrial y permite verificar que el backend gestiona correctamente la concurrencia.</p>
 
