@@ -355,16 +355,15 @@
       participant App as ordenes_screen.dart
       participant API as OrdenTrabajoController
       participant FCM as Firebase FCM
-      participant Tec as Técnico (Android)
+      participant Tec as Tecnico Android
 
       Jefe ->> App: Nueva OT (tipo, prioridad, descripción)
       App ->> API: POST /api/ordenes
-      Note right of API: {descripcion, tipo, prioridad,
-maquinaId, tecnicoId}
-      API ->> API: setEstado(PENDIENTE), setFechaCreacion(NOW)
+      Note right of API: descripcion, tipo, prioridad, maquinaId, tecnicoId
+      API ->> API: estado PENDIENTE + fechaCreacion NOW
       API -->> App: OT creada con ID
-      API ->> FCM: enviarPushAlerta(titulo, cuerpo)
-      FCM -->> Tec: Notificación push Android
+      API ->> FCM: enviarPushAlerta
+      FCM -->> Tec: Notificacion push Android
   </div>
   <span class="caption">Diagrama S4. Flujo de secuencia UC-04: Emisión y Asignación de Orden de Trabajo.</span>
 </div>
