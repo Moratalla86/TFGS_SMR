@@ -127,15 +127,29 @@
 <!-- 4. ABSTRACT                                                    -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <h1>4. ABSTRACT</h1>
-<p class="indent"><em>This thesis presents the design, architecture, and deployment of Mèltic GMAO 4.0, a scalable, real-time Computerized Maintenance Management System (CMMS). Built with a hybrid tech stack featuring Spring Boot 3 (Java 17), Flutter (Dart), MySQL 8.0, and MongoDB for time-series telemetry, the platform emphasizes cross-platform accessibility, Role-Based Access Control (RBAC), and physical security through RFID-based technician identification using Wiegand-protocol smart cards. The system orchestrates the entire industrial maintenance lifecycle — from predictive fault telemetry with circular buffer historization and Syncfusion-rendered visualizations, to automated PDF audit reports and digital signature capture on mobile — all deployed within an immutable Nginx-Docker multi-container cluster. The Flutter single-codebase approach enables simultaneous compilation to Android APK, Windows Desktop EXE, and Web WASM, reducing development effort by a factor of three compared to native platform-specific solutions.</em></p>
+<p class="indent"><em>This project documents the analysis, development and deployment of Mèltic GMAO 4.0, a Computerised Maintenance Management System (CMMS) designed for small and medium-sized industrial companies. The system enables maintenance teams to manage the full lifecycle of work orders, monitor equipment status in real time, authenticate technicians using RFID cards, and produce digital reports with signature and photo evidence.</em></p>
+<p class="indent"><em>The backend is developed with Spring Boot 3 (Java 17) and exposes a REST API secured with JSON Web Tokens (JWT) and role-based access control (RBAC). Relational data — users, machines and work orders — is stored in MySQL 8.0, while sensor time-series data is stored in MongoDB. The frontend is built with Flutter, which compiles a single shared codebase into Android, Windows Desktop and Web applications. The full system is containerised with Docker to ensure consistent and reproducible deployments.</em></p>
+<p class="indent"><em>The result is a functional, multi-platform application that replaces paper-based maintenance workflows with a centralised digital platform, improving traceability and reducing response times in industrial environments.</em></p>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- 5. RESUMEN Y OBJETIVOS                                         -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <h1>5. RESUMEN Y OBJETIVOS</h1>
-<p class="indent">Este Trabajo de Fin de Grado (TFG) documenta la concepción, ingeniería y ejecución de <strong>Mèltic GMAO 4.0</strong>, un Sistema de Gestión de Mantenimiento Asistido por Ordenador diseñado para erradicar las ineficiencias analógicas del sector industrial. El principal objetivo de Mèltic es fusionar la telemetría de planta (IoT y PLCs) con la logística humana de operarios, proporcionando trazabilidad completa en tiempo real.</p>
-<p class="indent">Como hitos vertebrales, el sistema persigue: la trazabilidad completa de las Órdenes de Trabajo (OTs), disponibilidad continua 24/7 mediante Docker, eliminación del fraude mediante identificación física RFID validada contra tokens JWT, y visualización de telemetría industrial con buffers circulares en memoria.</p>
-<p class="indent">A nivel de mercado hispanohablante, la digitalización de plantas de producción adolece de una brecha tecnológica insalvable para las pequeñas y medianas empresas (PYMES). Los grandes GMAO comerciales requieren licencias costosas y formación extenuante. Mèltic GMAO 4.0 desmitifica este escenario, proveyendo un entorno integral nativo que digitaliza el flujo de mantenimiento de fábrica y conecta físicamente con la maquinaria a través de sus PLCs.</p>
+<p class="indent">El presente Proyecto de Fin de Ciclo documenta el análisis, diseño y desarrollo de <strong>Mèltic GMAO 4.0</strong>, una aplicación multiplataforma de gestión de mantenimiento industrial orientada a pequeñas y medianas empresas del sector productivo. El sistema nace como respuesta a la dependencia que aún tienen muchas plantas de producción de procesos en papel o basados en hojas de cálculo, que dificultan el seguimiento de averías, la asignación de técnicos y el cumplimiento de los planes de mantenimiento preventivo.</p>
+
+<h2>5.1. Objetivos del Proyecto</h2>
+<p class="indent">El objetivo principal es desarrollar un sistema digital centralizado, funcional y desplegable en un entorno real, que cubra de forma integral el ciclo de mantenimiento industrial. Para ello se han definido los siguientes objetivos específicos:</p>
+<ul>
+  <li>Gestionar el ciclo de vida completo de las Órdenes de Trabajo (creación, asignación, ejecución y cierre con firma digital).</li>
+  <li>Identificar a los técnicos de forma segura mediante tarjetas RFID y credenciales con control de acceso por roles (RBAC).</li>
+  <li>Monitorizar en tiempo real los datos de los equipos industriales recibidos desde controladores PLC.</li>
+  <li>Generar informes PDF con firma digital y evidencia fotográfica directamente desde la aplicación móvil.</li>
+  <li>Planificar el mantenimiento preventivo mediante un calendario interactivo con órdenes programadas.</li>
+  <li>Desplegar el sistema completo en contenedores Docker para facilitar su instalación y mantenimiento.</li>
+</ul>
+
+<h2>5.2. Motivación</h2>
+<p class="indent">La digitalización del mantenimiento industrial sigue siendo un reto para muchas PYMEs, que no disponen de presupuesto para los grandes sistemas GMAO comerciales. Mèltic GMAO 4.0 ofrece una alternativa de código abierto, desarrollada con tecnologías actuales del sector — Spring Boot, Flutter y Docker — que puede implantarse sin costes de licencia y adaptarse a distintos entornos de producción.</p>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- 6. ANTECEDENTES                                                -->
