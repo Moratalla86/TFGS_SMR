@@ -1159,7 +1159,30 @@ class GlobalTelemetryHistorian extends ChangeNotifier {
 <h2>12.3. Alertas Preventivas Autónomas por Umbrales</h2>
 <p class="indent">Actualmente las alertas se registran manualmente. El siguiente paso sería un motor de reglas en Spring Boot que dispare OTs preventivas automáticas cuando una métrica (p.ej. temperatura) supere un umbral configurable durante más de N minutos, sin intervención humana.</p>
 
-<h2>12.4. Conclusiones Generales</h2>
+<h2>12.4. Módulo de Gestión Económica</h2>
+<p class="indent">Mèltic gestiona el ciclo técnico del mantenimiento, pero no el económico. Una línea de evolución natural sería incorporar un módulo de gestión de costes que vincule cada Orden de Trabajo con su impacto económico real:</p>
+<ul>
+  <li><strong>Control de repuestos y consumibles:</strong> registrar las piezas utilizadas en cada OT, descontarlas de un almacén virtual y generar alertas de reposición automática cuando el stock caiga por debajo de un mínimo.</li>
+  <li><strong>Coste por orden:</strong> calcular el coste total de cada OT sumando las horas de mano de obra del técnico (extraídas de <code>fechaInicio</code> y <code>fechaFin</code>) más el coste de los materiales consumidos, y almacenar el resultado en la propia entidad <code>OrdenTrabajo</code>.</li>
+  <li><strong>Informes de rentabilidad:</strong> ampliar el módulo de KPIs con indicadores económicos — coste medio por avería, ratio coste preventivo/correctivo y presupuesto anual de mantenimiento — que la dirección pueda consultar desde la pantalla de estadísticas.</li>
+  <li><strong>Integración contable:</strong> exportar los datos de coste en formato CSV o mediante una API hacia herramientas de contabilidad como FacturaDirecta o ERPs de código abierto como Odoo, cerrando la brecha entre el departamento técnico y el financiero.</li>
+</ul>
+<p class="indent">Esta mejora convertiría Mèltic en una herramienta de gestión integral, permitiendo a la dirección de la PYME tomar decisiones basadas en datos reales de coste operativo y no solo en indicadores técnicos.</p>
+
+<h2>12.5. Integración de Inteligencia Artificial en el Mantenimiento Predictivo</h2>
+<p class="indent">La arquitectura actual de Mèltic ya recoge y almacena en MongoDB series temporales de datos de sensores (temperatura, vibración, presión). Este histórico constituye la materia prima necesaria para entrenar modelos de inteligencia artificial orientados al mantenimiento predictivo, es decir, anticipar el fallo de un equipo antes de que se produzca en lugar de reaccionar a él.</p>
+
+<h3>12.5.1. Detección de Anomalías con Machine Learning</h3>
+<p class="indent">El primer nivel de integración consistiría en añadir un microservicio en <strong>Python (Flask o FastAPI)</strong> que consuma los datos de telemetría almacenados en MongoDB y aplique algoritmos de detección de anomalías. Modelos como <em>Isolation Forest</em> o <em>LSTM (Long Short-Term Memory)</em> pueden aprender el comportamiento normal de cada máquina y generar una alerta automática cuando se detecta una desviación significativa, sin necesidad de configurar umbrales manuales.</p>
+<p class="indent">El flujo sería el siguiente: el microservicio Python analiza los últimos N puntos del histórico de un sensor, calcula la probabilidad de fallo y, si supera un umbral de confianza, llama al endpoint <code>POST /api/alertas</code> del backend Spring Boot para registrar la alerta y enviar la notificación push al técnico responsable.</p>
+
+<h3>12.5.2. Generación Automática de Órdenes de Trabajo Predictivas</h3>
+<p class="indent">Un nivel más avanzado sería conectar el modelo predictivo directamente con el ciclo de OTs: cuando el modelo detecte que una máquina tiene una probabilidad de fallo superior al 80% en las próximas 48 horas, el sistema crearía automáticamente una OT de tipo PREVENTIVA, la asignaría al técnico disponible y la añadiría al calendario de mantenimiento, sin intervención humana.</p>
+
+<h3>12.5.3. Asistente de Diagnóstico con IA Generativa</h3>
+<p class="indent">A más largo plazo, la integración de un modelo de lenguaje (LLM) a través de la API de OpenAI o un modelo local como <em>Llama</em> permitiría ofrecer al técnico un asistente de diagnóstico dentro de la propia aplicación Flutter. El técnico podría describir en texto libre los síntomas de una avería y el asistente, entrenado con el historial de OTs cerradas de la empresa, sugeriría las causas más probables y los pasos de resolución más eficaces según la experiencia acumulada en el sistema.</p>
+
+<h2>12.6. Conclusiones Generales</h2>
 <p class="indent">El desarrollo de Mèltic GMAO 4.0 demuestra que crear una plataforma multiplataforma completa, conectada a hardware real y desplegable en contenedores Docker, es completamente viable aplicando los conocimientos del ciclo formativo DAM. La combinación de Spring Boot con MySQL/MongoDB y una interfaz Flutter ha producido un sistema funcional, escalable y profesional. Los retos más significativos — gestión de concurrencia en el historian de telemetría, RBAC granular en Spring Security, y resolución de errores de layout en Android — han sido superados con soluciones técnicas sólidas y documentadas.</p>
 <p class="indent"><strong>El resultado no es un simulador escolar, sino una aplicación estructurada y robusta</strong> que demuestra dominio de las competencias del módulo de Programación de Servicios y Procesos, Acceso a Datos, y Programación Multimedia y Dispositivos Móviles, aplicadas a un problema logístico industrial real.</p>
 
