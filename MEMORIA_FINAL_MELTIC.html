@@ -761,15 +761,94 @@ public class TokenAuthFilter extends OncePerRequestFilter {
 
 <!-- ─── 10.3 SWAGGER ────────────────────────────────────────────── -->
 <h2>10.3. Documentación de API (Swagger e Interoperabilidad)</h2>
-<p class="indent">Una de las paradojas de los proyectos con stacks separados (Flutter/Dart y Spring Boot/Java) reside en la rotura silenciosa de contratos de serialización: si el backend renombra un campo de <code>"estado_ot"</code> a <code>"estadoOrden"</code>, el cliente lanza <code>ParseException</code> en silencio. Mèltic resuelve esto integrando <strong>OpenAPI 3.0 con Springdoc</strong> (OpenAPI Initiative, 2024).</p>
+<p class="indent">Uno de los riesgos habituales en proyectos con dos lenguajes distintos en cliente y servidor es la rotura silenciosa de contratos: si el backend modifica el nombre de un campo JSON (por ejemplo, de <code>estadoOt</code> a <code>estadoOrden</code>), el cliente Flutter falla en silencio al deserializar la respuesta. Para evitar esta situación, Mèltic integra <strong>OpenAPI 3.0</strong> a través de la librería <strong>Springdoc OpenAPI</strong>, que genera y publica automáticamente la especificación completa de la API REST (OpenAPI Initiative, 2024).</p>
+
+<h3>10.3.1. Configuración de OpenAPI con Seguridad JWT</h3>
+<p class="indent">La clase <code>OpenApiConfig</code> registra el esquema de autenticación <em>Bearer JWT</em> directamente en la especificación OpenAPI, de modo que la consola Swagger UI puede enviar el token de autorización en todas las peticiones de prueba:</p>
+
+<pre>@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI openAPI() {
+        final String schemeName = "bearerAuth";
+        return new OpenAPI()
+                .info(new Info()
+                        .title("Meltic GMAO API")
+                        .version("1.0"))
+                .addSecurityItem(new SecurityRequirement().addList(schemeName))
+                .components(new Components()
+                        .addSecuritySchemes(schemeName, new SecurityScheme()
+                                .name(schemeName)
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")));
+    }
+}</pre>
+<p><em>Fragmento 4. OpenApiConfig.java — registro del esquema Bearer JWT en la especificación OpenAPI 3.0.</em></p>
+
+<p class="indent">Al arrancar el servidor Spring Boot, Springdoc analiza mediante reflexión todas las clases anotadas con <code>@RestController</code> y genera el fichero de especificación <code>/v3/api-docs</code> en formato JSON. La consola interactiva Swagger UI se sirve en <code>/swagger-ui/index.html</code> y consume ese fichero para construir la interfaz de pruebas.</p>
 
 <div class="img-container">
   <div class="img-placeholder">[PENDIENTE INSERCION MANUAL: Swagger UI en /swagger-ui/index.html con los endpoints de Mèltic]</div>
-  <span class="caption">Figura 3. Consola Swagger UI autogenerada del Backend Java. Permite probar endpoints con autenticación JWT Bearer directamente desde el navegador.</span>
+  <span class="caption">Figura 3. Consola Swagger UI del backend de Mèltic GMAO 4.0. Permite probar cualquier endpoint con autenticación JWT Bearer directamente desde el navegador.</span>
 </div>
 
-<h3>10.3.1. Implementación Code-First con Springdoc</h3>
-<p class="indent">A través de las anotaciones <code>@Operation</code> y <code>@Tag</code> en los controladores, el motor <code>springdoc-openapi</code> inspecciona mediante reflexión las clases Java en tiempo de compilación y despliega automáticamente la documentación en <code>/swagger-ui/index.html</code>. Esto elimina la documentación manual y garantiza que el contrato esté siempre sincronizado con el código real.</p>
+<h3>10.3.2. Anotaciones en los Controladores</h3>
+<p class="indent">Cada controlador declara su grupo funcional con <code>@Tag</code> y cada endpoint añade una descripción con <code>@Operation</code>. Esto permite que Swagger UI organice los endpoints por módulo y muestre información clara sobre parámetros, cuerpo de la petición y códigos de respuesta:</p>
+
+<pre>@RestController
+@RequestMapping("/api/auth")
+@Tag(name = "Seguridad - Autenticación",
+     description = "Endpoints para el control de acceso mediante credenciales y RFID")
+public class AuthController {
+
+    @Operation(summary = "Login con Credenciales",
+               description = "Permite el acceso al sistema mediante email y contraseña (bcrypt)")
+    @ApiResponse(responseCode = "200", description = "Usuario autenticado con éxito")
+    @ApiResponse(responseCode = "401", description = "Credenciales inválidas o usuario inactivo")
+    @PostMapping("/login")
+    public ResponseEntity&lt;?&gt; login(@RequestBody Map&lt;String, String&gt; credentials) { ... }
+}</pre>
+<p><em>Fragmento 5. AuthController.java — uso de @Tag, @Operation y @ApiResponse para documentar el endpoint de login.</em></p>
+
+<h3>10.3.3. Catálogo de Endpoints por Módulo</h3>
+<p class="indent">La API de Mèltic agrupa sus rutas en ocho módulos funcionales, cada uno mapeado a un controlador independiente. La tabla siguiente recoge los endpoints principales documentados en Swagger:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:28%;">Módulo (@Tag)</th>
+      <th style="width:12%;">Método</th>
+      <th style="width:35%;">Ruta</th>
+      <th style="width:25%;">Función</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td rowspan="2"><strong>Autenticación</strong></td><td>POST</td><td><code>/api/auth/login</code></td><td>Login email + password (JWT)</td></tr>
+    <tr><td>GET</td><td><code>/api/plc/last-rfid</code></td><td>Lectura última tarjeta RFID</td></tr>
+    <tr><td rowspan="3"><strong>Órdenes de Trabajo</strong></td><td>GET</td><td><code>/api/ordenes</code></td><td>Listar todas las OTs</td></tr>
+    <tr><td>POST</td><td><code>/api/ordenes</code></td><td>Crear nueva OT</td></tr>
+    <tr><td>PATCH</td><td><code>/api/ordenes/{id}/cerrar</code></td><td>Cerrar OT con firmas y PDF</td></tr>
+    <tr><td rowspan="2"><strong>Activos / Máquinas</strong></td><td>GET</td><td><code>/api/maquinas</code></td><td>Inventario de activos</td></tr>
+    <tr><td>POST</td><td><code>/api/maquinas</code></td><td>Registrar nuevo activo</td></tr>
+    <tr><td rowspan="2"><strong>Telemetría</strong></td><td>POST</td><td><code>/api/plc/telemetria</code></td><td>Ingestión de datos de sensor</td></tr>
+    <tr><td>GET</td><td><code>/api/telemetria/{id}</code></td><td>Histórico por máquina</td></tr>
+    <tr><td><strong>Usuarios</strong></td><td>GET / POST</td><td><code>/api/usuarios</code></td><td>Gestión de personal y roles</td></tr>
+    <tr><td><strong>Alertas</strong></td><td>GET</td><td><code>/api/alertas/activas</code></td><td>Alertas activas del sistema</td></tr>
+    <tr><td><strong>Estadísticas</strong></td><td>GET</td><td><code>/api/stats/dashboard</code></td><td>KPIs: OEE, MTBF, MTTR</td></tr>
+    <tr><td><strong>Notificaciones</strong></td><td>POST</td><td><code>/api/fcm/token</code></td><td>Registro token FCM (Android)</td></tr>
+  </tbody>
+</table>
+<p><em>Tabla X. Catálogo de endpoints REST de Mèltic GMAO 4.0 organizados por módulo funcional.</em></p>
+
+<h3>10.3.4. Valor para el Desarrollo y las Pruebas</h3>
+<p class="indent">La integración de Swagger aporta tres ventajas concretas al proyecto:</p>
+<ul>
+  <li><strong>Contrato vivo:</strong> la especificación <code>/v3/api-docs</code> siempre refleja el estado real del código. No hay documentación desfasada.</li>
+  <li><strong>Pruebas sin Postman:</strong> durante el desarrollo se probaron todos los endpoints directamente desde la consola Swagger UI, introduciendo el token JWT en el campo <em>Authorize</em> y ejecutando peticiones reales contra la base de datos.</li>
+  <li><strong>Interoperabilidad garantizada:</strong> el cliente Flutter puede importar el JSON de la especificación para validar que los modelos de datos coinciden con lo que espera el servidor, evitando errores de deserialización en producción.</li>
+</ul>
 
 <!-- ─── 10.4 BACKEND ─────────────────────────────────────────────── -->
 <h2>10.4. Lógica de Negocio Pura (Backend Transaccional)</h2>
