@@ -8,7 +8,7 @@
     font-family: "Arial", sans-serif;
     font-size: 12pt;
     line-height: 1.5;
-    margin: 2.5cm 2.5cm 2.5cm 2.5cm;
+    margin: 2.5cm 3cm 2.5cm 3cm;
     text-align: justify;
     color: #000;
   }
@@ -248,10 +248,32 @@
 
 <div class="use-case-card">
   <h3>UC-01: Autenticación Híbrida (RFID / Credenciales)</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso1.png" alt="Diagrama de secuencia UC-01: Autenticacion Hibrida RFID/JWT" style="max-width:90%;">
-    <span class="caption">Vista de la pantalla de autenticación — login_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    sequenceDiagram
+      actor Op as Operario
+      participant RFID as Lector RFID
+      participant App as login_screen.dart
+      participant API as AuthController
+      participant DB as MySQL USUARIOS
+
+      Op ->> RFID: Acerca tarjeta RFID
+      RFID -->> App: UID Wiegand
+      App ->> API: GET /api/plc/last-rfid
+      API ->> DB: SELECT WHERE rfidTag = UID
+      DB -->> API: Usuario encontrado
+      API -->> App: Bearer Token JWT + rol
+      App ->> App: Redirección según rol
+
+      Note over Op,App: Alternativa por credenciales
+      Op ->> App: Introduce email + password
+      App ->> API: POST /api/auth/login
+      API ->> DB: SELECT WHERE email = ?
+      DB -->> API: Usuario validado
+      API -->> App: Bearer Token JWT + rol
   </div>
+  <span class="caption">Diagrama S1. Flujo de secuencia UC-01: Autenticación Híbrida RFID/JWT.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Operario, Lector RFID Hardware</td><th>Precondiciones</th><td>Usuario registrado en BBDD</td></tr>
     <tr><th>Descripción</th><td colspan="3">Identificación mediante tarjeta RFID física (polling sobre <code>/api/plc/last-rfid</code>) o credenciales email/contraseña.</td></tr>
@@ -263,10 +285,27 @@
 
 <div class="use-case-card">
   <h3>UC-02: Gestión de Personal y Roles (RBAC)</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso2.png" alt="Diagrama de secuencia UC-02: Gestion de Personal y Roles RBAC" style="max-width:90%;">
-    <span class="caption">Pantalla de gestión de personal — usuarios_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    sequenceDiagram
+      actor Admin
+      participant App as usuarios_screen.dart
+      participant API as UsuarioController
+      participant DB as MySQL USUARIOS
+
+      Admin ->> App: Accede al módulo de personal
+      App ->> API: GET /api/usuarios
+      API -->> App: Lista de usuarios con roles
+      Admin ->> App: Nuevo usuario (formulario)
+      App ->> API: POST /api/usuarios
+      Note right of API: {nombre, email, rol, rfidTag}
+      API ->> DB: INSERT INTO usuarios
+      DB -->> API: ID generado
+      API -->> App: 201 Created
+      App -->> Admin: Usuario registrado
   </div>
+  <span class="caption">Diagrama S2. Flujo de secuencia UC-02: Gestión de Personal y Roles RBAC.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Administrador</td><th>Precondiciones</th><td>Sesión con rol ADMIN activa</td></tr>
     <tr><th>Descripción</th><td colspan="3">Alta, baja y modificación de operarios, con asignación de rol (ADMIN / JEFE_MANTENIMIENTO / TECNICO).</td></tr>
@@ -278,10 +317,26 @@
 
 <div class="use-case-card">
   <h3>UC-03: Gestión de Activos PLC y Gemelo Digital</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso3.png" alt="Diagrama UC-03: Gestion de Activos PLC y Gemelo Digital" style="max-width:90%;">
-    <span class="caption">Inventario de activos industriales — activos_plc_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    sequenceDiagram
+      actor Admin
+      participant App as activos_plc_screen.dart
+      participant API as MaquinaController
+      participant DB as MySQL MAQUINAS
+
+      Admin ->> App: Accede al inventario de activos
+      App ->> API: GET /api/maquinas
+      API -->> App: Lista con estado operativo
+      Admin ->> App: Nuevo activo (nombre, modelo, plcUrl)
+      App ->> API: POST /api/maquinas
+      API ->> DB: INSERT INTO maquinas + metric_configs
+      DB -->> API: ID activo creado
+      API -->> App: 201 Created
+      App -->> Admin: Activo disponible para OTs
   </div>
+  <span class="caption">Diagrama S3. Flujo de secuencia UC-03: Gestión de Activos PLC y Gemelo Digital.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Admin / Jefe Mantenimiento</td><th>Precondiciones</th><td>Acceso al módulo de activos</td></tr>
     <tr><th>Descripción</th><td colspan="3">Registro y configuración de maquinaria industrial. Cada activo almacena sus sensores (<code>MetricConfig</code>) y su estado operativo.</td></tr>
@@ -293,10 +348,26 @@
 
 <div class="use-case-card">
   <h3>UC-04: Emisión de Orden de Trabajo</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso4.png" alt="Diagrama UC-04: Emision y Asignacion de Orden de Trabajo" style="max-width:90%;">
-    <span class="caption">Gestión de órdenes de trabajo — ordenes_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    sequenceDiagram
+      actor Jefe as Jefe Mantenimiento
+      participant App as ordenes_screen.dart
+      participant API as OrdenTrabajoController
+      participant FCM as Firebase FCM
+      participant Tec as Técnico (Android)
+
+      Jefe ->> App: Nueva OT (tipo, prioridad, descripción)
+      App ->> API: POST /api/ordenes
+      Note right of API: {descripcion, tipo, prioridad,
+maquinaId, tecnicoId}
+      API ->> API: setEstado(PENDIENTE), setFechaCreacion(NOW)
+      API -->> App: OT creada con ID
+      API ->> FCM: enviarPushAlerta(titulo, cuerpo)
+      FCM -->> Tec: Notificación push Android
   </div>
+  <span class="caption">Diagrama S4. Flujo de secuencia UC-04: Emisión y Asignación de Orden de Trabajo.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Jefe Mantenimiento</td><th>Precondiciones</th><td>Activo y técnico disponibles</td></tr>
     <tr><th>Descripción</th><td colspan="3">Creación de OTs correctivas o preventivas, con asignación de técnico, máquina, prioridad y fecha planificada.</td></tr>
@@ -308,10 +379,28 @@
 
 <div class="use-case-card">
   <h3>UC-05: Resolución Técnica, Checklist y Firma Digital</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso5.png" alt="Diagrama UC-05: Ejecucion, Firma Digital y Cierre de OT" style="max-width:90%;">
-    <span class="caption">Resolución y cierre de OT con firma digital — ot_detail_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    sequenceDiagram
+      actor Tec as Técnico
+      participant App as ot_detail_screen.dart
+      participant API as MantenimientoService
+      participant DB as MySQL ORDENES_TRABAJO
+
+      Tec ->> App: Iniciar OT
+      App ->> API: PUT /api/ordenes/{id}/iniciar
+      API ->> DB: estado=EN_PROCESO, fechaInicio=NOW()
+      Tec ->> App: Completa trabajos realizados
+      Tec ->> App: Firma digital táctil (canvas → Base64)
+      Tec ->> App: Foto evidencia (Base64)
+      Tec ->> App: Cerrar OT
+      App ->> API: PUT /api/ordenes/{id}/cerrar
+      Note right of API: {firmas, foto, checklists}
+      API ->> DB: estado=CERRADA, fechaFin=NOW()
+      API -->> App: OT cerrada + PDF generado
   </div>
+  <span class="caption">Diagrama S5. Flujo de secuencia UC-05: Ejecución, Firma Digital y Cierre de OT.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Técnico de campo</td><th>Precondiciones</th><td>OT en estado PENDIENTE o EN_PROCESO</td></tr>
     <tr><th>Descripción</th><td colspan="3">Ejecución de trabajos, cumplimentación de checklist técnico, captura de evidencia fotográfica y cierre con firma táctil en pantalla. Genera reporte PDF inmutable.</td></tr>
@@ -323,10 +412,21 @@
 
 <div class="use-case-card">
   <h3>UC-06: KPIs Operacionales y Estadísticas</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso6.png" alt="Diagrama UC-06: Consulta de KPIs y Estadisticas Operativas" style="max-width:90%;">
-    <span class="caption">Panel de indicadores clave de rendimiento — kpis_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    flowchart LR
+      A([Admin / Jefe]) --> B[kpis_screen.dart]
+      B --> C[GET /api/stats/resumen]
+      C --> D[(MySQL
+ORDENES_TRABAJO)]
+      D --> C
+      C --> E[MTTR / MTBF / OEE]
+      E --> F[Syncfusion Charts]
+      B --> G[GET /api/stats/export-pdf]
+      G --> H[PDF generado en cliente]
   </div>
+  <span class="caption">Diagrama F6. Flujo UC-06: Consulta de KPIs y Estadísticas Operativas.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Jefe Mantenimiento / Admin</td><th>Precondiciones</th><td>Historial de OTs disponible</td></tr>
     <tr><th>Descripción</th><td colspan="3">Visualización de KPIs operacionales: MTTR, MTBF, tasa de avería, OTs por estado y exportación masiva a PDF.</td></tr>
@@ -338,10 +438,32 @@
 
 <div class="use-case-card">
   <h3>UC-07: Monitorización de Telemetría y Alertas</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso7.png" alt="Diagrama UC-07: Monitorizacion de Telemetria en Tiempo Real" style="max-width:90%;">
-    <span class="caption">Monitorización de telemetría en tiempo real — telemetria_chart_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    sequenceDiagram
+      participant PLC as Controlador PLC
+      participant Script as Script Python
+      participant API as PLCController
+      participant Mongo as MongoDB Telemetría
+      participant Hist as GlobalTelemetryHistorian
+      participant App as telemetria_chart_screen
+
+      PLC -->> Script: Señales sensor (1-5s)
+      Script ->> API: POST /api/plc/telemetria
+      API ->> Mongo: Insert time-series document
+      API ->> API: Evaluar umbrales
+      API ->> API: AlertaService.registrarAlerta()
+
+      loop polling cada 3 segundos
+        Hist ->> API: GET /api/telemetria/{id}?since=ts
+        API -->> Hist: Nuevos puntos JSON
+        Hist ->> Hist: _addAllToBuffer() / _trimBuffer()
+        Hist ->> App: notifyListeners()
+        App ->> App: Redibuja SfCartesianChart
+      end
   </div>
+  <span class="caption">Diagrama S7. Flujo de secuencia UC-07: Monitorización de Telemetría en Tiempo Real.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Técnico / Admin</td><th>Precondiciones</th><td>Máquina con sensores configurados y datos en BBDD</td></tr>
     <tr><th>Descripción</th><td colspan="3">Visualización en tiempo real de métricas de sensores con buffer histórico circular. Alertas críticas visibles en el dashboard.</td></tr>
@@ -353,10 +475,24 @@
 
 <div class="use-case-card">
   <h3>UC-08: Calendario Preventivo</h3>
-  <div class="img-container">
-    <img src="Diagramas/Casos%20de%20uso/caso8.png" alt="Diagrama UC-08: Calendario Preventivo de Mantenimiento" style="max-width:90%;">
-    <span class="caption">Planificación de mantenimiento preventivo — calendario_screen.dart</span>
+  <div class="mermaid-box">
+  <div class="mermaid">
+    flowchart TD
+      A([Jefe Mantenimiento]) --> B[calendario_screen.dart]
+      B --> C[GET /api/ordenes/preventivas]
+      C --> D[(MySQL ORDENES_TRABAJO
+tipo=PREVENTIVA
+fechaPlanificada IS NOT NULL)]
+      D --> C
+      C --> E[Agrupar por fechaPlanificada]
+      E --> B
+      B --> F{Seleccionar día
+en calendario}
+      F --> G[Mostrar OTs del día]
+      G --> H[Navegar a ot_detail_screen]
   </div>
+  <span class="caption">Diagrama F8. Flujo UC-08: Calendario Preventivo de Mantenimiento.</span>
+</div>
   <table>
     <tr><th>Actores</th><td>Jefe Mantenimiento</td><th>Precondiciones</th><td>OTs de tipo PREVENTIVA con fechaPlanificada asignada</td></tr>
     <tr><th>Descripción</th><td colspan="3">Visualización de OTs preventivas en un calendario interactivo mensual. Permite acceder al detalle de cada intervención planificada.</td></tr>
@@ -383,10 +519,6 @@
       E -->|flutter build windows| H(Windows EXE - Puesto fijo)
   </div>
   <span class="caption">Diagrama 1. Arquitectura topológica de Mèltic GMAO 4.0. Flujo de datos desde el hardware físico hasta las tres plataformas cliente.</span>
-</div>
-<div class="img-container" style="margin-top:1.5em;">
-  <img src="Diagramas/Arquitectura.png" alt="Arquitectura de red Meltic GMAO 4.0" style="max-width:90%;">
-  <span class="caption">Figura A1. Arquitectura de red y despliegue Docker de Meltic GMAO 4.0.</span>
 </div>
 <p class="indent">Se propone una arquitectura cliente-servidor desacoplada. El backend en <strong>Java Spring Boot 3</strong> gestiona la lógica de negocio y expone una API REST securizada con JWT, persistiendo datos relacionales en <strong>MySQL 8.0</strong> (usuarios, OTs, activos) y datos de telemetría temporal en <strong>MongoDB</strong>. El frontend en <strong>Flutter/Dart</strong> compila un único código fuente a tres plataformas: Android, Windows y Web, mientras que un módulo de hardware en Python simula la entrada de PLCs durante el desarrollo (Oracle Corporation, 2023).</p>
 
@@ -459,9 +591,26 @@
 </div>
 
 <h3>10.1.2. Enrutamiento y Flujos de Navegación</h3>
-<div class="img-container" style="margin-top:1em;">
-  <img src="Diagramas/Flujo%20de%20navegacion2.png" alt="Flujo de navegacion Flutter" style="max-width:90%;">
-  <span class="caption">Figura N2. Flujo de navegacion real de la aplicacion Flutter de Meltic GMAO 4.0.</span>
+<div class="mermaid-box">
+  <div class="mermaid">
+    flowchart TD
+      A([Inicio App]) --> B{Token JWT
+válido?}
+      B -->|No| C[login_screen]
+      C -->|RFID / Credenciales| D{Rol del usuario}
+      B -->|Si| D
+      D -->|ADMIN / JEFE| E[dashboard_screen]
+      D -->|TECNICO| F[ordenes_screen]
+      E --> F
+      E --> G[activos_plc_screen]
+      E --> H[usuarios_screen]
+      E --> I[kpis_screen]
+      E --> J[calendario_screen]
+      G --> K[machine_detail_screen]
+      K --> L[telemetria_chart_screen]
+      F --> M[ot_detail_screen]
+  </div>
+  <span class="caption">Figura N2. Flujo de navegación real de la aplicación Flutter de Mèltic GMAO 4.0.</span>
 </div>
 <p class="indent">La navegación de Mèltic se gestiona con el sistema de rutas nombradas nativo de Flutter (<code>Navigator.pushNamed</code>), definidas en el <code>MaterialApp</code> raíz. Al autenticarse, el servidor devuelve el rol del usuario dentro del payload JWT, y el cliente Flutter redirige condicionalmente a las pantallas permitidas según dicho rol.</p>
 
@@ -670,9 +819,59 @@ public class OrdenTrabajo {
 }
 </pre>
 
-<div class="img-container" style="margin-top:1em; margin-bottom:1.5em;">
-  <img src="Diagramas/DiagramaER.png" alt="Diagrama Entidad-Relacion MySQL" style="max-width:90%;">
-  <span class="caption">Figura ER1. Diagrama Entidad-Relacion de la base de datos MySQL de Meltic GMAO 4.0.</span>
+<div class="mermaid-box">
+  <div class="mermaid">
+    erDiagram
+      USUARIOS {
+        bigint id PK
+        string nombre
+        string email
+        string rol
+        string rfidTag
+      }
+      MAQUINAS {
+        bigint id PK
+        string nombre
+        string modelo
+        string ubicacion
+        string plcUrl
+        string estado
+      }
+      METRIC_CONFIGS {
+        bigint id PK
+        bigint maquina_id FK
+        string metricName
+        string unidad
+        float minValue
+        float maxValue
+      }
+      ORDENES_TRABAJO {
+        bigint id PK
+        string descripcion
+        string tipo
+        string estado
+        string prioridad
+        datetime fechaCreacion
+        date fechaPlanificada
+        datetime fechaInicio
+        datetime fechaFin
+        mediumtext firmaTecnico
+        mediumtext fotoBase64
+      }
+      ALERTAS {
+        bigint id PK
+        bigint maquina_id FK
+        string severidad
+        string descripcion
+        boolean activa
+        datetime timestamp
+      }
+      USUARIOS ||--o{ ORDENES_TRABAJO : "ejecuta"
+      MAQUINAS ||--o{ ORDENES_TRABAJO : "genera"
+      MAQUINAS ||--o{ METRIC_CONFIGS : "configura"
+      MAQUINAS ||--o{ ALERTAS : "genera"
+  </div>
+  <span class="caption">Figura ER1. Diagrama Entidad-Relación de la base de datos MySQL de Mèltic GMAO 4.0.</span>
 </div>
 <h3>10.4.3. Sistema de Alertas y Notificaciones Push (Firebase FCM)</h3>
 <p class="indent">Cuando el servidor detecta una anomalía o se registra un mantenimiento prioritario, el <code>AlertaService</code> persiste la alerta en MySQL y delega el envío push al <code>FcmService</code>, que invoca el SDK de Firebase Cloud Messaging. La deduplicación evita alertas repetidas para la misma máquina y descripción:</p>
@@ -748,10 +947,6 @@ public void registrarAlerta(Long maquinaId, String maquinaNombre,
       }
   </div>
   <span class="caption">Diagrama U2. Modelo de dominio de las entidades principales en MySQL/JPA.</span>
-<div class="img-container" style="margin-top:1.5em;">
-  <img src="Diagramas/Diagrama%20de%20clases.png" alt="Diagrama UML de clases" style="max-width:90%;">
-  <span class="caption">Figura C1. Diagrama UML de clases del modelo de dominio de Meltic GMAO 4.0.</span>
-</div>
 </div>
 
 <!-- ─── 10.6 TELEMETRÍA ──────────────────────────────────────────── -->
