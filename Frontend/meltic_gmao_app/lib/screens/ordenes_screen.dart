@@ -481,16 +481,15 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
       ),
       child: Column(
         children: [
-          Row(
+           Row(
             children: [
               Expanded(
-                flex: 2,
                 child: TextField(
                   onChanged: (v) => setState(() => _searchQuery = v),
                   style: const TextStyle(color: Colors.white, fontSize: 11),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search, size: 14),
-                    hintText: "BUSCAR ID O DESC...",
+                    hintText: "BUSCAR ID O DESCRIPCIÓN...",
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     filled: true,
                     fillColor: Colors.black.withValues(alpha: 0.2),
@@ -501,37 +500,26 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 1,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String?>(
-                      value: _selectedEstado,
-                      isExpanded: true,
-                      dropdownColor: IndustrialTheme.claudCloud,
-                      icon: const Icon(Icons.filter_alt_outlined, size: 14, color: IndustrialTheme.neonCyan),
-                      hint: const Text("ESTADO", style: TextStyle(color: IndustrialTheme.slateGray, fontSize: 9)),
-                      items: [
-                        const DropdownMenuItem(value: null, child: Text("TODOS", style: TextStyle(fontSize: 9))),
-                        const DropdownMenuItem(value: 'SOLICITADA', child: Text("SOLICITADA", style: TextStyle(fontSize: 9))),
-                        const DropdownMenuItem(value: 'PENDIENTE', child: Text("PENDIENTE", style: TextStyle(fontSize: 9))),
-                        const DropdownMenuItem(value: 'EN_PROCESO', child: Text("EN CURSO", style: TextStyle(fontSize: 9))),
-                        const DropdownMenuItem(value: 'CERRADA', child: Text("FINALIZADA", style: TextStyle(fontSize: 9))),
-                      ],
-                      onChanged: (v) => setState(() => _selectedEstado = v),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFiltroEstadoChip(null, "TODAS", IndustrialTheme.electricBlue),
+                const SizedBox(width: 6),
+                _buildFiltroEstadoChip("SOLICITADA", "SOLICITADA", IndustrialTheme.slateGray),
+                const SizedBox(width: 6),
+                _buildFiltroEstadoChip("PENDIENTE", "PENDIENTE", Colors.orange),
+                const SizedBox(width: 6),
+                _buildFiltroEstadoChip("EN_PROCESO", "EN CURSO", IndustrialTheme.warningOrange),
+                const SizedBox(width: 6),
+                _buildFiltroEstadoChip("CERRADA", "FINALIZADA", IndustrialTheme.operativeGreen),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -609,6 +597,30 @@ class _OrdenesScreenState extends State<OrdenesScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+  Widget _buildFiltroEstadoChip(String? value, String label, Color color) {
+    final isSelected = _selectedEstado == value;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? IndustrialTheme.spaceCadet : Colors.white,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _selectedEstado = selected ? value : null;
+        });
+      },
+      selectedColor: color,
+      backgroundColor: Colors.black.withValues(alpha: 0.2),
+      side: BorderSide(
+        color: isSelected ? color : color.withValues(alpha: 0.5),
       ),
     );
   }

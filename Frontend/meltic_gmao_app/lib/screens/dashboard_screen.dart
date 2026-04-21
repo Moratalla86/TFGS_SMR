@@ -629,7 +629,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         int cols = constraints.maxWidth > 900 ? 4
                  : constraints.maxWidth > 600 ? 3
                  : 2;
-        double aspectRatio = cols >= 3 ? 1.8 : 1.3;
+        // Al duplicar el aspect ratio, reducimos la altura a la mitad.
+        double aspectRatio = cols >= 3 ? 3.6 : 2.6;
 
         return GridView.builder(
           shrinkWrap: true,
@@ -649,7 +650,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return GestureDetector(
               onTap: () => Navigator.pushNamed(context, '/machine-detail', arguments: m.toJson()),
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: IndustrialTheme.claudCloud,
                   borderRadius: BorderRadius.circular(16),
@@ -662,32 +663,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Icon(Icons.precision_manufacturing, color: mColor, size: 20),
-                    const SizedBox(height: 12),
-                    Text(
-                      m.nombre.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 18, // Ligeramente menor que el valor numérico para que quepa bien
-                        fontWeight: FontWeight.w900,
-                        color: isOk ? Colors.white : mColor,
-                        letterSpacing: -0.5,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: mColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: Icon(Icons.precision_manufacturing, color: mColor, size: 24),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      m.ubicacion,
-                      style: const TextStyle(
-                        color: IndustrialTheme.slateGray,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            m.nombre.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: isOk ? Colors.white : mColor,
+                              letterSpacing: -0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            m.ubicacion,
+                            style: const TextStyle(
+                              color: IndustrialTheme.slateGray,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
