@@ -1,6 +1,38 @@
+# Environment
 .env
+
+# Node
 node_modules/
 package-lock.json
 package.json
+
+# Logs
 *.log
-docker-backend-build.log
+
+# IDE
+.vscode/
+.idea/
+
+# Internal planning (GSD)
+.planning/
+
+# LibreOffice lock files
+*.~lock.*#
+
+# Temporary documentation/conversion scripts
+auto_capture.py
+capture_*.py
+fix_*.py
+html_to_docx.py
+inject_*.py
+replace_*.py
+ultra_refactor.py
+use_cases_temp.html
+*.docx
+
+# Screenshot and asset capture
+screenshots/
+logos/
+
+# xpdf tools
+xpdf/
