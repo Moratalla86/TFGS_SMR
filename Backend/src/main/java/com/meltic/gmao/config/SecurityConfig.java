@@ -38,12 +38,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**").permitAll()
 
-                // --- PLC: solo el endpoint de datos del hardware está abierto ---
-                // last-rfid también público: se consulta desde la pantalla de login (sin token)
-                // El simulador RFID requiere rol ADMIN (no usar en producción sin auth)
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/plc/data").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/plc/last-rfid").permitAll()
+                // --- PLC: Telemetría y Control ---
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/plc/data").permitAll() // Hardware
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/plc/last-rfid").permitAll() // Login
                 .requestMatchers("/api/plc/simulate/**").hasRole("ADMIN")
+                .requestMatchers("/api/plc/maquina/**").hasAnyRole("ADMIN", "JEFE_MANTENIMIENTO", "TECNICO")
                 .requestMatchers("/api/plc/**").authenticated()
 
                 // --- FCM TOKEN REGISTRATION ---
@@ -56,6 +55,11 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/maquinas/**", "/api/usuarios/**").hasAnyRole("ADMIN", "SUPERADMIN")
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/maquinas/**", "/api/usuarios/**", "/api/config/**").hasAnyRole("ADMIN", "SUPERADMIN")
                 .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/maquinas/**", "/api/usuarios/**").hasAnyRole("ADMIN", "SUPERADMIN")
+
+                // --- ORDENES Y ALERTAS (RBAC explícito) ---
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/alertas/forzar").hasAnyRole("ADMIN", "JEFE_MANTENIMIENTO")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/ordenes/**").hasAnyRole("ADMIN", "JEFE_MANTENIMIENTO")
+                .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/ordenes/*/asignar", "/api/ordenes/*/estado").hasAnyRole("ADMIN", "JEFE_MANTENIMIENTO")
 
                 .anyRequest().authenticated()
             )

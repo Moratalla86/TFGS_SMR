@@ -114,6 +114,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleRfidLogin(String rfidTag) async {
+    _rfidTimer?.cancel();
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final response = await http.post(

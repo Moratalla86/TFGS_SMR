@@ -17,7 +17,9 @@ public class FcmTokenController {
 
     @PostMapping("/token")
     public ResponseEntity<?> registrarToken(@RequestBody Map<String, Object> body) {
-        Long usuarioId = ((Number) body.get("usuarioId")).longValue();
+        Object rawId = body.get("usuarioId");
+        if (rawId == null) return ResponseEntity.badRequest().body("usuarioId requerido");
+        Long usuarioId = ((Number) rawId).longValue();
         String token = (String) body.get("token");
 
         if (token == null || token.isEmpty()) {

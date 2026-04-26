@@ -31,8 +31,7 @@ public class FcmService {
     public void init() {
         File serviceAccount = new File("serviceAccountKey.json");
         if (serviceAccount.exists()) {
-            try {
-                FileInputStream stream = new FileInputStream(serviceAccount);
+            try (FileInputStream stream = new FileInputStream(serviceAccount)) {
                 FirebaseOptions options = FirebaseOptions.builder()
                         .setCredentials(GoogleCredentials.fromStream(stream))
                         .build();

@@ -93,12 +93,10 @@ public class MantenimientoService {
     // ── Creación (Jefe) ────────────────────────────────────────────────────────
     public OrdenTrabajo crearOrden(OrdenTrabajo ordenTrabajo) {
         ordenTrabajo.setFechaCreacion(LocalDateTime.now());
-        if (ordenTrabajo.getEstado() == null || ordenTrabajo.getEstado().isEmpty()) {
-            if (ordenTrabajo.getTecnico() == null) {
-                ordenTrabajo.setEstado("SOLICITADA");
-            } else {
-                ordenTrabajo.setEstado("PENDIENTE");
-            }
+        if (ordenTrabajo.getTecnico() == null) {
+            ordenTrabajo.setEstado("SOLICITADA");
+        } else {
+            ordenTrabajo.setEstado("PENDIENTE");
         }
         return ordenTrabajoRepository.save(ordenTrabajo);
     }

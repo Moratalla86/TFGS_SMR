@@ -134,7 +134,6 @@ public class PLCPollingService {
     }
 
     @Scheduled(fixedRateString = "${meltic.plc.polling.rate:5000}")
-    @Transactional
     public void pollPLCData() {
         List<Maquina> maquinas = maquinaRepository.findAll();
         for (Maquina m : maquinas) {

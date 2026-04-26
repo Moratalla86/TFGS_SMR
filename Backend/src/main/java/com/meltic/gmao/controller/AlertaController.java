@@ -27,7 +27,9 @@ public class AlertaController {
 
     @PostMapping("/forzar")
     public ResponseEntity<?> forzarAlerta(@RequestBody Map<String, Object> body) {
-        Long maquinaId = ((Number) body.get("maquinaId")).longValue();
+        Object raw = body.get("maquinaId");
+        if (raw == null) return ResponseEntity.badRequest().body("maquinaId requerido");
+        Long maquinaId = ((Number) raw).longValue();
         String maquinaNombre = (String) body.getOrDefault("maquinaNombre", "Máquina desconocida");
         String severidad     = (String) body.getOrDefault("severidad",    "CRITICAL");
         String descripcion   = (String) body.getOrDefault("descripcion",  "Alarma forzada manualmente [DEMO]");

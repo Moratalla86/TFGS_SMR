@@ -58,7 +58,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_machineMap == null) {
-      final args = ModalRoute.of(context)!.settings.arguments;
+      final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Map<String, dynamic>) {
         _machineMap = args;
       } else if (args is String) {
@@ -203,7 +203,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(status, style: TextStyle(color: col, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5)),
-              if (_analysisStart != null)
+              if (_analysisStart != null && _analysisEnd != null)
                 Text("${DateFormat.Hm().format(_analysisStart!)} - ${DateFormat.Hm().format(_analysisEnd!)}", style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
             ],
           ),
